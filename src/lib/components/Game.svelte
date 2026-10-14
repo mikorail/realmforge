@@ -21,7 +21,11 @@
 
 	let { cosmos, onquit }: { cosmos: Cosmos; onquit: () => void } = $props();
 
-	const genre = $derived(cosmos.u.planets[0].opts.genre);
+	// the current narration voice: fixed genre, or the era's genre on evolving worlds
+	const genre = $derived.by(() => {
+		void v;
+		return cosmos.sims[pi]?.voice ?? cosmos.u.planets[0].opts.genre;
+	});
 	const G = $derived(GENRES[genre]);
 	const theme = $derived(THEMES[genre]);
 
@@ -163,11 +167,23 @@
 		}
 	});
 
+	// re-theme the UI and the map whenever the genre voice changes (evolving worlds)
+	$effect(() => {
+		const th = theme, g = G;
+		const root = document.documentElement;
+		if (g.accent) root.style.setProperty('--accent', g.accent);
+		root.toggleAttribute('data-neon', !!th.glow || genre === 'biopunk');
+		root.style.setProperty('--title', th.font);
+		root.style.setProperty('--body', th.bodyFont);
+		if (r && r.theme !== th) {
+			r.theme = th;
+			r.invalidateTerrain();
+			r.invalidatePolitical();
+			needDraw = true;
+		}
+	});
+
 	onMount(() => {
-		if (G.accent) document.documentElement.style.setProperty('--accent', G.accent);
-		if (theme.glow || !theme.paper && theme.tintAmt > 0.4) document.documentElement.toggleAttribute('data-neon', !!theme.glow || genre === 'biopunk');
-		document.documentElement.style.setProperty('--title', theme.font);
-		document.documentElement.style.setProperty('--body', theme.bodyFont);
 		let raf = 0;
 		let last = performance.now();
 		let acc = 0;

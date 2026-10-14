@@ -35,6 +35,8 @@ export interface GenOptions {
 	/** multipliers for exotic layer settlements */
 	density: { deep: number; sky: number; sea: number };
 	climate: Climate;
+	/** the narration voice follows the tech era (myth → fantasy → steam → diesel → cyber/solar) */
+	evolve?: boolean;
 }
 
 /** what callers pass in; missing fields are filled by withDefaults() */

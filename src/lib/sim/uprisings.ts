@@ -37,7 +37,7 @@ export function processYearlyUprisings(sim: Simulation): UprisingEvent[] {
 	const scale = Math.min(1, 10 / alivePolities.length);
 	const roll = (p: number) => rng.chance(p * scale);
 	const digest = new Map<string, { kind: string; towns: string[]; realm: string; cell: number; state: number }>();
-	const genre = sim.w.opts.genre;
+	const genre = sim.voice;
 	const rest = (pol: Polity) => sim.unrestUntil.set(pol.id, sim.year + rng.int(3, 8));
 
 	for (const pol of alivePolities) {

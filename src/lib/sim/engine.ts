@@ -4,7 +4,7 @@ import { makeLang, makeName, personName, type Lang } from '../gen/names';
 import { assignBiomes, assignPopulation, biomeOf, BIOMES, climate, markFeatures, planetBiomes, precipitation } from '../gen/physical';
 import { withDefaults } from '../gen/options';
 import type { Climate } from '../gen/types';
-import { GENRES } from '../gen/genre';
+import { GENRES, type Genre } from '../gen/genre';
 import { langSeed, palette, polityForm } from '../gen/society';
 import { SEA, type Culture, type Religion, type World } from '../gen/types';
 import { AGES, ENCOUNTERS, REBEL_FORMS, TRAITS, TRAIT_FX, WAR_NAMES } from './content';
@@ -157,6 +157,7 @@ export class Simulation {
 	constructor(world: World, restoring = false) {
 		this.w = world;
 		this.rng = makeRng(world.opts.seed + ':sim');
+		this.voice = world.opts.genre;
 		const c = world.cells;
 		this.plague = new Float32Array(c.n);
 		this.basePop = c.pop.slice();
@@ -235,6 +236,7 @@ export class Simulation {
 			}
 		}
 		this.takeHistorySnapshot();
+		this.updateVoice();
 		this.log('misc', `The grand chronicle of ${world.name} begins: sovereign houses arise and uncharted lands await their destiny.`);
 	}
 
@@ -249,7 +251,7 @@ export class Simulation {
 	}
 	private nextEventId = 1;
 	log(kind: EventKind, text: string, cell?: number, state?: number) {
-		const ev: ChronEvent = { id: this.nextEventId++, y: this.year, m: this.month, kind, text: reskin(this.w.opts.genre, text), cell, state };
+		const ev: ChronEvent = { id: this.nextEventId++, y: this.year, m: this.month, kind, text: reskin(this.voice, text), cell, state };
 		this.events.push(ev);
 		if (this.events.length > MAX_EVENTS) this.events.splice(0, this.events.length - MAX_EVENTS);
 		this.allEvents.push(ev);
@@ -568,15 +570,22 @@ export class Simulation {
 		}
 	}
 
+	/** event-driven breakthroughs count for less than they claim; keeps era pacing sane */
+	gainInnovation(x: number) {
+		this.innovation += x * 0.16;
+	}
+
 	private innovate() {
 		const scholars = this.people.filter((p) => p.alive && p.traits.includes('Scholar')).length;
 		const stableRealms = this.polities.filter((p) => p.alive && p.stability > 60).length;
-		this.innovation += 2 + scholars * 1.5 + stableRealms * 0.4;
+		// diminishing returns so the ages unfold over centuries, not years (≈ era every 100–150 yrs)
+		this.gainInnovation(0.9 + Math.sqrt(scholars) * 0.25 + Math.sqrt(stableRealms) * 0.15);
 
 		// Check epoch transition
 		const nextEra = ERAS.find((e) => e.index === this.era + 1);
 		if (nextEra && this.innovation >= nextEra.threshold) {
 			this.era = nextEra.index;
+			this.updateVoice();
 			this.log('misc', `The grand wheel of ages turns: the ancient ways yield as the ${nextEra.name} (${nextEra.genreName}) dawns across the lands of ${this.w.name}!`);
 		}
 
@@ -596,9 +605,9 @@ export class Simulation {
 		for (const w of this.wonders) {
 			if (w.destroyed) continue;
 			if (w.kind === 'university') {
-				this.innovation += 2.5;
+				this.gainInnovation(2.5);
 			} else if (w.kind === 'tower_magic') {
-				this.innovation += 1.5;
+				this.gainInnovation(1.5);
 			} else if (w.kind === 'world_tree') {
 				if (w.stateId && this.polities[w.stateId]?.alive) {
 					this.polities[w.stateId].stability = clamp(this.polities[w.stateId].stability + 1, 0, 100);
@@ -646,7 +655,7 @@ export class Simulation {
 				const prof = LUMINARY_PROFILES[role];
 				this.log('luminary', `${prof.title} ${lum.name} of ${b.name} achieves worldwide acclaim with their magnum opus: "${lum.magnumOpus}".`, b.cell, b.state);
 				if (role === 'thinker' || role === 'inventor') {
-					this.innovation += 3;
+					this.gainInnovation(3);
 				}
 			}
 		}
@@ -660,7 +669,7 @@ export class Simulation {
 					const locName = b ? b.name : 'the realm';
 					this.log('luminary', `${lum.name} (${prof.title}) ${ach} in ${locName}.`, b ? b.cell : undefined, lum.state);
 					lum.renown += 5;
-					if (lum.role === 'inventor' || lum.role === 'thinker') this.innovation += 2;
+					if (lum.role === 'inventor' || lum.role === 'thinker') this.gainInnovation(2);
 				}
 			}
 		}
@@ -828,7 +837,7 @@ export class Simulation {
 
 					pol.treasury += 150;
 					pol.stability = clamp(pol.stability + 20, 0, 100);
-					this.innovation += 35;
+					this.gainInnovation(35);
 					if (ruler?.alive) ruler.renown += 40;
 
 					if (targetMonster.tier === 'cataclysm' || targetMonster.tier === 'legendary') {
@@ -1615,11 +1624,11 @@ export class Simulation {
 			if (roll < 0.2) {
 				p.stability += 15;
 				p.treasury += 30;
-				this.log('misc', packLine(this.w.opts.genre, 'golden', this.rng, { realm: p.name, town: cap.name }) ?? narrateMiscEvent(this.rng, 'golden_age', cap.name, p.name), cap.cell, p.id);
+				this.log('misc', packLine(this.voice, 'golden', this.rng, { realm: p.name, town: cap.name }) ?? narrateMiscEvent(this.rng, 'golden_age', cap.name, p.name), cap.cell, p.id);
 			} else if (roll < 0.35) {
 				for (let i = 0; i < this.c.n; i++) if (this.c.state[i] === p.id) this.c.pop[i] *= 0.85;
 				p.stability -= 10;
-				this.log('disaster', packLine(this.w.opts.genre, 'famine', this.rng, { realm: p.name, town: cap.name }) ?? narrateDisaster(this.rng, 'famine', cap.name, p.name), cap.cell, p.id);
+				this.log('disaster', packLine(this.voice, 'famine', this.rng, { realm: p.name, town: cap.name }) ?? narrateDisaster(this.rng, 'famine', cap.name, p.name), cap.cell, p.id);
 			} else if (roll < 0.45) {
 				const towns = this.w.burgs.filter((b) => b.alive && b.state === p.id);
 				if (towns.length) {
@@ -1831,7 +1840,7 @@ export class Simulation {
 				break;
 			}
 			case 'enlighten': {
-				this.innovation += 60;
+				this.innovation += 60; // divine act: full effect
 				const unlocked = checkNextDiscovery(this.techs, this.era, this.rng);
 				if (unlocked) {
 					this.techs.add(unlocked.id);
@@ -2120,7 +2129,7 @@ export class Simulation {
 				if (pol?.alive) {
 					pol.stability = clamp(pol.stability + 20, 0, 100);
 				}
-				this.innovation += 30;
+				this.gainInnovation(30);
 				this.log('god', `DIVINE ARCHITECTURE: The heavens consecrate the ${wonder.name} (${wonder.icon}) on the landscape! ${wonder.effect}`, cell, pol?.id);
 				break;
 			}
@@ -2130,7 +2139,7 @@ export class Simulation {
 				const b = burgs.reduce((best, x) => ((x.x - c.x[cell]) ** 2 + (x.y - c.y[cell]) ** 2 < (best.x - c.x[cell]) ** 2 + (best.y - c.y[cell]) ** 2 ? x : best));
 
 				c.h[cell] = clamp(c.h[cell] - 10, SEA + 5, 90);
-				this.innovation += 50;
+				this.innovation += 50; // divine act: full effect
 
 				const xenoCultId = this.w.cultures.length;
 				const xenoCulture: Culture = {
@@ -2378,7 +2387,7 @@ export class Simulation {
 			case 'research': {
 				if (me.gold < 20) return 'Researching innovations requires 20 gold for materials.';
 				me.gold -= 20;
-				this.innovation += 20;
+				this.innovation += 20; // player deed: full effect
 				me.renown += 3;
 				const disc = checkNextDiscovery(this.techs, this.era, this.rng);
 				if (disc && this.rng.chance(0.4)) {
@@ -2501,7 +2510,7 @@ export class Simulation {
 				me.renown += 45;
 				if (pol?.alive) pol.stability = clamp(pol.stability + 20, 0, 100);
 				if (local?.alive) local.stability = clamp(local.stability + 20, 0, 100);
-				this.innovation += 40;
+				this.gainInnovation(40);
 
 				let wonderText = '';
 				if (monster.tier === 'cataclysm' || monster.tier === 'legendary') {
@@ -2536,7 +2545,7 @@ export class Simulation {
 				this.wonders.push(tower);
 				me.renown += 15;
 				if (local?.alive) local.stability = clamp(local.stability + 10, 0, 100);
-				this.innovation += 25;
+				this.gainInnovation(25);
 				return say(`You commission the construction of ${tower.name} (${tower.icon}) in ${here.name}! Its battlements pierce the clouds. ${tower.effect}`);
 			}
 			case 'build_wonder': {
@@ -2567,7 +2576,7 @@ export class Simulation {
 				me.renown += 25;
 				if (local?.alive) local.stability = clamp(local.stability + 15, 0, 100);
 				if (pol?.alive) pol.stability = clamp(pol.stability + 15, 0, 100);
-				this.innovation += 35;
+				this.gainInnovation(35);
 				return say(`A historic triumph! You complete the construction of ${wonder.name} (${wonder.icon}) in ${here.name}! ${wonder.effect}`);
 			}
 			case 'invest': {
@@ -2585,7 +2594,7 @@ export class Simulation {
 				me.gold -= 75;
 				me.role = 'entrepreneur';
 				me.renown += 12;
-				this.innovation += 20;
+				this.gainInnovation(20);
 				if (local?.alive) {
 					local.treasury += 25;
 					local.stability = clamp(local.stability + 6, 0, 100);
@@ -2864,12 +2873,30 @@ export class Simulation {
 		return '';
 	}
 
+	/** genre the world is currently narrated in (fixed unless opts.evolve) */
+	voice: Genre = 'fantasy';
+	updateVoice() {
+		const base = this.w.opts.genre;
+		if (!this.w.opts.evolve) { this.voice = base; return; }
+		const prev = this.voice;
+		const byEra: Genre[] = ['mythic', 'fantasy', 'steampunk', 'dieselpunk'];
+		if (this.era < byEra.length) this.voice = byEra[this.era];
+		else {
+			// the final age forks on how the world got there: fractured, warlike worlds go cyber, stable ones solar
+			const alive = this.polities.filter((p) => p.alive && p.id);
+			const stab = alive.reduce((s, p) => s + p.stability, 0) / Math.max(1, alive.length);
+			const wars = this.wars.filter((w) => !w.end).length;
+			this.voice = stab < 45 || wars > alive.length / 6 ? 'cyberpunk' : 'solarpunk';
+		}
+		if (prev !== this.voice && this.year > 1) this.log('tech', `The voice of the age changes: ${this.w.name} now lives in an era of ${GENRES[this.voice].name}.`);
+	}
+
 	/** draw from the base deck plus the genre's own deck (weighted ×2 so it feels present) */
 	encounter(): Encounter {
-		const extra = packEncounters(this.w.opts.genre);
+		const extra = packEncounters(this.voice);
 		const deck = [...ENCOUNTERS, ...extra, ...extra];
 		const e = this.rng.pick(deck);
-		const g = this.w.opts.genre;
+		const g = this.voice;
 		return { ...e, title: reskin(g, e.title), text: reskin(g, e.text), options: e.options.map((o) => ({ ...o, label: reskin(g, o.label), win: { ...o.win, text: reskin(g, o.win.text) }, lose: o.lose && { ...o.lose, text: reskin(g, o.lose.text) } })) };
 	}
 
@@ -2913,6 +2940,7 @@ export class Simulation {
 		s.missions = d.missions ?? [];
 		s.quests = d.quests ?? [];
 		s.computeBorders();
+		s.updateVoice();
 		return s;
 	}
 
