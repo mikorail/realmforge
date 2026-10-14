@@ -18,7 +18,7 @@
 	});
 	const groups: [string, Power[]][] = [
 		['Grace & Destiny', ['bless', 'inspire', 'host', 'peace', 'hero', 'prophet', 'relic', 'enlighten', 'patron']],
-		['Earth & Genesis', ['raise', 'sink', 'cataclysm', 'species', 'monster', 'wonder']],
+		['Earth & Genesis', ['raise', 'sink', 'dig', 'cataclysm', 'species', 'monster', 'wonder']],
 		['Chaos & Calamity', ['discord', 'chaos', 'rebel', 'smite', 'villain', 'plague', 'pandemic']],
 		['Cosmos & Apocalypse', ['tear', 'meteor', 'alien', 'apocalypse']]
 	];

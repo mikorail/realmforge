@@ -41,6 +41,7 @@ import { processYearlyUprisings } from './uprisings';
 import { packEncounters, packLine, reskin } from './genrepacks';
 import { vassalizeAfterWar, yearlyConsolidation } from './consolidation';
 import { yearlySphereLore } from './spherelore';
+import { yearlyLayerLife } from './layerlife';
 import type { ArmyToken, ChronEvent, CovertMission, Effects, Encounter, EventKind, HistorySnapshot, IdeologyKind, Monster, LegendaryPlace, Person, Polity, Quest, Role, Travel, UprisingRecord, War } from './types';
 
 export type Power =
@@ -54,6 +55,7 @@ export type Power =
 	| 'enlighten'
 	| 'raise'
 	| 'sink'
+	| 'dig'
 	| 'cataclysm'
 	| 'species'
 	| 'monster'
@@ -72,6 +74,7 @@ export type Power =
 	| 'patron';
 
 export const POWERS: Record<Power, { name: string; cost: number; icon: string; desc: string }> = {
+	dig: { name: 'Dig Caverns', cost: 6, icon: '⛏', desc: 'Carve new caverns and tunnels in the underdark below' },
 	bless: { name: 'Bless', cost: 8, icon: '✦', desc: 'Fertility + calm around the target' },
 	inspire: { name: 'Inspire', cost: 15, icon: '☀', desc: 'Realm stability +30, coffers +' },
 	host: { name: 'Divine Host', cost: 30, icon: '⚔', desc: 'Realm army ×1.6' },
@@ -519,6 +522,7 @@ export class Simulation {
 		this.yearlyPantheon();
 		this.yearlyUprisings();
 		yearlySphereLore(this);
+		yearlyLayerLife(this);
 		yearlyConsolidation(this);
 		this.pruneMinorPeople();
 		this.compactArchive();
@@ -1823,6 +1827,22 @@ export class Simulation {
 				}
 				this.terraform();
 				this.log('god', `A terrifying cataclysm violently heaves the bedrock: cliffs plunge into the abyss and chasms tear across the continents!`, cell);
+				break;
+			}
+			case 'dig': {
+				// carve on the viewed deep layer, or the first one beneath the surface
+				const li = this.w.layers[layer]?.kind === 'deep' ? layer : this.w.layers.findIndex((l) => l.kind === 'deep');
+				if (li < 0) return 'This world has no underdark.';
+				const L = this.w.layers[li];
+				const owners = new Map<number, number>();
+				const carve = [cell];
+				const seen = new Set(carve);
+				for (let d = 0; d < 2; d++) for (const i of [...carve]) for (const j of neighbors(c, i)) if (!seen.has(j)) { seen.add(j); carve.push(j); }
+				for (const i of carve) for (const j of neighbors(c, i)) if (L.open[j] && L.state[j]) owners.set(L.state[j], (owners.get(L.state[j]) ?? 0) + 1);
+				const owner = [...owners].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 0;
+				for (const i of carve) if (!L.open[i]) { L.open[i] = 1; L.state[i] = owner; }
+				this.dirty.terrain = true;
+				this.log('god', `The earth groans: new caverns open in ${L.name}${owner ? `, and ${this.polities[owner].name} spreads into them` : ''}.`, cell, owner || undefined);
 				break;
 			}
 			case 'tear': {
