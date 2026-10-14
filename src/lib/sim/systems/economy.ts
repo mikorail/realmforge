@@ -2,6 +2,7 @@
 import type { Simulation } from '../engine';
 import { clamp } from '../../rng';
 import { ERAS, checkNextDiscovery, type TechDiscovery } from '../tech';
+import { techName } from '../genre/techskins';
 import { buildWonder } from '../wonders';
 import type { LegendaryPlace } from '../types';
 import { cellsByState } from '../indexes';
@@ -84,7 +85,7 @@ export function innovate(sim: Simulation) {
 			sim.techs.add(disc.id);
 			sim.applyTechBonus(disc);
 			const invSummary = disc.inventions?.length ? ` (${disc.inventions.slice(0, 2).join(', ')})` : '';
-			sim.log('tech', `Artificers and scholars achieve a historic breakthrough: ${disc.name}${invSummary} spreads between guilds and academies across the realms!`);
+			sim.log('tech', `Artificers and scholars achieve a historic breakthrough: ${techName(sim.voice, disc.id, disc.name)}${invSummary} spreads between guilds and academies across the realms!`);
 		}
 	}
 }

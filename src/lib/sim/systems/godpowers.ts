@@ -7,6 +7,7 @@ import { palette } from '../../gen/society';
 import { SEA, type Culture, type Religion, type World } from '../../gen/types';
 import { forgeArtifact } from '../relics';
 import { checkNextDiscovery } from '../tech';
+import { techName } from '../genre/techskins';
 import { buildWonder, destroyWonder } from '../wonders';
 import { MONSTER_ARCHETYPES } from '../monsters';
 import type { Monster, LegendaryPlace } from '../types';
@@ -241,7 +242,7 @@ export function cast(sim: Simulation, power: Power, cell: number, layer = 0): st
 			if (unlocked) {
 				sim.techs.add(unlocked.id);
 				sim.applyTechBonus(unlocked);
-				sim.log('god', `Divine enlightenment descends: ${unlocked.name} is revealed to the world!`, cell, pol?.id);
+				sim.log('god', `Divine enlightenment descends: ${techName(sim.voice, unlocked.id, unlocked.name)} is revealed to the world!`, cell, pol?.id);
 			} else {
 				sim.log('god', `Divine enlightenment inspires scholars across ${sim.w.name}!`, cell, pol?.id);
 			}

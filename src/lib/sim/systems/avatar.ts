@@ -6,6 +6,7 @@ import { BIOMES } from '../../gen/physical';
 import { ENCOUNTERS } from '../content';
 import { forgeMonsterRelic } from '../relics';
 import { checkNextDiscovery } from '../tech';
+import { techName } from '../genre/techskins';
 import { buildWonder, createTitanShrineWonder, destroyWonder } from '../wonders';
 import { resolveMonsterCombat } from '../monsters';
 import { transitionRegime } from '../politics';
@@ -145,7 +146,7 @@ export function act(sim: Simulation, action: string, arg?: number): string {
 			if (disc && sim.rng.chance(0.4)) {
 				sim.techs.add(disc.id);
 				sim.applyTechBonus(disc);
-				return say(`Through diligent research, you pioneer a breakthrough: ${disc.name}!`);
+				return say(`Through diligent research, you pioneer a breakthrough: ${techName(sim.voice, disc.id, disc.name)}!`);
 			}
 			sim.skipMonths(2);
 			return say(`You devote months to research in ${here.name}, advancing global innovation (+20).`);
