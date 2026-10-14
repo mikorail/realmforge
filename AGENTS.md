@@ -36,6 +36,20 @@ Always run tests and `npm run check` before finishing a change.
 - **Content:** no real sacred figures of living faiths as monsters or villains. Culture content is inspired by real traditions but generated; keep it respectful.
 - **Copy style:** no em dashes in UI text or logs; keep commit messages and code comments short and factual.
 
+## Working with several agents at once
+This is how the roadmap was built in parallel without collisions.
+1. **One git worktree per agent**, each on its own branch (`git worktree add ../rf-<task> -b <task>`; here they live under `.claude/worktrees/`, which is git-ignored). Never let two agents edit the same checkout.
+2. **Disjoint files.** Give each agent its own new files or folder. Shared files (`engine.ts`, `sim/types.ts`, `systems/*.ts`, `Game.svelte`, `InfoPanel.svelte`) get only tiny additive edits: a new optional field or a one-line hook call. Put the logic in new files.
+3. **Waves, not everything at once.** Run refactors first and alone (the `engine.ts` split had to land before feature work). Then run independent features in parallel.
+4. **Small, concrete prompts.** Name the roadmap items, the files to read first (`CLAUDE.md`), the commands to verify (`npm test`, `npm run check`, `npm run build`), the commit trailer, and a short final report (branch, commits, risks). Long open-ended prompts burn tokens and wander.
+5. **Match the model to the job.** Strongest model for risky cross-cutting refactors; mid-tier for self-contained features and UI; the cheapest for lookup tables and re-skins. Tell agents to skip extra benchmarks unless asked.
+6. **Merge one branch at a time** into `main` with `git merge --no-ff`. When two agents each added a line in the same spot (imports, a yearly hook, a roadmap checkbox), keep both. After every merge run `npm test`, `npm run check`, and `npm run build`, then push.
+7. **Keep determinism.** Seeded RNG only. New RNG draws can make stream-sensitive tests flaky; raise the loop or timeout in the test rather than weakening the check.
+8. **Clean up.** Remove merged worktrees and branches. Agents must update `ROADMAP.md` checkboxes and add a short bullet to `CLAUDE.md` for new modules.
+9. **Verify in a browser when UI changed.** Type checks do not catch blank canvases or layout breaks. A hidden browser pane pauses animation frames, so keep it visible when checking visuals.
+
+Ready-made prompts for the open roadmap items are in `docs/AGENT_PROMPTS.md`.
+
 ## Deploy
 Static site: build with `npm run build`, publish `build/`. `netlify.toml` is included (Node 24, SPA fallback to `/200.html`, no-cache for the service worker). The PWA and offline mode only work over HTTPS.
 
