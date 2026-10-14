@@ -1,4 +1,5 @@
 import type { Genre, LayerKind } from './genre';
+import type { RaceConfig } from './species';
 export type { Genre, LayerKind };
 export type Template = 'continents' | 'archipelago' | 'pangea' | 'highIsland' | 'inlandSea' | 'peninsulas';
 export type PlanetKind = 'terran' | 'desert' | 'ocean' | 'ice' | 'volcanic' | 'shattered' | 'verdant' | 'exotic';
@@ -41,6 +42,10 @@ export interface GenOptions {
 	climate: Climate;
 	/** the narration voice follows the tech era (myth → fantasy → steam → diesel → cyber/solar) */
 	evolve?: boolean;
+	/** which races exist: allow-list (null = all) plus user-made custom races; unset = classic behaviour */
+	races?: RaceConfig;
+	/** spherical world: the east and west edges join (cells across the seam become neighbours); forces a 2:1 map covering all 360 degrees */
+	wrapX?: boolean;
 }
 
 /** what callers pass in; missing fields are filled by withDefaults() */

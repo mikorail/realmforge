@@ -1,3 +1,4 @@
+// @ts-ignore
 import { serialize } from 'node:v8';
 import { describe, expect, it } from 'vitest';
 import { generateUniverse } from './gen/universe';

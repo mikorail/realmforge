@@ -73,6 +73,11 @@ export function withDefaults(o: Partial<GenOptions> & { seed: string }): GenOpti
 	out.layerDetail = ld;
 	out.climate = { ...climateFor(out.planet), ...(o.climate ?? {}) };
 	if (!out.climate.winds || out.climate.winds.length !== 6) out.climate.winds = [...DEFAULT_WINDS];
+	if (out.wrapX) {
+		out.width = out.height * 2;
+		out.climate.mapSize = 100;
+		out.climate.latitude = 50;
+	}
 	return out;
 }
 

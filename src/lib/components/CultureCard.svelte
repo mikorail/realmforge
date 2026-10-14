@@ -31,7 +31,7 @@
 			<dl class="facts">
 				<dt>Food</dt><dd>{card.food}</dd>
 				<dt>Dress</dt><dd>{card.dress}</dd>
-				<dt>Architecture</dt><dd>{card.architecture}</dd>
+				<dt>Architecture</dt><dd>{card.architecture}{#if card.archStyle} <span class="muted small">· map style: {card.archStyle}</span>{/if}</dd>
 				<dt>Music</dt><dd>{card.music}</dd>
 				<dt>Values</dt><dd>{card.values.join(', ')}</dd>
 			</dl>

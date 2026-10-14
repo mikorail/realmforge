@@ -3,6 +3,7 @@ import { TEMPLATE_NAMES } from '#lib/gen/heightmap';
 import { climateFor, DEFAULTS, SPHERE_SETS } from '#lib/gen/options';
 import { PLANETS } from '#lib/gen/physical';
 import type { GenOptions, PlanetKind, Template } from '#lib/gen/types';
+import { SPECIES, type SpeciesDef, sanitizeRace } from '#lib/gen/species';
 import { decodeSharePayload } from '#lib/share';
 import type { Preset } from './presets';
 
@@ -47,7 +48,16 @@ export class SetupStore {
 			if (raw) {
 				const saved = JSON.parse(raw) as { s: Settings; locked: string[] };
 				const base = fresh();
-				this.s = { ...base, ...saved.s, seed: saved.locked?.includes('seed') ? saved.s.seed : rndSeed(), density: { ...base.density, ...saved.s.density }, layerDetail: { ...base.layerDetail, ...saved.s.layerDetail }, planetOverrides: Array.isArray(saved.s.planetOverrides) ? saved.s.planetOverrides.map((o) => (o && typeof o === 'object' ? o : {})) : [], climate: { ...base.climate, ...saved.s.climate } };
+				this.s = {
+					...base,
+					...saved.s,
+					seed: saved.locked?.includes('seed') ? saved.s.seed : rndSeed(),
+					density: { ...base.density, ...saved.s.density },
+					layerDetail: { ...base.layerDetail, ...saved.s.layerDetail },
+					planetOverrides: Array.isArray(saved.s.planetOverrides) ? saved.s.planetOverrides.map((o) => (o && typeof o === 'object' ? o : {})) : [],
+					climate: { ...base.climate, ...saved.s.climate },
+					races: saved.s.races ? { allow: saved.s.races.allow ? [...saved.s.races.allow] : null, custom: Array.isArray(saved.s.races.custom) ? [...saved.s.races.custom] : [] } : undefined
+				};
 				this.locked = saved.locked ?? [];
 			}
 		} catch { /* private mode etc. */ }
@@ -147,6 +157,49 @@ export class SetupStore {
 		s.sphereSet = 'Custom';
 		const cur = s.spheres ?? [];
 		s.spheres = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
+	}
+
+	isRaceAllowed(id: string): boolean {
+		return !this.s.races?.allow || this.s.races.allow.includes(id);
+	}
+
+	setRaceMode(mode: 'all' | 'single' | 'custom', singleId?: string) {
+		const custom = this.s.races?.custom ?? [];
+		if (mode === 'all') {
+			this.s.races = custom.length ? { allow: null, custom } : undefined;
+		} else if (mode === 'single') {
+			this.s.races = { allow: [singleId || 'human'], custom };
+		} else {
+			const allIds = [...SPECIES.map((s) => s.id), ...custom.map((c) => c.id)];
+			this.s.races = { allow: this.s.races?.allow ? [...this.s.races.allow] : allIds, custom };
+		}
+	}
+
+	toggleRace(id: string) {
+		const curCustom = this.s.races?.custom ?? [];
+		const allIds = [...SPECIES.map((s) => s.id), ...curCustom.map((c) => c.id)];
+		let curAllow = this.s.races?.allow ? [...this.s.races.allow] : allIds;
+		if (curAllow.includes(id)) {
+			if (curAllow.length > 1) curAllow = curAllow.filter((x) => x !== id);
+		} else {
+			curAllow = [...curAllow, id];
+		}
+		this.s.races = { allow: curAllow.length === allIds.length && !curCustom.length ? null : curAllow, custom: curCustom };
+	}
+
+	addCustomRace(r: Partial<SpeciesDef>) {
+		const custom = [...(this.s.races?.custom ?? [])];
+		const sanitized = sanitizeRace(r, custom.length);
+		custom.push(sanitized);
+		const allow = this.s.races?.allow ? [...this.s.races.allow, sanitized.id] : null;
+		this.s.races = { allow, custom };
+	}
+
+	removeCustomRace(id: string) {
+		const custom = (this.s.races?.custom ?? []).filter((c) => c.id !== id);
+		let allow = this.s.races?.allow ? this.s.races.allow.filter((x) => x !== id) : null;
+		if (allow && !allow.length) allow = ['human'];
+		this.s.races = custom.length || allow ? { allow, custom } : undefined;
 	}
 
 	/** Apply a gallery preset. Locked groups keep their values, like Randomize. Size, density, planets and evolve are never locked. */

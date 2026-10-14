@@ -3,6 +3,7 @@ import { makeLang, type Lang } from '../gen/names';
 import type { Climate } from '../gen/types';
 import { GENRES, type Genre } from '../gen/genre';
 import { langSeed } from '../gen/society';
+import { setRaces } from '../gen/species';
 import { SEA, type World } from '../gen/types';
 import { AGES } from './content';
 import { forgeArtifact, type Artifact } from './relics';
@@ -64,7 +65,8 @@ export class Simulation {
 	travel: Travel | null = null;
 	pending: Encounter | null = null;
 	/** cells whose ownership/terrain changed since the renderer last looked */
-	dirty = { political: true, terrain: false };
+	/** terrain: surface/global change; layerTerrain: exotic layers (by layer index) whose own map changed */
+	dirty: { political: boolean; terrain: boolean; layerTerrain: Set<number> } = { political: true, terrain: false, layerTerrain: new Set() };
 	/** border length between polities, refreshed yearly */
 	borders = new Map<string, number>();
 	nextWar = 1;
@@ -118,6 +120,7 @@ export class Simulation {
 
 	constructor(world: World, restoring = false) {
 		this.w = world;
+		setRaces(world.opts.races);
 		this.rng = makeRng(world.opts.seed + ':sim');
 		this.voice = world.opts.genre;
 		const c = world.cells;

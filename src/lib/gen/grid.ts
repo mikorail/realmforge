@@ -2,8 +2,43 @@ import { Delaunay } from 'd3-delaunay';
 import type { Rng } from '../rng';
 import type { Cells, Edges } from './types';
 
-/** Jittered square grid → Delaunay/Voronoi. Same approach as Azgaar's FMG. */
-export function buildGrid(rng: Rng, desired: number, width: number, height: number) {
+/**
+ * Extra neighbour links across the east/west seam of a wrapped (spherical) map.
+ * Points within a few spacings of an edge get ghost copies shifted by one map width; any real cell that
+ * neighbours a ghost is linked (both ways) to the ghost's original, unless they already touch.
+ */
+function seamLinks(pts: number[], n: number, width: number, spacing: number): number[][] {
+	const margin = spacing * 3;
+	const ext = pts.slice();
+	const origin: number[] = [];
+	for (let i = 0; i < n; i++) {
+		const px = pts[2 * i];
+		if (px < margin) { ext.push(px + width, pts[2 * i + 1]); origin.push(i); }
+		else if (px > width - margin) { ext.push(px - width, pts[2 * i + 1]); origin.push(i); }
+	}
+	const links: number[][] = Array.from({ length: n }, () => []);
+	if (!origin.length) return links;
+	const real = new Delaunay(Float64Array.from(pts));
+	const del = new Delaunay(Float64Array.from(ext));
+	const seen = new Set<number>();
+	for (let i = 0; i < n; i++) {
+		const touching = new Set<number>(real.neighbors(i));
+		for (const k of del.neighbors(i)) {
+			if (k < n) continue;
+			const j = origin[k - n];
+			if (j === i || touching.has(j)) continue;
+			const key = i < j ? i * n + j : j * n + i;
+			if (seen.has(key)) continue;
+			seen.add(key);
+			links[i].push(j);
+			links[j].push(i);
+		}
+	}
+	return links;
+}
+
+/** Jittered square grid → Delaunay/Voronoi. Same approach as Azgaar's FMG. `wrap` joins the east and west edges. */
+export function buildGrid(rng: Rng, desired: number, width: number, height: number, wrap = false) {
 	const spacing = Math.sqrt((width * height) / desired);
 	const radius = spacing / 2;
 	const jitter = radius * 0.9;
@@ -26,11 +61,13 @@ export function buildGrid(rng: Rng, desired: number, width: number, height: numb
 	}
 
 	// neighbours (CSR)
+	const seam: number[][] | null = wrap ? seamLinks(pts, n, width, spacing) : null;
 	const nStart = new Int32Array(n + 1);
 	const tmp: number[] = [];
 	for (let i = 0; i < n; i++) {
 		nStart[i] = tmp.length;
 		for (const j of delaunay.neighbors(i)) tmp.push(j);
+		if (seam) for (const j of seam[i]) tmp.push(j);
 	}
 	nStart[n] = tmp.length;
 	const nList = Int32Array.from(tmp);

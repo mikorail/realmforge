@@ -1,5 +1,6 @@
 /** Culture card data (shared by CultureCard.svelte and the Markdown dossier export). */
 import type { Simulation } from '../engine';
+import { archStyleOf } from '../../gen/spheres';
 import { FEAST_MONTH } from './data';
 import { TRAITS, cultureProfile, monthName } from './profile';
 
@@ -11,6 +12,8 @@ export interface CultureCardData {
 	food: string;
 	dress: string;
 	architecture: string;
+	/** short style tag (map glyph family), empty for unclassed cultures */
+	archStyle: string;
 	music: string;
 	values: string[];
 	traits: { icon: string; name: string; blurb: string }[];
@@ -32,6 +35,7 @@ export function cultureCard(sim: Simulation, id: number): CultureCardData | null
 		food: p.food,
 		dress: p.dress,
 		architecture: p.architecture,
+		archStyle: archStyleOf(cu.sphere)?.tag ?? '',
 		music: p.music,
 		values: p.values,
 		traits: p.traits.map((t) => ({ icon: TRAITS[t].icon, name: TRAITS[t].name, blurb: TRAITS[t].blurb })),
@@ -48,7 +52,7 @@ export function cultureCardMarkdown(card: CultureCardData): string[] {
 		`- **Sphere**: ${card.sphere} (${card.type})`,
 		`- **Food**: ${card.food}`,
 		`- **Dress**: ${card.dress}`,
-		`- **Architecture**: ${card.architecture}`,
+		`- **Architecture**: ${card.architecture}${card.archStyle ? ` (map style: ${card.archStyle})` : ''}`,
 		`- **Music**: ${card.music}`,
 		`- **Values**: ${card.values.join(', ')}`,
 		`- **Traits**: ${card.traits.map((t) => `${t.name} (${t.blurb})`).join('; ')}`,

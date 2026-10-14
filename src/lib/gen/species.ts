@@ -193,7 +193,69 @@ export const SPECIES: SpeciesDef[] = [
 	}
 ];
 
-export const SPECIES_BY_ID = Object.fromEntries(SPECIES.map((s) => [s.id, s]));
+export const SPECIES_BY_ID: Record<string, SpeciesDef> = Object.fromEntries(SPECIES.map((s) => [s.id, s]));
+
+/** per-world race setup: `allow` restricts which species cultures get (null = all), `custom` adds new races */
+export interface RaceConfig {
+	allow: string[] | null;
+	custom?: SpeciesDef[];
+}
+
+const BUILTIN_COUNT = SPECIES.length;
+let activeAllow: string[] | null = null;
+
+const clampN = (v: unknown, lo: number, hi: number, d: number) => (typeof v === 'number' && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d);
+const LAYER_KINDS: LayerKind[] = ['surface', 'deep', 'sky', 'sea'];
+
+/** make a user-defined race safe: id prefix `x-`, clamped stats, never empty lists */
+export function sanitizeRace(r: Partial<SpeciesDef>, index: number): SpeciesDef {
+	const name = String(r.name || `Race ${index + 1}`).slice(0, 24);
+	const slug = String(r.id || name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').replace(/^x-/, '') || `race${index + 1}`;
+	const m = r.mods ?? ({} as SpeciesDef['mods']);
+	const layers = (r.layers ?? []).filter((l) => LAYER_KINDS.includes(l));
+	const forms = (r.forms ?? []).map((f) => String(f).trim()).filter(Boolean).slice(0, 8);
+	return {
+		id: `x-${slug}`,
+		name,
+		plural: String(r.plural || `${name}s`).slice(0, 24),
+		adjective: String(r.adjective || name).slice(0, 24),
+		icon: String(r.icon || '🧬').slice(0, 4),
+		desc: String(r.desc || `A custom people: the ${name}.`).slice(0, 200),
+		mods: { martial: clampN(m.martial, -5, 8, 0), diplomacy: clampN(m.diplomacy, -5, 8, 0), stewardship: clampN(m.stewardship, -5, 8, 0), intrigue: clampN(m.intrigue, -5, 8, 0), health: clampN(m.health, -30, 60, 0) },
+		lifespanMult: clampN(r.lifespanMult, 0.3, 10, 1),
+		biomes: (r.biomes ?? []).filter((b) => Number.isInteger(b) && b >= 0 && b <= 16),
+		layers: layers.length ? layers : ['surface'],
+		traits: (r.traits ?? []).slice(0, 4),
+		forms: forms.length ? forms : ['Kingdom', 'Clanhold']
+	};
+}
+
+/**
+ * Apply a world's race config to the (module-level) registry. Called at the start of generation and in the
+ * Simulation constructor, so worker and main thread agree. Replaces any custom races from an earlier world.
+ */
+export function setRaces(cfg?: RaceConfig | null) {
+	SPECIES.length = BUILTIN_COUNT;
+	for (const id of Object.keys(SPECIES_BY_ID)) if (id.startsWith('x-')) delete SPECIES_BY_ID[id];
+	(cfg?.custom ?? []).forEach((c, i) => {
+		const sp = sanitizeRace(c, i);
+		if (SPECIES_BY_ID[sp.id]) sp.id = `${sp.id}-${i}`;
+		SPECIES.push(sp);
+		SPECIES_BY_ID[sp.id] = sp;
+	});
+	const allow = (cfg?.allow ?? []).filter((id) => SPECIES_BY_ID[id]);
+	activeAllow = allow.length ? allow : null;
+}
+
+/** with an allow-list: pick only among allowed races, weighted by layer and biome fit */
+function pickAllowed(rng: Rng, biome: number, layer: LayerKind, allow: string[]): SpeciesDef {
+	const pool = allow.map((id) => SPECIES_BY_ID[id]);
+	if (pool.length === 1) return pool[0];
+	const w = pool.map((sp) => (sp.layers.includes(layer) ? 3 : 0.6) * (sp.biomes.includes(biome) ? 2.4 : 1));
+	let roll = rng() * w.reduce((a, b) => a + b, 0);
+	for (let i = 0; i < pool.length; i++) if ((roll -= w[i]) <= 0) return pool[i];
+	return pool[0];
+}
 
 /** Pick an appropriate species for a culture based on biome, layer, and PRNG */
 export function pickSpeciesForCulture(
@@ -202,6 +264,7 @@ export function pickSpeciesForCulture(
 	layer: LayerKind,
 	sphereId: string
 ): SpeciesDef {
+	if (activeAllow) return pickAllowed(rng, biome, layer, activeAllow);
 	// Deep layer defaults heavily to dwarves, goblins, or trolls
 	if (layer === 'deep') {
 		const roll = rng();

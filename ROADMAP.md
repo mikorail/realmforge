@@ -99,7 +99,9 @@ Effort: S ≈ an hour, M ≈ a session, L ≈ multi-session. Do them in this ord
 - [x] **Lazy-load heavy panels** (S) _(done for Export, Dynasty, CompleteSim, TimelineScrubber; God/Avatar tabs still eager)_: Export, Dynasty, CompleteSim, God/Avatar on demand.
 
 ### Later
-- [ ] More sphere content: per-sphere architecture styles for map icons, sphere-specific quests.
+- [x] More sphere content _(done: `SPHERE_ARCH` style tags and map glyphs (`render/glyphs.ts`, shown on the culture card), 44 sphere quests in `sim/culture/spherequests.ts`)_.
 - [x] Point budgets per layer and per-planet overrides in the multiverse _(done: `GenOptions.layerDetail` 0.5-2x per exotic layer on the shared cell graph, `planetOverrides` in `universe.ts`, Planets sub-section in Setup; separate denser grids deliberately not built)_.
+- [x] Spherical wrap & azimuthal globe studio _(done: `wrapX` seam-linked Voronoi topology across 360° longitude, 2:1 aspect ratio whole-world climate, `globe.ts` rasterizer and `GlobeModal.svelte` supporting Orthographic, Azimuthal Equidistant, Stereographic, and Gnomonic projections with drag rotation and graticule)_.
+- [x] Inhabitants, mono-species worlds & custom race forge _(done: `RaceConfig` allow-list for single-race or subset worlds, `sanitizeRace`, custom species creator in `SocietyTab.svelte` with custom stat modifiers, lifespans, and native planes)_.
 - [x] PWA offline caching, keyboard navigation refinements, Playwright end-to-end tests.
 - [ ] Optional LLM-written chronicles and encounters (bring-your-own Claude key).

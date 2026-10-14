@@ -91,6 +91,47 @@ export const SPHERES: Sphere[] = [
 
 export const SPHERE_BY_ID = Object.fromEntries(SPHERES.map((s) => [s.id, s]));
 
+/** glyph drawn for a settlement on the map (see render/glyphs.ts) */
+export type ArchShape =
+	| 'pagoda' | 'gate' | 'spire' | 'stilt' | 'tent' | 'dome' | 'minaret' | 'tower' | 'enclosure' | 'roundhouse' | 'cross'
+	| 'stepped' | 'temple' | 'terrace' | 'longhouse' | 'snow' | 'hall' | 'stave' | 'ringfort' | 'arch' | 'onion' | 'jagged';
+
+export interface ArchStyle {
+	/** short style tag shown on the culture card */
+	tag: string;
+	shape: ArchShape;
+}
+
+/** per-sphere architecture style: a short tag plus the map glyph */
+export const SPHERE_ARCH: Record<string, ArchStyle> = {
+	sinic: { tag: 'pagoda roofs', shape: 'pagoda' },
+	japonic: { tag: 'gate-shrines and raised halls', shape: 'gate' },
+	indic: { tag: 'tapering temple spires', shape: 'spire' },
+	sea: { tag: 'stilt halls', shape: 'stilt' },
+	steppe: { tag: 'felt tents', shape: 'tent' },
+	persian: { tag: 'blue-tiled domes', shape: 'dome' },
+	arabic: { tag: 'minarets and courtyards', shape: 'minaret' },
+	mande: { tag: 'mud-brick towers', shape: 'tower' },
+	yoruba: { tag: 'walled compounds', shape: 'enclosure' },
+	bantu: { tag: 'round thatched houses', shape: 'roundhouse' },
+	ethiopic: { tag: 'rock-hewn cross churches', shape: 'cross' },
+	nahua: { tag: 'stepped pyramids', shape: 'stepped' },
+	maya: { tag: 'crested temple-pyramids', shape: 'temple' },
+	andean: { tag: 'fitted-stone terraces', shape: 'terrace' },
+	turtle: { tag: 'longhouses', shape: 'longhouse' },
+	inuit: { tag: 'snow domes', shape: 'snow' },
+	polynesian: { tag: 'open thatched halls', shape: 'hall' },
+	norse: { tag: 'stave halls', shape: 'stave' },
+	celtic: { tag: 'ring forts', shape: 'ringfort' },
+	latin: { tag: 'arches and aqueducts', shape: 'arch' },
+	slavic: { tag: 'onion-roofed halls', shape: 'onion' },
+	eldritch: { tag: 'cyclopean spires', shape: 'jagged' }
+};
+
+export function archStyleOf(sphere: string | null | undefined): ArchStyle | null {
+	return (sphere && SPHERE_ARCH[sphere]) || null;
+}
+
 /** spheres eligible for placement; 'eldritch' only on request */
 export function pickSphere(rng: () => number, biome: number, temp: number, allowed: string[] | null): Sphere {
 	const pool = SPHERES.filter((s) => (allowed ? allowed.includes(s.id) : s.id !== 'eldritch'));

@@ -6,6 +6,7 @@ import { generateLayers } from './layers';
 import { assignBiomes, assignPopulation, climate, markFeatures, PLANETS, planetBiomes, precipitation, rivers } from './physical';
 import { generateBurgs, generateCultures, generateReligions, generateRoutes, generateStates } from './society';
 import { withDefaults } from './options';
+import { setRaces } from './species';
 import type { GenInput, World } from './types';
 
 export type Progress = (stage: string, pct: number) => void;
@@ -15,8 +16,9 @@ export function generateWorld(input: GenInput, progress: Progress = () => {}, pl
 	const opts = withDefaults(input);
 	const rng = makeRng(opts.seed);
 	const { width: W, height: H } = opts;
+	setRaces(opts.races);
 	progress('Scattering points', 0.02);
-	const { cells: c, edges, spacing } = buildGrid(rng, opts.cells, W, H);
+	const { cells: c, edges, spacing } = buildGrid(rng, opts.cells, W, H, !!opts.wrapX);
 	progress('Raising mountains', 0.12);
 	const pk = PLANETS[opts.planet];
 	generateHeightmap(rng, c, opts.planet === 'shattered' && opts.template === 'continents' ? 'archipelago' : opts.template, W, H);

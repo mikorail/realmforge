@@ -8,6 +8,7 @@ import { updatePolitics } from '../politics';
 import { processAnthropogenicDisasters } from '../ecology';
 import { updateIntrigue } from '../intrigue';
 import { spawnQuest, updateQuests } from '../quests';
+import { applySphereQuest } from '../culture/spherequests';
 import { processPantheonInterventions } from '../pantheon';
 import { processYearlyUprisings } from '../uprisings';
 import { cultureMod } from '../culture';
@@ -86,6 +87,7 @@ export function yearlyQuests(sim: Simulation) {
 		const q = spawnQuest(sim.w, sim.polities, sim.people, sim.monsters, sim.rng, sim.year, nextQObj);
 		sim.nextQuestId = nextQObj.val;
 		if (q) {
+			applySphereQuest(sim, q);
 			sim.quests.push(q);
 			sim.log('quest', `QUEST UNDERTAKEN: ${q.heroName} embarks upon the ${q.title}! ${q.storyLog[0]}`, q.targetCell, q.stateId);
 		}

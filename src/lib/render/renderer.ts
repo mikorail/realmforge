@@ -3,6 +3,8 @@ import { BIOMES } from '../gen/physical';
 import { SEA, type Cells, type Edges, type World } from '../gen/types';
 import type { Simulation } from '../sim/engine';
 import { alpha, mix, shade, THEMES, type MapTheme } from './theme';
+import { archStyleOf } from '../gen/spheres';
+import { drawArchGlyph } from './glyphs';
 
 export type MapMode = 'political' | 'biome' | 'height' | 'culture' | 'religion' | 'population';
 
@@ -18,11 +20,15 @@ export const HYPSO = ['#3a7a3a', '#5f9a48', '#8fb35a', '#c2c46a', '#d8b46a', '#c
 
 /** walk edges that satisfy pred into vertex chains (for smooth coastlines / borders) */
 export function chains(e: Edges, pred: (a: number, b: number) => boolean): number[][] {
-	const adj = new Map<number, number[]>();
 	const ids: number[] = [];
-	for (let k = 0; k < e.n; k++) {
-		if (!pred(e.a[k], e.b[k])) continue;
-		ids.push(k);
+	for (let k = 0; k < e.n; k++) if (pred(e.a[k], e.b[k])) ids.push(k);
+	return chainsOf(e, ids);
+}
+
+/** walk the given edge ids into vertex chains */
+export function chainsOf(e: Edges, ids: number[]): number[][] {
+	const adj = new Map<number, number[]>();
+	for (const k of ids) {
 		const va = e.va[k], vb = e.vb[k];
 		(adj.get(va) ?? adj.set(va, []).get(va)!).push(k);
 		(adj.get(vb) ?? adj.set(vb, []).get(vb)!).push(k);
@@ -66,6 +72,37 @@ function smooth(path: Path2D, e: Edges, chain: number[]) {
 		for (let i = 1; i < n - 1; i++) path.quadraticCurveTo(X(i), Y(i), (X(i) + X(i + 1)) / 2, (Y(i) + Y(i + 1)) / 2);
 		path.lineTo(X(n - 1), Y(n - 1));
 	}
+}
+
+function polyline(path: Path2D, e: Edges, chain: number[]) {
+	const n = chain.length;
+	path.moveTo(e.vx[chain[0]], e.vy[chain[0]]);
+	for (let i = 1; i < n; i++) path.lineTo(e.vx[chain[i]], e.vy[chain[i]]);
+	if (chain[0] === chain[n - 1]) path.closePath();
+}
+
+/**
+ * Fill regions by their outlines instead of one polygon per cell. Cost follows border length,
+ * not cell count, which is what keeps 60k-200k point maps from freezing on every redraw.
+ * `owner[i]` is the region id of cell i (0 = none); drawn with the even-odd rule so holes work.
+ */
+function regionFills(edges: Edges, owner: ArrayLike<number>, colorOf: (id: number) => string | null): [string, Path2D][] {
+	const buckets = new Map<number, number[]>();
+	for (let k = 0; k < edges.n; k++) {
+		const oa = owner[edges.a[k]], ob = owner[edges.b[k]];
+		if (oa === ob) continue;
+		if (oa) (buckets.get(oa) ?? buckets.set(oa, []).get(oa)!).push(k);
+		if (ob) (buckets.get(ob) ?? buckets.set(ob, []).get(ob)!).push(k);
+	}
+	const byColor = new Map<string, Path2D>();
+	for (const [id, ids] of buckets) {
+		const col = colorOf(id);
+		if (!col) continue;
+		let p = byColor.get(col);
+		if (!p) byColor.set(col, (p = new Path2D()));
+		for (const ch of chainsOf(edges, ids)) polyline(p, edges, ch);
+	}
+	return [...byColor];
 }
 
 function addCell(p: Path2D, c: Cells, i: number) {
@@ -227,6 +264,7 @@ export class MapRenderer {
 
 	/** cheap frame: last full render, re-transformed to the current camera */
 	drawSnapshot() {
+		this.ensureSnapshot();
 		if (!this.snap || !this.snap.width || !this.snap.height || !this.world || !this.T) return this.draw();
 		this.lastInteract = performance.now();
 		const ctx = this.ctx;
@@ -240,6 +278,7 @@ export class MapRenderer {
 
 	/** fast frame: redraws only transient overlays (rifts, selection rings, avatar) over snapshot */
 	drawDynamic() {
+		this.ensureSnapshot();
 		if (!this.snap || this.snapCam.k !== this.k || this.snapCam.tx !== this.tx || this.snapCam.ty !== this.ty) {
 			return this.draw();
 		}
@@ -247,6 +286,14 @@ export class MapRenderer {
 		ctx.setTransform(1, 0, 0, 1, 0, 0);
 		ctx.drawImage(this.snap, 0, 0);
 		this.drawOverlays();
+	}
+
+	/** copying the whole canvas is expensive, so only do it when a frame actually needs it (pan, overlay animation) */
+	private snapStale = true;
+	private ensureSnapshot() {
+		if (!this.snapStale) return;
+		this.snapStale = false;
+		this.takeSnapshot();
 	}
 
 	private takeSnapshot() {
@@ -621,10 +668,21 @@ export class MapRenderer {
 		const pols = s.polities;
 		const fill = this.mode === 'political' ? (this.theme.glow ? 0.22 : 0.42) : 0.62;
 		let fills: [string, Path2D][] = [];
-		if (this.mode === 'political') fills = groupPaths(c, (i) => (open[i] && st[i] && pols[st[i]]?.alive ? alpha(pols[st[i]].color, fill) : null));
-		else if (this.mode === 'culture' && L.kind === 'surface') fills = groupPaths(c, (i) => (open[i] && c.culture[i] ? alpha(w.cultures[c.culture[i]].color, fill) : null));
-		else if (this.mode === 'religion' && L.kind === 'surface') fills = groupPaths(c, (i) => (open[i] && c.religion[i] ? alpha(w.religions[c.religion[i]]?.color ?? '#999', fill) : null));
-		else if (this.mode === 'population' && L.kind === 'surface') fills = groupPaths(c, (i) => (open[i] ? alpha('#c0392b', Math.min(0.85, Math.round(Math.sqrt(c.pop[i]) * 4) / 20)) : null));
+		const owner = new Uint16Array(c.n);
+		if (this.mode === 'political') {
+			for (let i = 0; i < c.n; i++) owner[i] = open[i] && st[i] && pols[st[i]]?.alive ? st[i] : 0;
+			fills = regionFills(w.edges, owner, (id) => alpha(pols[id].color, fill));
+		} else if (this.mode === 'culture' && L.kind === 'surface') {
+			for (let i = 0; i < c.n; i++) owner[i] = open[i] ? c.culture[i] : 0;
+			fills = regionFills(w.edges, owner, (id) => alpha(w.cultures[id].color, fill));
+		} else if (this.mode === 'religion' && L.kind === 'surface') {
+			for (let i = 0; i < c.n; i++) owner[i] = open[i] ? c.religion[i] : 0;
+			fills = regionFills(w.edges, owner, (id) => alpha(w.religions[id]?.color ?? '#999', fill));
+		} else if (this.mode === 'population' && L.kind === 'surface') {
+			// quantised into 17 density bands so it is a handful of regions, not a polygon per cell
+			for (let i = 0; i < c.n; i++) owner[i] = open[i] ? Math.min(17, Math.round(Math.sqrt(c.pop[i]) * 4)) : 0;
+			fills = regionFills(w.edges, owner, (id) => alpha('#c0392b', Math.min(0.85, id / 20)));
+		}
 		const borders = new Path2D();
 		const keyArr = this.mode === 'culture' ? c.culture : this.mode === 'religion' ? c.religion : st;
 		if (this.mode !== 'biome' && this.mode !== 'height' && this.mode !== 'population')
@@ -728,7 +786,7 @@ export class MapRenderer {
 		}
 
 		// ── political / thematic ──
-		for (const [col, p] of P.fills) { ctx.fillStyle = col; ctx.fill(p); }
+		for (const [col, p] of P.fills) { ctx.fillStyle = col; ctx.fill(p, 'evenodd'); }
 		for (const [col, p] of P.plague) { ctx.fillStyle = col; ctx.fill(p); }
 		ctx.strokeStyle = th.glow ? th.border : alpha(th.border, 0.75);
 		ctx.lineWidth = px(1.4);
@@ -781,15 +839,22 @@ export class MapRenderer {
 			const big = b.capital;
 			const r = (big ? 3.4 : 2) * Math.min(2.2, Math.max(0.8, Math.sqrt(k)));
 			if (!big && k < 0.7) continue;
-			ctx.beginPath();
-			if (big) {
-				ctx.rect(x - r, y - r, r * 2, r * 2);
-			} else ctx.arc(x, y, r, 0, Math.PI * 2);
-			ctx.fillStyle = th.glow ? '#0d0b18' : '#fffaf0';
-			ctx.fill();
-			ctx.lineWidth = big ? 1.8 : 1.2;
-			ctx.strokeStyle = th.glow ? (b.state ? this.sim!.polities[b.state].color : '#888') : '#2b2116';
-			ctx.stroke();
+			const style = k >= 1.1 ? archStyleOf(w.cultures[b.culture]?.sphere) : null;
+			const ink = th.glow ? (b.state ? this.sim!.polities[b.state].color : '#888') : '#2b2116';
+			if (style) {
+				const gr = r * (big ? 1.5 : 1.7);
+				drawArchGlyph(ctx, style.shape, x, y, gr, th.glow ? '#0d0b18' : '#fffaf0', ink, big ? 1.8 : 1.2);
+			} else {
+				ctx.beginPath();
+				if (big) {
+					ctx.rect(x - r, y - r, r * 2, r * 2);
+				} else ctx.arc(x, y, r, 0, Math.PI * 2);
+				ctx.fillStyle = th.glow ? '#0d0b18' : '#fffaf0';
+				ctx.fill();
+				ctx.lineWidth = big ? 1.8 : 1.2;
+				ctx.strokeStyle = ink;
+				ctx.stroke();
+			}
 			if (this.showLabels && (k > 1.5 || (big && k > 0.75))) {
 				const fs = big ? 12 : 10.5;
 				ctx.font = `${big ? 600 : 400} ${fs}px ${th.bodyFont}`;
@@ -817,7 +882,7 @@ export class MapRenderer {
 				}
 			}
 		}
-		this.takeSnapshot();
+		this.snapStale = true;
 		this.drawOverlays();
 	}
 

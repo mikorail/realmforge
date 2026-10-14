@@ -128,4 +128,9 @@
 			<PlanetsSection {store} />
 		{/if}
 	</div>
+	<label class="evolve mt-md">
+		<input type="checkbox" checked={!!store.s.wrapX} onchange={(e) => { store.s.wrapX = (e.currentTarget as HTMLInputElement).checked; if (store.s.wrapX) store.s.width = store.s.height * 2; }} />
+		<span><strong>Spherical world</strong> <span class="muted">Covers the whole globe at 2:1 and joins the east and west edges, so land, rivers, realms and armies wrap around. Use the Globe button in game to turn it around.</span></span>
+	</label>
 </section>
+

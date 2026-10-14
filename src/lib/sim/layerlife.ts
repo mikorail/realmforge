@@ -74,7 +74,7 @@ function driftSky(sim: Simulation, li: number) {
 			return bid ? sim.w.burgs[bid].cell : cell;
 		});
 	}
-	sim.dirty.terrain = true;
+	sim.dirty.layerTerrain.add(li);
 	sim.dirty.political = true;
 	// occasionally note where a sky city is now hovering
 	if (sim.rng.chance(0.25)) {
@@ -108,7 +108,7 @@ function underdark(sim: Simulation, li: number) {
 		const dug = edge.sort(() => r() - 0.5).slice(0, r.int(3, 8));
 		for (const i of dug) { L.open[i] = 1; L.state[i] = pol.id; }
 		if (dug.length) {
-			sim.dirty.terrain = true;
+			sim.dirty.layerTerrain.add(li);
 			sim.dirty.political = true;
 			sim.log('found', `Delvers of ${pol.name} break into ${r.pick(['a vast geode cavern', 'a forgotten dwarven gallery', 'an underground lake', 'a hall of glowing crystals', 'the bones of an elder wyrm'])}${town ? ` beyond ${town.name}` : ''}; the deep realm grows.`, dug[0], pol.id);
 		}

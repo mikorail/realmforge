@@ -4,6 +4,7 @@ import type { ChronEvent, Monster, Person, Polity, Quest, QuestKind, LegendaryPl
 import { forgeArtifact, forgeMonsterRelic, type Artifact } from './relics';
 import { resolveMonsterCombat } from './monsters';
 import { createTitanShrineWonder } from './wonders';
+import { sphereQuestBonus, sphereQuestText } from './culture/spherequests';
 
 export interface QuestTemplate {
 	kind: QuestKind;
@@ -177,7 +178,7 @@ export function updateQuests(
 		if (q.stage === 'scouting') {
 			q.stage = 'confrontation';
 			q.progress = 55;
-			const txt = tpl.confrontationText(hero.name, q.targetName);
+			const txt = sphereQuestText(q, 'confront', hero.name) ?? tpl.confrontationText(hero.name, q.targetName);
 			q.storyLog.push(txt);
 		} else if (q.stage === 'confrontation') {
 			// Subjugation quests fight the monster
@@ -280,8 +281,9 @@ export function updateQuests(
 				hero.gold += 80;
 			}
 			hero.renown += 25;
+			sphereQuestBonus(q, polities ?? []);
 
-			const txt = tpl.triumphText(hero.name, q.targetName, rewardDesc);
+			const txt = sphereQuestText(q, 'triumph', hero.name, rewardDesc) ?? tpl.triumphText(hero.name, q.targetName, rewardDesc);
 			q.storyLog.push(txt);
 
 			events.push({

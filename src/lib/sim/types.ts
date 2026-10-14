@@ -180,6 +180,8 @@ export interface Quest {
 	reward: string;
 	storyLog: string[];
 	completed: boolean;
+	/** sphere quest id (culture/spherequests.ts); unset for ordinary quests */
+	sq?: string;
 	year: number;
 }
 

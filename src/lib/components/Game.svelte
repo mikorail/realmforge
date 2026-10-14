@@ -23,7 +23,8 @@
 		dynasty: () => import('./DynastyModal.svelte'),
 		scrubber: () => import('./TimelineScrubber.svelte'),
 		completeSim: () => import('./CompleteSimModal.svelte'),
-		history: () => import('./HistoryModal.svelte')
+		history: () => import('./HistoryModal.svelte'),
+		globe: () => import('./GlobeModal.svelte')
 	};
 
 	let { cosmos, onquit }: { cosmos: Cosmos; onquit: () => void } = $props();
@@ -53,6 +54,7 @@
 	let scrubberOpen = $state(false);
 	let completeSimOpen = $state(false);
 	let historyOpen = $state(false);
+	let globeOpen = $state(false);
 	let peeking = $state(true);
 	function togglePeeking() {
 		peeking = !peeking;
@@ -81,6 +83,9 @@
 	let modal = $state.raw<import('#lib/sim/engine').Simulation | null>(null);
 	let needDraw = true;
 	let lastPol = 0;
+	let lastTerrain = 0;
+	let lastV = 0;
+	let panelsStale = false;
 
 	const sim = $derived.by(() => {
 		void v;
@@ -139,6 +144,7 @@
 		// planet / layer / mode switches
 		const w = world, l = layer, m = mode;
 		if (!r) return;
+		cosmos.sims[pi].dirty.layerTerrain.clear(); // switching layer rebuilds its map anyway
 		if (r.world !== w) {
 			r.setWorld(w, cosmos.sims[pi], theme);
 			fit();
@@ -208,13 +214,28 @@
 					acc -= 1;
 					n++;
 				}
-				if (n) v++;
+				if (n) panelsStale = true;
+			}
+			// panels recompute from `v`; refreshing them every frame is the most expensive part of fast-forward
+			if (panelsStale && t - lastV > (speed >= 12 ? 350 : 200)) {
+				v++;
+				lastV = t;
+				panelsStale = false;
 			}
 			const s = cosmos.sims[pi];
-			if (r && (s.dirty.political || s.dirty.terrain) && t - lastPol > (speed > 12 ? 450 : 200)) {
-				if (s.dirty.terrain) r.invalidateTerrain();
+			// Rebuilding the map is expensive, so batch it: political fills at most a few times a second
+			// (less at high speed), terrain only when the *viewed* layer changed and at most every few seconds.
+			const terrainDirty = s.dirty.terrain || s.dirty.layerTerrain.has(layer);
+			const polGap = speed >= 36 ? 1000 : speed >= 12 ? 600 : 250;
+			if (r && (s.dirty.political || terrainDirty) && t - lastPol > polGap) {
+				if (terrainDirty && t - lastTerrain > (speed >= 12 ? 4000 : 2500)) {
+					r.invalidateTerrain();
+					s.dirty.terrain = false;
+					s.dirty.layerTerrain.delete(layer);
+					lastTerrain = t;
+				}
 				r.invalidatePolitical();
-				s.dirty.political = s.dirty.terrain = false;
+				s.dirty.political = false;
 				lastPol = t;
 				needDraw = true;
 			}
@@ -242,7 +263,7 @@
 			else if (e.key >= '1' && e.key <= '5') speed = [0, 1, 3, 12, 36][+e.key - 1];
 			else if (e.key === 'Escape') {
 				if (worldOpen) { worldOpen = false; return; }
-				if (historyOpen) return;
+				if (historyOpen || globeOpen) return;
 				power = null; cell = -1;
 			}
 			else if (e.key === 'f') fit();
@@ -329,6 +350,7 @@
 			<button class="btn" onclick={() => (completeSimOpen = true)} title="Fast-forward complete history preserving all annals & timeline snapshots">Complete Sim</button>
 			<button class="btn" class:on={scrubberOpen} onclick={() => (scrubberOpen = !scrubberOpen)} aria-pressed={scrubberOpen} title="Scrub past realm borders and eras">Timeline</button>
 			<button class="btn" onclick={() => (historyOpen = true)} title="Realm size over time and the family tree of splits and mergers">History</button>
+			<button class="btn" onclick={() => (globeOpen = true)} title="See the world as a rotatable globe">Globe</button>
 			<button class="btn" onclick={() => (exportOpen = true)} title="Export poster, vector map, or dossier">Export</button>
 			<button class="btn" onclick={() => { climate = structuredClone(cosmos.sims[pi].w.opts.climate); worldOpen = !worldOpen; }} aria-expanded={worldOpen}>Configure world</button>
 			<button class="btn" onclick={save}>Save</button>
@@ -448,6 +470,11 @@
 	{#if historyOpen}
 		{#await lazy.history() then { default: HistoryModal }}
 			<HistoryModal sim={cosmos.sims[pi]} {v} onclose={() => (historyOpen = false)} />
+		{/await}
+	{/if}
+	{#if globeOpen}
+		{#await lazy.globe() then { default: GlobeModal }}
+			<GlobeModal sim={cosmos.sims[pi]} onclose={() => (globeOpen = false)} />
 		{/await}
 	{/if}
 
