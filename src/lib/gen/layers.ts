@@ -36,9 +36,10 @@ export function generateLayers(
 
 	for (const def of defs) {
 		const open = new Uint8Array(c.n);
+		const det = opts.layerDetail?.[def.kind as 'deep' | 'sky' | 'sea'] ?? 1;
 		const z = def.kind === 'deep' ? def.depth * 3.7 : def.kind === 'sky' ? 50 : 90;
 		for (let i = 0; i < c.n; i++) {
-			const nx = (c.x[i] / W) * 5, ny = (c.y[i] / H) * 5;
+			const nx = (c.x[i] / W) * 5 * det, ny = (c.y[i] / H) * 5 * det;
 			const v = noise(nx, ny, z) * 0.65 + noise(nx * 3, ny * 3, z + 7) * 0.35;
 			if (def.kind === 'deep') {
 				const mountain = c.h[i] >= SEA ? Math.max(0, c.h[i] - 40) / 60 : 0;
@@ -50,14 +51,15 @@ export function generateLayers(
 				open[i] = c.h[i] < SEA && c.dist[i] <= -2 && c.dist[i] >= -9 && v > -0.25 ? 1 : 0;
 			}
 		}
-		// prune specks: keep components of 6+ cells
+		// prune specks: keep components of 6+ cells (scaled by 1/detail, floor 3)
+		const minComp = det === 1 ? 6 : Math.max(3, Math.round(6 / det));
 		const comp = new Int32Array(c.n).fill(-1);
 		for (let s = 0; s < c.n; s++) {
 			if (!open[s] || comp[s] >= 0) continue;
 			const q = [s];
 			comp[s] = s;
 			for (let qi = 0; qi < q.length; qi++) for (const j of neighbors(c, q[qi])) if (open[j] && comp[j] < 0) { comp[j] = s; q.push(j); }
-			if (q.length < 6) for (const i of q) open[i] = 0;
+			if (q.length < minComp) for (const i of q) open[i] = 0;
 		}
 		const id = layers.length;
 		const name = def.kind === 'deep' ? `${g.layerNames.deep} ${'I II III IV V VI'.split(' ')[def.depth - 1] ?? def.depth}` : g.layerNames[def.kind];
@@ -80,7 +82,7 @@ function populateLayer(
 	opts: GenOptions
 ) {
 	const g = GENRES[genre];
-	const density = g.density[layer.kind as 'deep' | 'sky' | 'sea'] * (opts.density?.[layer.kind as 'deep' | 'sky' | 'sea'] ?? 1);
+	const density = g.density[layer.kind as 'deep' | 'sky' | 'sea'] * (opts.density?.[layer.kind as 'deep' | 'sky' | 'sea'] ?? 1) * (opts.layerDetail?.[layer.kind as 'deep' | 'sky' | 'sea'] ?? 1);
 	let openN = 0;
 	for (let i = 0; i < c.n; i++) openN += layer.open[i];
 	if (openN < 20) return;

@@ -34,6 +34,10 @@ export interface GenOptions {
 	rivers: number;
 	/** multipliers for exotic layer settlements */
 	density: { deep: number; sky: number; sea: number };
+	/** 0.5–2: granularity of each exotic layer on the shared cell graph (noise frequency, min component size, settlement spacing); 1 = unchanged */
+	layerDetail: { deep: number; sky: number; sea: number };
+	/** per-planet overrides (index = planet) applied on top of the rolled options in generateUniverse; deep-merged for density/layerDetail/climate */
+	planetOverrides?: Partial<GenOptions>[];
 	climate: Climate;
 	/** the narration voice follows the tech era (myth → fantasy → steam → diesel → cyber/solar) */
 	evolve?: boolean;

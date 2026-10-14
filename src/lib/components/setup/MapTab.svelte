@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { TEMPLATE_NAMES } from '#lib/gen/heightmap';
 	import LockButton from './LockButton.svelte';
+	import PlanetsSection from './PlanetsSection.svelte';
 	import { POINTS, rndSeed, SIZES, type SetupStore } from './store.svelte';
 
 	let { store }: { store: SetupStore } = $props();
@@ -124,6 +125,7 @@
 		</div>
 		{#if store.s.planets > 1}
 			<p class="field-hint">Extra planets generate with unique biomes, connected via magical or spatial rifts.</p>
+			<PlanetsSection {store} />
 		{/if}
 	</div>
 </section>

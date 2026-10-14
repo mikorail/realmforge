@@ -28,7 +28,7 @@ const r = (a: number, b: number) => a + Math.random() * (b - a);
 const ri = (a: number, b: number) => Math.round(r(a, b));
 const pick = <T,>(arr: readonly T[]) => arr[Math.floor(Math.random() * arr.length)];
 
-const fresh = (): Settings => ({ ...structuredClone(DEFAULTS), seed: rndSeed(), planets: 1, sphereSet: 'All' });
+const fresh = (): Settings => ({ ...structuredClone(DEFAULTS), seed: rndSeed(), planets: 1, sphereSet: 'All', planetOverrides: [] });
 
 /** All generator settings plus the lock list. One instance per Setup screen; tabs receive it as a prop. */
 export class SetupStore {
@@ -47,7 +47,7 @@ export class SetupStore {
 			if (raw) {
 				const saved = JSON.parse(raw) as { s: Settings; locked: string[] };
 				const base = fresh();
-				this.s = { ...base, ...saved.s, seed: saved.locked?.includes('seed') ? saved.s.seed : rndSeed(), density: { ...base.density, ...saved.s.density }, climate: { ...base.climate, ...saved.s.climate } };
+				this.s = { ...base, ...saved.s, seed: saved.locked?.includes('seed') ? saved.s.seed : rndSeed(), density: { ...base.density, ...saved.s.density }, layerDetail: { ...base.layerDetail, ...saved.s.layerDetail }, planetOverrides: Array.isArray(saved.s.planetOverrides) ? saved.s.planetOverrides.map((o) => (o && typeof o === 'object' ? o : {})) : [], climate: { ...base.climate, ...saved.s.climate } };
 				this.locked = saved.locked ?? [];
 			}
 		} catch { /* private mode etc. */ }
@@ -86,7 +86,7 @@ export class SetupStore {
 
 	randomize() {
 		const s = this.s;
-		const n = { ...s, climate: { ...s.climate }, density: { ...s.density } };
+		const n = { ...s, climate: { ...s.climate }, density: { ...s.density }, layerDetail: { ...s.layerDetail } };
 		const u = (k: string) => !this.isLocked(k);
 		if (u('seed')) n.seed = rndSeed();
 		if (u('template')) n.template = pick(Object.keys(TEMPLATE_NAMES) as Template[]);
@@ -114,6 +114,27 @@ export class SetupStore {
 		if (!this.isLocked('climate')) s.climate = { ...climateFor(p), mapSize: s.climate.mapSize, latitude: s.climate.latitude, longitude: s.climate.longitude, winds: [...s.climate.winds] };
 	}
 
+	/** Per-planet override object for planet `i` (index 0 = the main planet, left to the main tabs). Empty entries are padded. */
+	override(i: number): Partial<GenOptions> {
+		const arr = (this.s.planetOverrides ??= []);
+		while (arr.length <= i) arr.push({});
+		return arr[i];
+	}
+
+	/** Set or clear (value === undefined) one field of a planet's override. */
+	setOverride<K extends 'planet' | 'template' | 'genre' | 'states'>(i: number, key: K, value: GenOptions[K] | undefined) {
+		const o = this.override(i);
+		if (value === undefined) delete o[key];
+		else o[key] = value;
+	}
+
+	/** Layer detail for a planet (all three exotic layers at once); 1 clears it. */
+	setOverrideDetail(i: number, v: number) {
+		const o = this.override(i);
+		if (v === 1) delete o.layerDetail;
+		else o.layerDetail = { deep: v, sky: v, sea: v };
+	}
+
 	setSphereSet(name: string) {
 		const s = this.s;
 		s.sphereSet = name;
@@ -131,7 +152,7 @@ export class SetupStore {
 	/** Apply a gallery preset. Locked groups keep their values, like Randomize. Size, density, planets and evolve are never locked. */
 	applyPreset(p: Preset) {
 		const o = p.options;
-		const n = { ...this.s, climate: { ...this.s.climate }, density: { ...this.s.density } };
+		const n = { ...this.s, climate: { ...this.s.climate }, density: { ...this.s.density }, layerDetail: { ...this.s.layerDetail } };
 		const u = (k: string) => !this.isLocked(k);
 		if (u('seed')) n.seed = o.seed;
 		if (u('genre')) n.genre = o.genre;
@@ -154,6 +175,7 @@ export class SetupStore {
 			n.sky = o.sky;
 			n.sea = o.sea;
 			n.density = { ...o.density };
+			n.layerDetail = { ...DEFAULTS.layerDetail };
 		}
 		n.cells = o.cells;
 		n.burgs = o.burgs;
