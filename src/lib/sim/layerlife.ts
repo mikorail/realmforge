@@ -95,7 +95,7 @@ function underdark(sim: Simulation, li: number) {
 	const realms = sim.polities.filter((p) => p.alive && p.id && p.layer === li);
 	if (!realms.length || !r.chance(0.35)) return;
 	const pol = r.pick(realms);
-	const towns = sim.w.burgs.filter((b) => b.id && b.alive && b.state === pol.id && sim.burgLayer(b) === li);
+	const towns = sim.idx.burgsIn(sim.w.burgs, pol.id).filter((b) => b.id && b.alive && b.state === pol.id && sim.burgLayer(b) === li);
 	const town = towns.length ? r.pick(towns) : null;
 	const roll = r();
 	if (roll < 0.4) {

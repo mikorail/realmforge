@@ -176,7 +176,7 @@ export function yearlySphereLore(sim: Simulation) {
 		const sphere = sim.w.cultures[pol.culture]?.sphere;
 		const lore = sphere ? SPHERE_LORE[sphere] : undefined;
 		if (!lore) continue;
-		const towns = sim.w.burgs.filter((b) => b.id && b.alive && b.state === pol.id);
+		const towns = sim.idx.burgsIn(sim.w.burgs, pol.id).filter((b) => b.id && b.alive && b.state === pol.id);
 		const town = towns.length ? r.pick(towns) : sim.w.burgs[pol.capital];
 		const fill = (t: string) => t.replace(/\{town\}/g, town?.name ?? pol.name).replace(/\{realm\}/g, pol.name);
 		const roll = r();
