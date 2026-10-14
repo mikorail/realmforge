@@ -117,7 +117,16 @@
 		onopenscrubber();
 		onclose();
 	}
+
+	function onKey(e: KeyboardEvent) {
+		if (e.key === 'Escape' && !running) {
+			e.stopPropagation();
+			onclose();
+		}
+	}
 </script>
+
+<svelte:window onkeydown={onKey} />
 
 <div class="overlay" role="dialog" aria-modal="true" aria-labelledby="complete-sim-title">
 	<div class="modal">

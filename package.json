@@ -10,6 +10,7 @@
 		"prepare": "./scripts/run-with-nvm.sh svelte-kit sync || echo ''",
 		"check": "./scripts/run-with-nvm.sh svelte-check --tsconfig ./tsconfig.json",
 		"test": "./scripts/run-with-nvm.sh vitest run",
+		"e2e": "./scripts/run-with-nvm.sh playwright test",
 		"sim": "./scripts/run-with-nvm.sh tsx scripts/sim.ts"
 	},
 	"imports": {
@@ -17,6 +18,7 @@
 		"#lib/*": "./src/lib/*.ts"
 	},
 	"devDependencies": {
+		"@playwright/test": "^1.64.1",
 		"@sveltejs/adapter-static": "^4.0.0",
 		"@sveltejs/kit": "^3.0.1",
 		"@sveltejs/vite-plugin-svelte": "^7.3.1",

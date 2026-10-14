@@ -101,5 +101,5 @@ Effort: S ≈ an hour, M ≈ a session, L ≈ multi-session. Do them in this ord
 ### Later
 - [ ] More sphere content: per-sphere architecture styles for map icons, sphere-specific quests.
 - [ ] Point budgets per layer (denser underground grids) and per-planet overrides in the multiverse.
-- [ ] PWA offline caching, keyboard navigation refinements, Playwright end-to-end tests.
+- [x] PWA offline caching, keyboard navigation refinements, Playwright end-to-end tests.
 - [ ] Optional LLM-written chronicles and encounters (bring-your-own Claude key).

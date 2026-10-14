@@ -4,6 +4,7 @@
 	--bg: #16120d;
 	--panel: rgba(250, 243, 226, 0.94);
 	--panel-ink: #2b2116;
+	--vellum: #faf3e2;
 	--muted: #7a6a55;
 	--line: rgba(43, 33, 22, 0.18);
 	--danger: #b03a2e;
@@ -13,13 +14,18 @@
 }
 :root[data-neon] {
 	--panel: rgba(12, 12, 24, 0.92);
+	--vellum: #0c0c18;
 	--panel-ink: #e6f1ff;
 	--muted: #8a93b0;
 	--line: rgba(140, 160, 255, 0.2);
 	color-scheme: dark;
 }
 * { box-sizing: border-box; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; box-shadow: 0 0 0 4px rgba(22, 18, 13, 0.75); }
+canvas:focus-visible { outline-offset: -4px; box-shadow: none; }
+input[type='range']:focus-visible { box-shadow: none; }
+.skip-link { position: fixed; left: 0.5rem; top: -4rem; z-index: 100; padding: 0.5rem 0.9rem; border-radius: 6px; background: var(--accent); color: var(--ink); font-weight: 600; text-decoration: none; }
+.skip-link:focus { top: 0.5rem; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--panel-ink); font-family: var(--body); overscroll-behavior: none; }
 button { font: inherit; color: inherit; cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: 0.45; }
