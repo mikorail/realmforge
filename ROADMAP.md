@@ -81,8 +81,8 @@ Effort: S ≈ an hour, M ≈ a session, L ≈ multi-session. Do them in this ord
 - [ ] **Art movements & religious orders** (M): spread, split and suppression like faiths.
 
 ### P5 · Genre & layers completeness
-- [ ] **Genre-aware tech tree** (M): re-skin the 75 inventions per genre (cyberpunk: neural lace, orbital elevator…).
-- [ ] **Genre monster/wonder reskins** (S): dragon → rogue mech, Tower of Magic → corporate spire, etc.
+- [x] **Genre-aware tech tree** (M): re-skin the 75 inventions per genre (cyberpunk: neural lace, orbital elevator…).
+- [x] **Genre monster/wonder reskins** (S): dragon → rogue mech, Tower of Magic → corporate spire, etc.
 - [ ] **Replace `Thunderbird` archetype** (S): sacred to several Indigenous nations; swap for a non-sacred folklore creature.
 - [ ] **Cross-layer politics** (M): surface taxes undercity trade, sky blockades, undersea port control.
 - [ ] **Planet-specific rules** (S): ocean worlds favour sea power, ice worlds halt winter campaigns.
