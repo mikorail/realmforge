@@ -101,5 +101,5 @@ Effort: S ≈ an hour, M ≈ a session, L ≈ multi-session. Do them in this ord
 ### Later
 - [ ] More sphere content: per-sphere architecture styles for map icons, sphere-specific quests.
 - [x] Point budgets per layer and per-planet overrides in the multiverse _(done: `GenOptions.layerDetail` 0.5-2x per exotic layer on the shared cell graph, `planetOverrides` in `universe.ts`, Planets sub-section in Setup; separate denser grids deliberately not built)_.
-- [ ] PWA offline caching, keyboard navigation refinements, Playwright end-to-end tests.
+- [x] PWA offline caching, keyboard navigation refinements, Playwright end-to-end tests.
 - [ ] Optional LLM-written chronicles and encounters (bring-your-own Claude key).
