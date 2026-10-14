@@ -10,7 +10,8 @@ import { checkNextDiscovery } from '../tech';
 import { techName } from '../genre/techskins';
 import { buildWonder, destroyWonder } from '../wonders';
 import { MONSTER_ARCHETYPES } from '../monsters';
-import type { Monster, LegendaryPlace } from '../types';
+import { transitionRegime } from '../politics';
+import type { Monster, LegendaryPlace, IdeologyKind } from '../types';
 
 export type Power =
 	| 'bless'
@@ -39,7 +40,10 @@ export type Power =
 	| 'alien'
 	| 'apocalypse'
 	| 'wonder'
-	| 'patron';
+	| 'patron'
+	| 'reform'
+	| 'revolution'
+	| 'coup';
 
 export const POWERS: Record<Power, { name: string; cost: number; icon: string; desc: string }> = {
 	dig: { name: 'Dig Caverns', cost: 6, icon: '⛏', desc: 'Carve new caverns and tunnels in the underdark below' },
@@ -68,7 +72,10 @@ export const POWERS: Record<Power, { name: string; cost: number; icon: string; d
 	tear: { name: 'Tear Rift', cost: 45, icon: '🌀', desc: 'Rend the cosmic veil to connect another world' },
 	alien: { name: 'Alien Invasion', cost: 45, icon: '🛸', desc: 'Extraterrestrial dreadnought descends to subjugate the world' },
 	apocalypse: { name: 'Apocalypse Omen', cost: 55, icon: '🌑', desc: 'A blood eclipse and cataclysm bring the world to the brink' },
-	patron: { name: 'Crown Chosen Realm', cost: 25, icon: '👑', desc: 'Anoint this nation as your Chosen Realm, granting supreme celestial protection and favor' }
+	patron: { name: 'Crown Chosen Realm', cost: 25, icon: '👑', desc: 'Anoint this nation as your Chosen Realm, granting supreme celestial protection and favor' },
+	reform: { name: 'Divine Reform', cost: 20, icon: '📜', desc: 'Inspire the sovereign and estates to peacefully adopt sweeping constitutional reforms' },
+	revolution: { name: 'Divine Revolution', cost: 25, icon: '✊', desc: 'Ignite a righteous popular revolution to topple autocracy and establish a new republic or union' },
+	coup: { name: 'Divine Coup', cost: 25, icon: '⚔️', desc: 'Overthrow the ruler via a military putsch or palace conspiracy to transform the realm system' }
 };
 
 export function canCast(sim: Simulation, p: Power) {
@@ -81,7 +88,7 @@ export function cast(sim: Simulation, power: Power, cell: number, layer = 0): st
 	if (layer > 0 && ['meteor', 'raise', 'sink', 'cataclysm', 'apocalypse'].includes(power)) layer = 0;
 	const pol = sim.stateAt(cell, layer);
 	const hasRealm = pol && pol.alive && pol.id > 0;
-	const needRealm = ['inspire', 'host', 'peace', 'discord', 'chaos', 'rebel', 'smite', 'relic', 'patron'].includes(power);
+	const needRealm = ['inspire', 'host', 'peace', 'discord', 'chaos', 'rebel', 'smite', 'relic', 'patron', 'reform', 'revolution', 'coup'].includes(power);
 	if (needRealm && !hasRealm) return 'Choose a realm.';
 	const spend = () => { if (!sim.sandbox) sim.mana -= POWERS[power].cost; };
 	const area = (radius: number) => {
@@ -598,6 +605,77 @@ export function cast(sim: Simulation, power: Power, cell: number, layer = 0): st
 			sim.log('god', `DIVINE MANDATE: The Creator anoints ${pol.name} as the Chosen Realm of the Mortal World! Celestial light bathes the realm, granting supreme divine favor and eternal protection.`, cell, pol.id);
 			break;
 		}
+		case 'reform': {
+			if (!hasRealm) return 'Choose a realm to enact constitutional reform.';
+			if (sim.divineTargetIdeology && sim.divineTargetIdeology === pol.ideology) {
+				return `${pol.name} already follows this constitutional system.`;
+			}
+			const oldFullName = pol.fullName;
+			let targetIdeology: IdeologyKind | undefined = sim.divineTargetIdeology;
+			if (!targetIdeology) {
+				if (pol.ideology === 'monarchy') {
+					targetIdeology = sim.rng.pick(['republic', 'communal', 'technocracy'] as IdeologyKind[]);
+				} else {
+					const reformPool: IdeologyKind[] = ['republic', 'communal', 'technocracy', 'theocracy', 'oligarchy'];
+					const viable = reformPool.filter((k) => k !== pol.ideology);
+					targetIdeology = viable.length ? sim.rng.pick(viable) : 'republic';
+				}
+			}
+
+			const res = transitionRegime(pol, targetIdeology, 'reform', sim.year, sim.rng, sim.people, { victorName: 'Divine Will' });
+			for (const ev of res.events) {
+				sim.log(ev.kind, ev.text, cell, pol.id);
+			}
+			pol.stability = clamp(pol.stability + 25, 10, 100);
+			sim.idx.touch();
+			sim.log('god', `DIVINE MANDATE: Divine wisdom moves the Grand Assembly of ${pol.name}! By celestial concordat, the realm peacefully adopts a new charter, reconstituting as the ${res.newFullName}.`, cell, pol.id);
+			break;
+		}
+		case 'revolution': {
+			if (!hasRealm) return 'Choose a realm to ignite a popular revolution.';
+			const oldFullName = pol.fullName;
+			let targetIdeology: IdeologyKind | undefined = sim.divineTargetIdeology;
+			if (!targetIdeology) {
+				const revPool: IdeologyKind[] = ['communal', 'republic', 'technocracy'];
+				const viable = revPool.filter((k) => k !== pol.ideology);
+				targetIdeology = viable.length ? sim.rng.pick(viable) : 'communal';
+			}
+
+			const citizen = sim.people.find((p) => p.alive && p.state === pol.id && p.id !== pol.ruler && (p.role === 'hero' || p.role === 'prophet'));
+			const res = transitionRegime(pol, targetIdeology, 'revolution', sim.year, sim.rng, sim.people, { victorName: 'Divine Will', customLeader: citizen });
+			for (const ev of res.events) {
+				sim.log(ev.kind, ev.text, cell, pol.id);
+			}
+			pol.stability = clamp(sim.rng.int(45, 75), 10, 95);
+			sim.idx.touch();
+			sim.log('god', `DIVINE MANDATE: Holy fire stirs the populace of ${pol.name}! Millions rise in popular revolution, tearing down the throne and establishing the ${res.newFullName} by divine decree.`, cell, pol.id);
+			break;
+		}
+		case 'coup': {
+			if (!hasRealm) return 'Choose a realm to stage a coup.';
+			const oldFullName = pol.fullName;
+			let targetIdeology: IdeologyKind | undefined = sim.divineTargetIdeology;
+			if (!targetIdeology) {
+				const coupPool: IdeologyKind[] = ['autocracy', 'oligarchy', 'technocracy', 'theocracy', 'monarchy'];
+				const opposition = pol.factions?.filter((f) => f.ideology !== pol.ideology).sort((a, b) => b.influence - a.influence);
+				if (opposition && opposition.length > 0 && sim.rng.chance(0.7)) {
+					targetIdeology = opposition[0].ideology;
+				} else {
+					const viable = coupPool.filter((k) => k !== pol.ideology);
+					targetIdeology = viable.length ? sim.rng.pick(viable) : 'autocracy';
+				}
+			}
+
+			const commander = sim.people.find((p) => p.alive && p.state === pol.id && p.id !== pol.ruler && p.role === 'general');
+			const res = transitionRegime(pol, targetIdeology, 'coup', sim.year, sim.rng, sim.people, { victorName: 'Divine Will', customLeader: commander });
+			for (const ev of res.events) {
+				sim.log(ev.kind, ev.text, cell, pol.id);
+			}
+			pol.stability = clamp(sim.rng.int(40, 70), 5, 95);
+			sim.idx.touch();
+			sim.log('god', `DIVINE MANDATE: By the Creator's will, a sudden palace putsch overthrows the old regime in ${pol.name}! ${oldFullName} is reconstituted as the ${res.newFullName}.`, cell, pol.id);
+			break;
+		}
 	}
 	spend();
 	sim.dirty.political = true;
@@ -612,7 +690,7 @@ export function castRandom(sim: Simulation, power: Power, layer = 0): { text: st
 	const aliveRealms = sim.polities.filter((p) => p.id && p.alive);
 
 	let targetCell = 0;
-	if (aliveRealms.length && ['inspire', 'host', 'peace', 'relic', 'discord', 'chaos', 'smite', 'wonder', 'patron'].includes(power)) {
+	if (aliveRealms.length && ['inspire', 'host', 'peace', 'relic', 'discord', 'chaos', 'smite', 'wonder', 'patron', 'reform', 'revolution', 'coup'].includes(power)) {
 		const picked = r.pick(aliveRealms);
 		targetCell = sim.w.burgs[picked.capital]?.cell ?? r.int(0, c.n - 1);
 	} else if (aliveBurgs.length && ['hero', 'prophet', 'villain', 'rebel', 'species', 'alien', 'plague'].includes(power)) {

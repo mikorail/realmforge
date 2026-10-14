@@ -16,8 +16,13 @@
 		void v;
 		return sim.sandbox;
 	});
+	const targetIdeology = $derived.by(() => {
+		void v;
+		return sim.divineTargetIdeology;
+	});
 	const groups: [string, Power[]][] = [
 		['Grace & Destiny', ['bless', 'inspire', 'host', 'peace', 'hero', 'prophet', 'relic', 'enlighten', 'patron']],
+		['Statecraft & Regime', ['reform', 'revolution', 'coup']],
 		['Earth & Genesis', ['raise', 'sink', 'dig', 'cataclysm', 'species', 'monster', 'wonder']],
 		['Chaos & Calamity', ['discord', 'chaos', 'rebel', 'smite', 'villain', 'plague', 'pandemic']],
 		['Cosmos & Apocalypse', ['tear', 'meteor', 'alien', 'apocalypse']]
@@ -40,6 +45,32 @@
 		✨ Surprise Divine Miracle
 	</button>
 </div>
+
+{#if power === 'coup' || power === 'reform' || power === 'revolution'}
+	<div class="target-ideology-box">
+		<div class="row between small" style="margin-bottom: 0.25rem;">
+			<strong>Ordained System:</strong>
+			<span class="muted">{targetIdeology ? targetIdeology : 'Auto'}</span>
+		</div>
+		<select
+			class="ideology-select"
+			value={targetIdeology ?? ''}
+			onchange={(e) => {
+				const val = (e.target as HTMLSelectElement).value;
+				sim.divineTargetIdeology = val ? (val as any) : undefined;
+			}}
+		>
+			<option value="">Auto (Divine Providence / Factional Will)</option>
+			<option value="republic">🏛️ Civic Republic</option>
+			<option value="monarchy">👑 Hereditary Monarchy</option>
+			<option value="theocracy">☀️ Holy Theocracy</option>
+			<option value="communal">🌾 Agrarian Commonweal</option>
+			<option value="autocracy">⚔️ Military Stratocracy</option>
+			<option value="oligarchy">⚖️ Merchant Oligarchy</option>
+			<option value="technocracy">⚙️ Artificer Technocracy</option>
+		</select>
+	</div>
+{/if}
 
 <p class="muted small">{power ? `Click the map or tap 'Cast on Random Target' to invoke ${POWERS[power].name}. Esc to cancel.` : 'Pick a power, then click the map or cast on a random target. Realm powers target whoever owns the clicked land on the current layer.'}</p>
 
@@ -78,4 +109,21 @@
 	.primary-random:hover { background: color-mix(in srgb, var(--accent) 28%, transparent); }
 	.surprise-btn { background: color-mix(in srgb, #9d4edd 18%, transparent); border-color: #9d4edd; color: var(--text); }
 	.surprise-btn:hover { background: color-mix(in srgb, #9d4edd 32%, transparent); }
+	.target-ideology-box {
+		border: 1px solid var(--accent);
+		border-radius: 8px;
+		background: color-mix(in srgb, var(--accent) 8%, transparent);
+		padding: 0.5rem;
+		margin-bottom: 0.6rem;
+	}
+	.ideology-select {
+		width: 100%;
+		padding: 0.35rem 0.5rem;
+		border-radius: 6px;
+		border: 1px solid var(--line);
+		background: var(--bg);
+		color: var(--text);
+		font-size: 0.82rem;
+		cursor: pointer;
+	}
 </style>

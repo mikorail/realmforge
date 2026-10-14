@@ -318,6 +318,74 @@
 					{/each}
 				</div>
 			{/if}
+			<div class="divine-system-box" style="margin-top: 0.6rem; padding: 0.5rem; border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); border-radius: 8px; background: color-mix(in srgb, var(--accent) 6%, transparent);">
+				<div class="row between small" style="margin-bottom: 0.35rem;">
+					<strong>✨ Divine Will: Transform System</strong>
+					<span class="muted small">{sim.sandbox ? '∞ power' : `${sim.mana.toFixed(0)} / ${sim.manaMax} mana`}</span>
+				</div>
+				<div class="row small" style="gap: 4px; margin-bottom: 0.4rem; align-items: center;">
+					<span class="muted">Ordain:</span>
+					<select
+						class="small"
+						style="flex: 1; padding: 2px 4px; border-radius: 4px; background: var(--bg); border: 1px solid var(--line); color: var(--text);"
+						value={sim.divineTargetIdeology ?? ''}
+						onchange={(e) => {
+							const val = (e.target as HTMLSelectElement).value;
+							sim.divineTargetIdeology = val ? (val as any) : undefined;
+						}}
+					>
+						<option value="">Auto (Divine Providence / Factional Will)</option>
+						<option value="republic">🏛️ Civic Republic</option>
+						<option value="monarchy">👑 Hereditary Monarchy</option>
+						<option value="theocracy">☀️ Holy Theocracy</option>
+						<option value="communal">🌾 Agrarian Commonweal</option>
+						<option value="autocracy">⚔️ Military Stratocracy</option>
+						<option value="oligarchy">⚖️ Merchant Oligarchy</option>
+						<option value="technocracy">⚙️ Artificer Technocracy</option>
+					</select>
+				</div>
+				<div class="row" style="gap: 4px; flex-wrap: wrap;">
+					<button
+						class="btn small"
+						style="flex: 1; min-width: 80px;"
+						disabled={!sim.sandbox && sim.mana < 20}
+						onclick={() => {
+							const targetCell = p.capital ? sim.w.burgs[p.capital]?.cell ?? cell : cell;
+							sim.cast('reform', targetCell, layer);
+							onselect(cell);
+						}}
+						title="Inspire the Grand Assembly to peacefully enact constitutional reform by divine mandate (Cost: 20)"
+					>
+						📜 Reform
+					</button>
+					<button
+						class="btn small"
+						style="flex: 1; min-width: 80px;"
+						disabled={!sim.sandbox && sim.mana < 25}
+						onclick={() => {
+							const targetCell = p.capital ? sim.w.burgs[p.capital]?.cell ?? cell : cell;
+							sim.cast('revolution', targetCell, layer);
+							onselect(cell);
+						}}
+						title="Ignite a popular mass revolution to topple autocracy by divine will (Cost: 25)"
+					>
+						✊ Revolution
+					</button>
+					<button
+						class="btn small"
+						style="flex: 1; min-width: 80px;"
+						disabled={!sim.sandbox && sim.mana < 25}
+						onclick={() => {
+							const targetCell = p.capital ? sim.w.burgs[p.capital]?.cell ?? cell : cell;
+							sim.cast('coup', targetCell, layer);
+							onselect(cell);
+						}}
+						title="Incite a military putsch or palace conspiracy to seize power by divine mandate (Cost: 25)"
+					>
+						⚔️ Coup
+					</button>
+				</div>
+			</div>
 			{#if realm.enemies.length}<p class="small"><strong class="bad">At war with</strong> {realm.enemies.map((e) => e.name).join(', ')}</p>{/if}
 			{#if realm.allies.length}<p class="small"><strong>Allies</strong> {realm.allies.map((e) => e.name).join(', ')}</p>{/if}
 			{#if realmArtifacts.length > 0}

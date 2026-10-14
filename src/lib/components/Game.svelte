@@ -289,7 +289,7 @@
 	}
 
 	function castRandom(p?: Power) {
-		const defaultPowers: Power[] = ['bless', 'inspire', 'host', 'hero', 'prophet', 'relic', 'cataclysm', 'discord', 'plague', 'alien', 'monster', 'species'];
+		const defaultPowers: Power[] = ['bless', 'inspire', 'host', 'hero', 'prophet', 'relic', 'cataclysm', 'discord', 'plague', 'alien', 'monster', 'species', 'reform', 'revolution', 'coup'];
 		const targetPower = p ?? defaultPowers[Math.floor(Math.random() * defaultPowers.length)];
 		const targetSim = cosmos.sims[pi];
 		const res = targetSim.castRandom(targetPower, layer);

@@ -268,6 +268,13 @@ export function narrateSystemChange(
 	}
 
 	if (context === 'coup') {
+		if (victorName === 'Divine Will') {
+			const divineTemplates = [
+				`DIVINE COUP: Heeding signs from the heavens, mutinous commanders loyal to ${leaderOrRulerName} storm the royal citadel in ${polName}! The old rulers are deposed, establishing the ${newFullName} by divine mandate.`,
+				`DIVINE COUP: Heavenly portents strike fear into the palace in ${polName}! Conspirators led by ${leaderOrRulerName} overthrow the sovereign, proclaiming the ${newFullName} by divine will!`
+			];
+			return rng.pick(divineTemplates);
+		}
 		const templates = [
 			`COUP D'ETAT: Mutinous conspirators led by ${leaderOrRulerName} strike at midnight in ${polName}! The revolutionary council seizes control, overthrowing the sovereign and proclaiming the ${newFullName}!`,
 			`COUP D'ETAT: Armed regiments loyal to ${leaderOrRulerName} storm the government palace in ${polName}! The faction seizes control, establishing the ${newFullName}.`,
@@ -277,6 +284,13 @@ export function narrateSystemChange(
 	}
 
 	if (context === 'revolution') {
+		if (victorName === 'Divine Will') {
+			const divineTemplates = [
+				`DIVINE REVOLUTION: Miraculous visions awaken the common folk of ${polName}! A holy mass uprising topples the ancient throne of ${oldFullName}, and ${leaderOrRulerName} proclaims the ${newFullName} by divine will!`,
+				`DIVINE REVOLUTION: Righteous fury from above stirs popular assemblies in ${polName}! The former autocracy is dismantled, and revolutionary citizens inaugurate the ${newFullName} by heavenly decree.`
+			];
+			return rng.pick(divineTemplates);
+		}
 		const templates = [
 			`POPULAR REVOLUTION: Crowds fill the avenues of ${polName} as a mass uprising topples the throne of ${oldFullName}! The ancient autocracy is abolished, and ${leaderOrRulerName} proclaims the sovereign ${newFullName}!`,
 			`POPULAR REVOLUTION: Spurred by cries for liberty and bread, popular assemblies across ${polName} overthrow the old order! Monarchy is dismantled, and the revolutionary convention inaugurates the ${newFullName}.`,
@@ -286,6 +300,13 @@ export function narrateSystemChange(
 	}
 
 	if (context === 'reform') {
+		if (victorName === 'Divine Will') {
+			const divineTemplates = [
+				`DIVINE CONSTITUTIONAL REFORM: The Creator inspires the Grand Assembly of ${polName}! Guided by heavenly wisdom, ${leaderOrRulerName} peacefully dissolves absolute rule and reconstitutes the realm as the ${newFullName}.`,
+				`DIVINE CONSTITUTIONAL REFORM: Divine revelations descend upon the estates of ${polName}! Sovereign and citizens forge a sacred charter, transitioning ${oldFullName} into the ${newFullName} by divine will.`
+			];
+			return rng.pick(divineTemplates);
+		}
 		const templates = [
 			`CONSTITUTIONAL REFORM: The Grand Assembly of ${polName} peacefully promulgates a new constitutional charter! Yielding absolute authority, ${leaderOrRulerName} transitions ${oldFullName} into the ${newFullName}.`,
 			`CONSTITUTIONAL REFORM: Amid national debate and civic petitions, the government of ${polName} adopts sweeping constitutional reforms! ${oldFullName} peacefully reorganizes as the ${newFullName}.`,

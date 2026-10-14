@@ -19,7 +19,7 @@ import { monthlyFeasts, newCultureState, yearlyCulture } from './culture';
 import { yearlyLayerLife } from './layerlife';
 import { yearlyEpochs, type ClimateEpoch } from './epochs';
 import { checkAmbition, yearlyLetters, type Letter } from './ambitions';
-import type { ArmyToken, ChronEvent, CovertMission, Effects, Encounter, EventKind, HistorySnapshot, Monster, LegendaryPlace, Person, Polity, Quest, Role, Travel, UprisingRecord, War } from './types';
+import type { ArmyToken, ChronEvent, CovertMission, Effects, Encounter, EventKind, HistorySnapshot, IdeologyKind, Monster, LegendaryPlace, Person, Polity, Quest, Role, Travel, UprisingRecord, War } from './types';
 import * as history from './systems/history';
 import * as economy from './systems/economy';
 import * as diplomacy from './systems/diplomacy';
@@ -53,6 +53,7 @@ export class Simulation {
 	mana = 50;
 	manaMax = 100;
 	sandbox = false;
+	divineTargetIdeology?: IdeologyKind;
 	people: Person[] = [];
 	polities: Polity[] = [];
 	wars: War[] = [];
@@ -550,13 +551,15 @@ export class Simulation {
 			nextWar: this.nextWar, rng: this.rng.state(), plagueActive: this.plagueActive,
 			era: this.era, innovation: this.innovation, techs: Array.from(this.techs),
 			wonders: this.wonders, monsters: this.monsters,
-			missions: this.missions, quests: this.quests, cx: this.cx
+			missions: this.missions, quests: this.quests, cx: this.cx,
+			divineTargetIdeology: this.divineTargetIdeology
 		};
 	}
 
 	static restore(world: World, d: ReturnType<Simulation['dump']>): Simulation {
 		const s = new Simulation(world, true);
 		Object.assign(s, { year: d.year, month: d.month, mana: d.mana, manaMax: d.manaMax, sandbox: d.sandbox, people: d.people, polities: d.polities, wars: d.wars, events: d.events, plague: d.plague, basePop: d.basePop, avatar: d.avatar, travel: d.travel, pending: d.pending, plagueActive: d.plagueActive });
+		s.divineTargetIdeology = d.divineTargetIdeology;
 		s.allEvents = d.allEvents ?? d.events?.slice() ?? [];
 		s.story = d.story ?? newStory();
 		s.letters = d.letters ?? [];
