@@ -269,6 +269,13 @@ export interface Monster {
 	regen?: number;
 	trophy?: string;
 	hardToKill?: boolean;
+	/** immortal entities outlive thousands of years and slumber when struck down rather than dying permanently */
+	immortal?: boolean;
+	birthYear?: number;
+	slumberUntil?: number;
+	wrathTarget?: number;
+	destructionCount?: number;
+	traitsResented?: string[];
 }
 
 export interface LegendaryPlace {

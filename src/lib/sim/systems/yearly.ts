@@ -3,7 +3,8 @@ import type { Simulation } from '../engine';
 import { clamp } from '../../rng';
 import { forgeMonsterRelic } from '../relics';
 import { createTitanShrineWonder } from '../wonders';
-import { resolveMonsterCombat } from '../monsters';
+import { processMonsterWrath, resolveMonsterCombat } from '../monsters';
+import { buildRealmRoads } from '../roads';
 import { updatePolitics } from '../politics';
 import { processAnthropogenicDisasters } from '../ecology';
 import { updateIntrigue } from '../intrigue';
@@ -116,7 +117,8 @@ export function yearlyMonsterHunts(sim: Simulation) {
 			const rawDmg = Math.round(pol.army * 1.6 + sim.rng.int(15, 40));
 			const res = resolveMonsterCombat(targetMonster, rawDmg, leaderName, sim.year, sim.rng);
 
-			pol.army = Math.max(5, +(pol.army - res.damageTaken * 0.15).toFixed(1));
+			const casualtyFactor = targetMonster.power >= 85 ? 0.35 : 0.15;
+			pol.army = Math.max(0, +(pol.army - res.damageTaken * casualtyFactor).toFixed(1));
 
 			if (res.slain) {
 				// Forge monster relic for the realm
@@ -152,12 +154,11 @@ export function yearlyMonsterHunts(sim: Simulation) {
 					sim.wonders.push(shrine);
 				}
 
-				sim.log(
-					'monster',
-					`EXPEDITION TRIUMPH: ${leaderName} and the hosts of ${pol.name} slay ${targetMonster.name}! Spoils: ${art.name} (${targetMonster.trophy || 'Dragonhide'}), boosting stability (+20) and treasury (+150 gold).`,
-					targetMonster.cell,
-					pol.id
-				);
+				const triumphText = targetMonster.immortal
+					? `EXPEDITION TRIUMPH: ${leaderName} and the hosts of ${pol.name} defeat ${targetMonster.name}, banishing the immortal titan into deep slumber in ${targetMonster.lairName}! Spoils: ${art.name} (${targetMonster.trophy || 'Dragonhide'}), boosting stability (+20) and treasury (+150 gold).`
+					: `EXPEDITION TRIUMPH: ${leaderName} and the hosts of ${pol.name} slay ${targetMonster.name}! Spoils: ${art.name} (${targetMonster.trophy || 'Dragonhide'}), boosting stability (+20) and treasury (+150 gold).`;
+
+				sim.log('monster', triumphText, targetMonster.cell, pol.id);
 			} else {
 				sim.log(
 					'monster',
@@ -170,3 +171,15 @@ export function yearlyMonsterHunts(sim: Simulation) {
 		}
 	}
 }
+
+export function yearlyBeastWrath(sim: Simulation) {
+	const events = processMonsterWrath(sim);
+	for (const ev of events) {
+		sim.log(ev.kind, ev.text, ev.cell, ev.state);
+	}
+}
+
+export function yearlyRoadConstruction(sim: Simulation) {
+	buildRealmRoads(sim);
+}
+

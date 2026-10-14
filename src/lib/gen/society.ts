@@ -262,7 +262,7 @@ export function generateReligions(c: Cells, rng: Rng, cultures: Culture[], burgs
 }
 
 /** A* over land cells; roads cheaper on existing roads so they merge into networks */
-function landPath(c: Cells, a: number, b: number, water = false): number[] | null {
+export function landPath(c: Cells, a: number, b: number, water = false): number[] | null {
 	const n = c.n;
 	const g = new Float32Array(n).fill(Infinity);
 	const from = new Int32Array(n).fill(-1);

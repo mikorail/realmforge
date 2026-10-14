@@ -391,6 +391,8 @@ export class Simulation {
 		yearly.yearlyQuests(this);
 		economy.yearlyWonderConstruction(this);
 		yearly.yearlyMonsterHunts(this);
+		yearly.yearlyBeastWrath(this);
+		yearly.yearlyRoadConstruction(this);
 		yearly.yearlyPantheon(this);
 		yearly.yearlyUprisings(this);
 		yearlySphereLore(this);

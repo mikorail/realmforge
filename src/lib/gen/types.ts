@@ -190,6 +190,7 @@ export interface Route {
 	cells: number[];
 	a: number;
 	b: number;
+	name?: string;
 }
 
 /**
