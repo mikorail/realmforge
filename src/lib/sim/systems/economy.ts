@@ -4,6 +4,7 @@ import { clamp } from '../../rng';
 import { ERAS, checkNextDiscovery, type TechDiscovery } from '../tech';
 import { buildWonder } from '../wonders';
 import type { LegendaryPlace } from '../types';
+import { cellsByState } from '../indexes';
 
 export function demographics(sim: Simulation) {
 	const c = sim.c;
@@ -22,10 +23,13 @@ export function demographics(sim: Simulation) {
 		b.pop = +clamp(b.pop * (0.97 + ratio * 0.03 + (r() - 0.5) * 0.02), 0.2, 500).toFixed(2);
 		b.state = sim.st(li)[b.cell];
 	}
+	sim.idx.touch();
 }
 
 export function economy(sim: Simulation) {
 	const r = sim.rng;
+	// surface cells per realm; ownership does not change inside this loop
+	const own = cellsByState(sim.c.state, sim.polities.length);
 	for (const p of sim.polities) {
 		if (!p.alive) continue;
 		const ruler = sim.ruler(p);
@@ -42,8 +46,9 @@ export function economy(sim: Simulation) {
 		// stability drift
 		let cult = 0, faith = 0, tot = 0;
 		const c = sim.c;
-		for (let i = 0; i < c.n; i += 3) {
-			if (c.state[i] !== p.id) continue;
+		for (let k = own.start[p.id], end = own.start[p.id + 1]; k < end; k++) {
+			const i = own.cells[k];
+			if (i % 3) continue; // every third cell, as sampled before the index existed
 			tot++;
 			if (c.culture[i] === p.culture) cult++;
 			if (c.religion[i] === p.religion) faith++;
@@ -59,7 +64,7 @@ export function economy(sim: Simulation) {
 }
 
 export function innovate(sim: Simulation) {
-	const scholars = sim.people.filter((p) => p.alive && p.traits.includes('Scholar')).length;
+	const scholars = sim.idx.living(sim.people).filter((p) => p.traits.includes('Scholar')).length;
 	const stableRealms = sim.polities.filter((p) => p.alive && p.stability > 60).length;
 	// diminishing returns so the ages unfold over centuries, not years (≈ era every 100–150 yrs)
 	sim.gainInnovation(0.9 + Math.sqrt(scholars) * 0.25 + Math.sqrt(stableRealms) * 0.15);

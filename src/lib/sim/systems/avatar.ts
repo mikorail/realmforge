@@ -189,6 +189,7 @@ export function act(sim: Simulation, action: string, arg?: number): string {
 			const ruler = sim.ruler(local);
 			if (me.renown >= 30 && me.state !== local.id) {
 				me.state = local.id;
+				sim.idx.touch();
 				me.role = me.martial >= me.diplomacy ? 'general' : 'priest';
 				return say(`${ruler.name} welcomes you to court and names you ${me.role === 'general' ? 'a general' : 'a counsellor'} of ${local.name}.`);
 			}
@@ -426,6 +427,7 @@ export function act(sim: Simulation, action: string, arg?: number): string {
 			}
 			me.health -= 40;
 			me.state = 0;
+			sim.idx.touch();
 			me.role = 'wanderer';
 			me.renown = Math.max(0, me.renown - 20);
 			if (me.health <= 0) sim.kill(me, 'execution');

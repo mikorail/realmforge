@@ -63,7 +63,14 @@ export function makePerson(sim: Simulation, culture: number, state: number, burg
 
 export function lifecycle(sim: Simulation) {
 	const r = sim.rng;
-	for (const p of sim.people) {
+	// living people, then anyone born during the loop (a plain for-of over `people` visits them too)
+	const live = sim.idx.living(sim.people);
+	const born = sim.idx.scannedLength;
+	const visit = function* () {
+		yield* live;
+		for (let i = born; i < sim.people.length; i++) yield sim.people[i];
+	};
+	for (const p of visit()) {
 		if (!p.alive || !p.id) continue;
 		const age = sim.ageOf(p);
 		const spMult = SPECIES_BY_ID[p.species ?? 'human']?.lifespanMult ?? 1.0;
@@ -89,7 +96,7 @@ export function lifecycle(sim: Simulation) {
 		if (!sim.general(pol) && r.chance(0.5)) sim.makePerson(pol.culture, pol.id, pol.capital, 'general', r.int(22, 40));
 	}
 	// keep a pool of wanderers for avatar mode
-	const free = sim.people.filter((p) => p.alive && p.state === 0).length;
+	const free = sim.idx.living(sim.people).filter((p) => p.state === 0).length;
 	if (free < 25) {
 		const burgs = sim.w.burgs.filter((b) => b.id && b.alive);
 		const b = r.pick(burgs);
@@ -137,7 +144,7 @@ export function kill(sim: Simulation, p: Person, cause: string) {
 		}
 	} else if (p.id === sim.avatar) {
 		// continue as a child if any
-		const child = sim.people.find((x) => x.alive && x.parent === p.id);
+		const child = sim.idx.living(sim.people).find((x) => x.alive && x.parent === p.id);
 		sim.log('avatar', `${p.name} ${p.house} departs sim mortal realm (${cause}).${child ? ` Their kin, ${child.name}, carries on the family mantle.` : ' The journey ends here.'}`);
 		sim.avatar = child ? child.id : -1;
 		if (child) { child.gold += p.gold; child.renown += Math.round(p.renown / 2); }
@@ -153,7 +160,7 @@ export function kill(sim: Simulation, p: Person, cause: string) {
 export function pruneMinorPeople(sim: Simulation) {
 	const aliveRealms = sim.polities.filter((p) => p.alive && p.id).length;
 	const cap = 150 + aliveRealms * 6;
-	const alive = sim.people.filter((p) => p.alive && p.id);
+	const alive = sim.idx.living(sim.people);
 	if (alive.length <= cap) return;
 	const busy = new Set<number>();
 	for (const q of sim.quests ?? []) if (!q.completed) busy.add(q.heroId);
@@ -169,7 +176,7 @@ export function pruneMinorPeople(sim: Simulation) {
 }
 
 export function updateLuminaries(sim: Simulation) {
-	const activeLuminaries = sim.people.filter((p) => p.alive && ['magician', 'thinker', 'artist', 'athlete', 'inventor'].includes(p.role));
+	const activeLuminaries = sim.idx.living(sim.people).filter((p) => ['magician', 'thinker', 'artist', 'athlete', 'inventor'].includes(p.role));
 	if (activeLuminaries.length < 8 && sim.rng.chance(0.45)) {
 		const aliveBurgs = sim.w.burgs.filter((b) => b.id && b.alive);
 		if (aliveBurgs.length) {

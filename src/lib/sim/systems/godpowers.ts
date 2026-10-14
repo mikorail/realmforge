@@ -252,12 +252,12 @@ export function cast(sim: Simulation, power: Power, cell: number, layer = 0): st
 			pol.allies = [];
 			for (const p of sim.polities) p.allies = p.allies.filter((a) => a !== pol.id);
 			for (const n of sim.neighborsOf(pol.id)) sim.addRel(pol.id, n, -40);
-			const towns = sim.w.burgs.filter((b) => b.id && b.alive && b.state === pol.id && b.id !== pol.capital);
+			const towns = sim.idx.burgsIn(sim.w.burgs, pol.id).filter((b) => b.id && b.alive && b.state === pol.id && b.id !== pol.capital);
 			for (const t of sim.rng.shuffle(towns).slice(0, 2)) {
 				sim.revolt(pol, t.cell);
 			}
 			pol.stability = Math.min(25, Math.max(5, pol.stability - 50));
-			for (const p of sim.people.filter((x) => x.alive && x.state === pol.id)) {
+			for (const p of sim.idx.living(sim.people).filter((x) => x.state === pol.id)) {
 				if (!p.traits.includes('Paranoid') && sim.rng.chance(0.5)) p.traits.push('Paranoid');
 			}
 			sim.log('god', `Chaos consumes ${pol.fullName}! Riots shatter the cities, mutinous garrisons revolt, and the realm plunges into anarchy.`, cell, pol.id);

@@ -17,10 +17,12 @@ export function mergeInto(sim: Simulation, small: Polity, big: Polity) {
 		b.state = big.id;
 		b.capital = b.id === big.capital;
 	}
-	for (const p of sim.people) if (p.alive && p.state === small.id) {
+	sim.idx.touch();
+	for (const p of sim.idx.inState(sim.people, small.id)) if (p.alive && p.state === small.id) {
 		p.state = big.id;
 		if (p.role === 'ruler' || p.role === 'heir') p.role = 'general';
 	}
+	sim.idx.touch();
 	for (const w of sim.wars) if (!w.end) {
 		w.attackers = w.attackers.filter((x) => x !== small.id);
 		w.defenders = w.defenders.filter((x) => x !== small.id);

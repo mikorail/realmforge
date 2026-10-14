@@ -29,6 +29,7 @@ import * as environment from './systems/environment';
 import * as yearly from './systems/yearly';
 import * as godpowers from './systems/godpowers';
 import * as avatar from './systems/avatar';
+import { FrontIndex, OpenCells, SimIndex } from './indexes';
 import type { Power } from './systems/godpowers';
 
 export { POWERS, type Power } from './systems/godpowers';
@@ -98,6 +99,14 @@ export class Simulation {
 	voice: Genre = 'fantasy';
 	/** set by Cosmos so time skips advance every planet together */
 	skipper: ((n: number) => void) | null = null;
+	/** living people / per-state people and burgs (indexes.ts); call `idx.touch()` after changing a person's or burg's state */
+	idx = new SimIndex();
+	/** contested edges per realm pair, synced once per war month */
+	fronts = new FrontIndex();
+	/** open cells per layer for recount */
+	openCells = new OpenCells();
+	/** polity id → bordering polity ids, derived from `borders`; reset by computeBorders */
+	neighborCache: Map<number, number[]> | null = null;
 
 	constructor(world: World, restoring = false) {
 		this.w = world;
@@ -215,12 +224,14 @@ export class Simulation {
 		person.burg = pol.capital;
 		pol.ruler = person.id;
 		if (pol.heir === person.id) pol.heir = 0;
+		this.idx.touch();
 	}
 	ruler(p: Polity) {
 		return this.people[p.ruler];
 	}
 	general(p: Polity) {
-		return this.people.find((x) => x.alive && x.state === p.id && x.role === 'general');
+		for (const x of this.idx.inState(this.people, p.id)) if (x.alive && x.state === p.id && x.role === 'general') return x;
+		return undefined;
 	}
 	stateAt(cell: number, layer = 0) {
 		return this.polities[this.w.layers[layer].state[cell]];
@@ -236,6 +247,7 @@ export class Simulation {
 	}
 	syncBurgs() {
 		for (const b of this.w.burgs) if (b.id && b.alive) b.state = this.st(this.burgLayer(b))[b.cell];
+		this.idx.touch();
 	}
 	isLand(i: number) {
 		return this.c.h[i] >= SEA;
@@ -256,13 +268,21 @@ export class Simulation {
 		pb.relations[a] = clamp((pb.relations[a] ?? 0) + d, -100, 100);
 	}
 	neighborsOf(id: number): number[] {
-		const out: number[] = [];
-		for (const k of this.borders.keys()) {
-			const [a, b] = k.split('-').map(Number);
-			if (a === id) out.push(b);
-			else if (b === id) out.push(a);
+		if (!this.neighborCache) {
+			const m = new Map<number, number[]>();
+			const add = (x: number, y: number) => {
+				const l = m.get(x);
+				if (l) l.push(y);
+				else m.set(x, [y]);
+			};
+			for (const k of this.borders.keys()) {
+				const [a, b] = k.split('-').map(Number);
+				add(a, b);
+				add(b, a);
+			}
+			this.neighborCache = m;
 		}
-		return out;
+		return this.neighborCache.get(id)?.slice() ?? [];
 	}
 	strength(ids: number[]) {
 		let s = 0;
@@ -276,18 +296,22 @@ export class Simulation {
 		return s;
 	}
 	recount() {
-		const c = this.c;
-		for (const p of this.polities) { p.cells = 0; p.pop = 0; }
-		this.w.layers.forEach((L, li) => {
-			for (let i = 0; i < c.n; i++) {
-				if (!L.open[i]) continue;
-				const p = this.polities[L.state[i]];
-				if (!p || !p.id) continue;
-				p.cells++;
+		const c = this.c, P = this.polities, np = P.length;
+		// typed accumulators, same summation order as counting into each polity (identical floats)
+		const cells = new Int32Array(np), pop = new Float64Array(np), valid = new Uint8Array(np);
+		for (let k = 0; k < np; k++) valid[k] = P[k].id ? 1 : 0;
+		const layers = this.w.layers;
+		for (let li = 0; li < layers.length; li++) {
+			const st = layers[li].state, list = this.openCells.of(li, layers[li].open);
+			for (let k = 0; k < list.length; k++) {
+				const i = list[k], s = st[i];
+				if (s >= np || !valid[s]) continue;
+				cells[s]++;
 				// surface folk live off the land; other planes count their settlements + cavern/isle hinterland
-				p.pop += li === 0 ? c.pop[i] : 0.35;
+				pop[s] += li === 0 ? c.pop[i] : 0.35;
 			}
-		});
+		}
+		for (let k = 0; k < np; k++) { P[k].cells = cells[k]; P[k].pop = pop[k]; }
 		for (const b of this.w.burgs) if (b.id && b.alive && this.burgLayer(b) > 0 && b.state) this.polities[b.state].pop += b.pop * 2;
 		for (const p of this.polities) p.peak = Math.max(p.peak, p.cells);
 	}
@@ -298,6 +322,7 @@ export class Simulation {
 	// ───────────────────────────── tick ─────────────────────────────
 	tick() {
 		if (this.pending) return; // waiting for the player to resolve an encounter
+		this.idx.touch(); // safety net for ownership edits made between ticks (UI, other planets)
 		this.month++;
 		if (this.month >= 12) {
 			this.month = 0;
@@ -538,6 +563,6 @@ export class Simulation {
 
 	/** people the player could inhabit */
 	candidates() {
-		return this.people.filter((p) => p.alive && p.id && this.ageOf(p) >= 14);
+		return this.idx.living(this.people).filter((p) => this.ageOf(p) >= 14);
 	}
 }

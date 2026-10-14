@@ -1,5 +1,6 @@
 /** Faith spread and conversion, heresies, the Great Reformation. */
 import type { Simulation } from '../engine';
+import { cellsByState } from '../indexes';
 import { neighbors } from '../../gen/grid';
 import { personName } from '../../gen/names';
 import { palette } from '../../gen/society';
@@ -25,10 +26,15 @@ export function faiths(sim: Simulation) {
 	}
 	for (const [i, rel] of changes) c.religion[i] = rel;
 	// state conversion when the realm's majority faith differs
+	let own: ReturnType<typeof cellsByState> | null = null; // built on first use; ownership is fixed in this loop
 	for (const pol of sim.polities) {
 		if (!pol.alive || pol.secularized || r() > 0.15) continue;
+		own ??= cellsByState(c.state, sim.polities.length);
 		const counts = new Map<number, number>();
-		for (let i = 0; i < c.n; i += 2) if (c.state[i] === pol.id) counts.set(c.religion[i], (counts.get(c.religion[i]) ?? 0) + 1);
+		for (let k = own.start[pol.id], end = own.start[pol.id + 1]; k < end; k++) {
+			const i = own.cells[k];
+			if (i % 2 === 0) counts.set(c.religion[i], (counts.get(c.religion[i]) ?? 0) + 1);
+		}
 		let best = pol.religion, bestN = counts.get(pol.religion) ?? 0;
 		for (const [rel, n] of counts) if (n > bestN * 1.5) { best = rel; bestN = n; }
 		if (best !== pol.religion) {

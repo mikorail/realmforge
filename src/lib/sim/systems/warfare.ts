@@ -9,23 +9,23 @@ export function monthlyWars(sim: Simulation) {
 	const c = sim.c;
 	const r = sim.rng;
 	let changed = false;
-	// one pass: every edge where ownership differs, on every layer (shared by all wars)
-	const contested: number[] = [];
-	if (sim.wars.some((w) => !w.end))
-		sim.w.layers.forEach((L, li) => {
-			const st = L.state, op = L.open, E = sim.w.edges;
-			for (let e = 0; e < E.n; e++) {
-				const a = E.a[e], b = E.b[e];
-				if (op[a] && op[b] && st[a] !== st[b] && st[a] && st[b]) contested.push(a, b, li);
-			}
-		});
+	// every edge where ownership differs, on every layer, frozen for the month (shared by all wars)
+	if (!sim.wars.some((w) => !w.end)) return;
+	const fronts = sim.fronts, E = sim.w.edges, nE = E.n;
+	fronts.sync(sim.w);
+	let resync = false;
 	for (const w of sim.wars) {
 		if (w.end) continue;
 		w.attackers = w.attackers.filter((id) => sim.polities[id].alive);
 		w.defenders = w.defenders.filter((id) => sim.polities[id].alive);
 		if (!w.attackers.length || !w.defenders.length) {
 			sim.finishWar(w, w.attackers.length ? 'attackers' : 'defenders');
+			resync = true; // peace terms (vassals, merges) can move cells outside takeCell
 			continue;
+		}
+		if (resync) {
+			fronts.resync(sim.w);
+			resync = false;
 		}
 		w.months++;
 		const sa = sim.strength(w.attackers), sd = sim.strength(w.defenders) * 1.1;
@@ -34,8 +34,9 @@ export function monthlyWars(sim: Simulation) {
 		const att = new Set(w.attackers), def = new Set(w.defenders);
 		// [cell, taker, layer]
 		const frontD: [number, number, number][] = [], frontA: [number, number, number][] = [];
-		for (let k = 0; k < contested.length; k += 3) {
-			const a = contested[k], b = contested[k + 1], li = contested[k + 2];
+		for (const g of fronts.gather(att, def)) {
+			const li = Math.floor(g / nE), e = g - li * nE;
+			const a = E.a[e], b = E.b[e];
 			const st = sim.w.layers[li].state;
 			const sa2 = st[a], sb2 = st[b];
 			if (att.has(sa2) && def.has(sb2)) { frontD.push([b, sa2, li]); frontA.push([a, sb2, li]); }
@@ -60,7 +61,10 @@ export function monthlyWars(sim: Simulation) {
 		}
 		if (!frontD.length) {
 			// no shared border (e.g. across the sea): slowly exhausts
-			if (w.months > 30) sim.finishWar(w, 'white');
+			if (w.months > 30) {
+				sim.finishWar(w, 'white');
+				resync = true;
+			}
 			if (changed) sim.dirty.political = true;
 			continue;
 		}
@@ -102,11 +106,13 @@ export function takeCell(sim: Simulation, cell: number, taker: number, war?: War
 	const st = sim.st(layer);
 	const old = st[cell];
 	st[cell] = taker;
+	sim.fronts.rekey(sim.w, cell, layer);
 	if (layer === 0) c.pop[cell] *= 0.93;
 	const bid = sim.lb[layer][cell];
 	if (!bid) return;
 	const b = sim.w.burgs[bid];
 	b.state = taker;
+	sim.idx.touch();
 	b.pop = +(b.pop * 0.85).toFixed(2);
 	const loser = sim.polities[old];
 	const winner = sim.polities[taker];
@@ -133,7 +139,8 @@ export function takeCell(sim: Simulation, cell: number, taker: number, war?: War
 		sim.log('capture', capText, cell, taker);
 	}
 	// people in the burg change allegiance
-	for (const p of sim.people) if (p.alive && p.burg === bid && p.role !== 'ruler' && p.state === old && p.role !== 'heir') p.state = taker;
+	for (const p of sim.idx.inState(sim.people, old)) if (p.alive && p.burg === bid && p.role !== 'ruler' && p.state === old && p.role !== 'heir') p.state = taker;
+	sim.idx.touch();
 
 	// Check for wonders at the captured settlement
 	const wonder = sim.wonders.find((w) => w.cell === cell && !w.destroyed);
@@ -151,10 +158,11 @@ export function takeCell(sim: Simulation, cell: number, taker: number, war?: War
 }
 
 export function relocateCapital(sim: Simulation, p: Polity) {
-	const own = sim.w.burgs.filter((b) => b.id && b.alive && b.state === p.id).sort((a, b) => b.pop - a.pop);
+	const mine = sim.idx.burgsIn(sim.w.burgs, p.id);
+	const own = mine.filter((b) => b.id && b.alive && b.state === p.id).sort((a, b) => b.pop - a.pop);
 	if (!own.length) return false;
 	p.capital = own[0].id;
-	for (const b of sim.w.burgs) if (b.state === p.id) b.capital = false;
+	for (const b of mine) if (b.state === p.id) b.capital = false;
 	own[0].capital = true;
 	const ruler = sim.ruler(p);
 	if (ruler) ruler.burg = own[0].id;
@@ -168,11 +176,12 @@ export function fall(sim: Simulation, p: Polity) {
 	const r = sim.ruler(p);
 	const fallText = narrateFall(sim.rng, p.fullName, r?.name, r?.house);
 	sim.log('fall', fallText, sim.w.burgs[p.capital]?.cell, p.id);
-	for (const x of sim.people) if (x.alive && x.state === p.id) {
+	for (const x of sim.idx.inState(sim.people, p.id)) if (x.alive && x.state === p.id) {
 		x.state = 0;
 		if (x.role === 'ruler' || x.role === 'heir' || x.role === 'general') x.role = 'wanderer';
 	}
-	for (const b of sim.w.burgs) if (b.state === p.id) b.state = 0;
+	for (const b of sim.idx.burgsIn(sim.w.burgs, p.id)) if (b.state === p.id) b.state = 0;
+	sim.idx.touch();
 	for (const w of sim.wars) if (!w.end) {
 		w.attackers = w.attackers.filter((x) => x !== p.id);
 		w.defenders = w.defenders.filter((x) => x !== p.id);

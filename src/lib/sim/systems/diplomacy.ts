@@ -8,17 +8,18 @@ import type { War } from '../types';
 
 export function computeBorders(sim: Simulation) {
 	const { edges } = sim.w;
-	sim.borders.clear();
+	// numeric pair keys while counting; insertion order (first sighting) is kept for `borders`
+	const acc = new Map<number, number>();
 	const bump = (sa: number, sb: number, n: number) => {
 		if (sa === sb || !sa || !sb) return;
-		const k = sa < sb ? `${sa}-${sb}` : `${sb}-${sa}`;
-		sim.borders.set(k, (sim.borders.get(k) ?? 0) + n);
+		const k = sa < sb ? sa * 65536 + sb : sb * 65536 + sa;
+		acc.set(k, (acc.get(k) ?? 0) + n);
 	};
 	for (const L of sim.w.layers) {
 		const st = L.state, op = L.open;
 		for (let e = 0; e < edges.n; e++) {
 			const a = edges.a[e], b = edges.b[e];
-			if (op[a] && op[b]) bump(st[a], st[b], 1);
+			if (op[a] && op[b] && st[a] !== st[b]) bump(st[a], st[b], 1);
 		}
 	}
 	// vertical neighbours: settlements joined by shafts / docks
@@ -27,6 +28,9 @@ export function computeBorders(sim: Simulation) {
 		const A = sim.w.burgs[r.a], B = sim.w.burgs[r.b];
 		if (A.alive && B.alive) bump(A.state, B.state, 4);
 	}
+	sim.borders.clear();
+	for (const [k, n] of acc) sim.borders.set(`${Math.floor(k / 65536)}-${k % 65536}`, n);
+	sim.neighborCache = null;
 }
 
 export function diplomacy(sim: Simulation) {

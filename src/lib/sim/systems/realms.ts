@@ -25,7 +25,7 @@ export function rebellions(sim: Simulation) {
 export function revolt(sim: Simulation, pol: Polity, nearCell?: number, leader?: Person): Polity | null {
 	const c = sim.c;
 	const r = sim.rng;
-	const towns = sim.w.burgs.filter((b) => b.id && b.alive && b.state === pol.id && b.id !== pol.capital);
+	const towns = sim.idx.burgsIn(sim.w.burgs, pol.id).filter((b) => b.id && b.alive && b.state === pol.id && b.id !== pol.capital);
 	if (!towns.length) return null;
 	let town = towns[0];
 	if (nearCell !== undefined) {
@@ -148,6 +148,7 @@ export function colonize(sim: Simulation) {
 				const bid = sim.lb[li][i];
 				if (bid) {
 					sim.w.burgs[bid].state = s;
+					sim.idx.touch();
 					const colText = narrateColonization(sim.rng, sim.polities[s].name, sim.w.burgs[bid].name);
 					sim.log('found', colText, i, s);
 				}
@@ -184,6 +185,7 @@ export function foundState(sim: Simulation, burgId: number, origin: string, lead
 	for (const j of neighbors(c, b.cell)) if (sim.open(li, j) && (!S[j] || origin === 'rift')) S[j] = id;
 	if (prev?.alive && prev.capital === b.id) sim.relocateCapital(prev);
 	b.state = id;
+	sim.idx.touch();
 	b.capital = true;
 	sim.crown(np, leader ?? sim.makePerson(b.culture, id, b.id, 'ruler', r.int(20, 45)));
 	sim.recount();
@@ -211,14 +213,14 @@ export function randomEvents(sim: Simulation) {
 			p.stability -= 10;
 			sim.log('disaster', packLine(sim.voice, 'famine', sim.rng, { realm: p.name, town: cap.name }) ?? narrateDisaster(sim.rng, 'famine', cap.name, p.name), cap.cell, p.id);
 		} else if (roll < 0.45) {
-			const towns = sim.w.burgs.filter((b) => b.alive && b.state === p.id);
+			const towns = sim.idx.burgsIn(sim.w.burgs, p.id).filter((b) => b.alive && b.state === p.id);
 			if (towns.length) {
 				const t = r.pick(towns);
 				t.pop = +(t.pop * 0.7).toFixed(2);
 				sim.log('disaster', narrateDisaster(sim.rng, 'fire', t.name, p.name), t.cell, p.id);
 			}
 		} else if (roll < 0.52) {
-			const towns = sim.w.burgs.filter((b) => b.alive && b.state === p.id);
+			const towns = sim.idx.burgsIn(sim.w.burgs, p.id).filter((b) => b.alive && b.state === p.id);
 			if (towns.length) sim.seedPlague(r.pick(towns).cell, 0.6);
 		} else if (roll < 0.6) {
 			const omenKind = r.pick(['comet', 'library', 'wall', 'road', 'omen'] as const);
