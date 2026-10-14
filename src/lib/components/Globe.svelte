@@ -125,6 +125,7 @@
 	canvas { display: block; max-width: calc(100% - 36px); margin: 0 auto; }
 	.winds { position: absolute; right: 0; top: 0; bottom: 0; width: 34px; }
 	.wind { position: absolute; right: 0; transform: translateY(-50%); width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line); background: transparent; padding: 0; display: grid; place-items: center; font-size: 1rem; color: var(--accent); }
+	.wind::after { content: ''; position: absolute; inset: -6px; }
 	.wind span { display: inline-block; transition: transform 0.2s; }
 	.wind:hover { border-color: var(--accent); }
 </style>

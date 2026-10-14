@@ -60,7 +60,7 @@
 	.side { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; margin: 0 auto; max-width: 100%; }
 	label { display: flex; flex-direction: column; gap: 0.15rem; }
 	.lab { font-size: 0.88rem; display: flex; justify-content: space-between; gap: 0.5rem; }
-	input[type='range'] { width: 100%; accent-color: var(--accent); }
+	input[type='range'] { width: 100%; accent-color: var(--accent); min-height: 40px; }
 	.small { font-size: 0.8rem; }
 	.facts { color: var(--muted); line-height: 1.35; padding: 0.2rem 0; }
 	.presets { gap: 0.35rem; margin-top: 0.2rem; }
