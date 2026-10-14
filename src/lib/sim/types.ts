@@ -61,6 +61,14 @@ export interface Person {
 	cargo?: { from: number; cost: number };
 	species?: string;
 	magnumOpus?: string;
+	/** avatar life goals (ambitions.ts) */
+	ambition?: string;
+	ambitionChoices?: string[];
+	ambitionsDone?: string[];
+	visited?: number[];
+	companions?: number[];
+	companionOf?: number;
+	rival?: number;
 }
 
 export interface Polity {

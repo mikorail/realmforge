@@ -42,6 +42,7 @@ import { packEncounters, packLine, reskin } from './genrepacks';
 import { vassalizeAfterWar, yearlyConsolidation } from './consolidation';
 import { yearlySphereLore } from './spherelore';
 import { yearlyLayerLife } from './layerlife';
+import { checkAmbition, companionBonus, hireCompanion, yearlyLetters, type Letter } from './ambitions';
 import type { ArmyToken, ChronEvent, CovertMission, Effects, Encounter, EventKind, HistorySnapshot, IdeologyKind, Monster, LegendaryPlace, Person, Polity, Quest, Role, Travel, UprisingRecord, War } from './types';
 
 export type Power =
@@ -148,6 +149,9 @@ export class Simulation {
 	uprisings: UprisingRecord[] = [];
 	/** polity id → year its next notable uprising may happen */
 	unrestUntil = new Map<number, number>();
+	/** avatar inbox (ambitions.ts) */
+	letters: Letter[] = [];
+	tradeTip: { burg: number; until: number } | null = null;
 	era = 0;
 	innovation = 0;
 	techs = new Set<string>();
@@ -450,6 +454,7 @@ export class Simulation {
 			}
 		}
 		this.advanceTravel();
+		checkAmbition(this);
 	}
 
 	takeHistorySnapshot() {
@@ -523,6 +528,7 @@ export class Simulation {
 		this.yearlyUprisings();
 		yearlySphereLore(this);
 		yearlyLayerLife(this);
+		yearlyLetters(this);
 		yearlyConsolidation(this);
 		this.pruneMinorPeople();
 		this.compactArchive();
@@ -543,7 +549,7 @@ export class Simulation {
 		for (const q of this.quests ?? []) if (!q.completed) busy.add(q.heroId);
 		const keepRole = new Set(['ruler', 'heir', 'general']);
 		const candidates = alive
-			.filter((p) => p.id !== this.avatar && !busy.has(p.id) && !(keepRole.has(p.role) && this.polities[p.state]?.alive) && !p.magnumOpus)
+			.filter((p) => p.id !== this.avatar && p.companionOf !== this.avatar && !busy.has(p.id) && !(keepRole.has(p.role) && this.polities[p.state]?.alive) && !p.magnumOpus)
 			.sort((a, b) => a.renown - b.renown);
 		for (const p of candidates.slice(0, alive.length - cap)) {
 			p.alive = false;
@@ -2343,6 +2349,7 @@ export class Simulation {
 			t.days -= t.legDays;
 			t.leg++;
 			me.burg = t.path[t.leg];
+			for (const id of me.companions ?? []) if (this.people[id]?.alive) this.people[id].burg = me.burg;
 			if (t.leg < t.path.length - 1) t.legDays = this.linkDays(t.path[t.leg], t.path[t.leg + 1]);
 		}
 		if (t.leg >= t.path.length - 1) {
@@ -2361,7 +2368,7 @@ export class Simulation {
 		const o = enc.options[optIndex];
 		let ok = true;
 		if (o.stat) {
-			const roll = this.rng.int(1, 10) + me[o.stat] / 2 + (me.traits.includes('Lucky') ? 2 : 0);
+			const roll = this.rng.int(1, 10) + me[o.stat] / 2 + (me.traits.includes('Lucky') ? 2 : 0) + companionBonus(this, me, o.stat);
 			ok = roll >= (o.dc ?? 10);
 		}
 		const fx = ok ? o.win : (o.lose ?? o.win);
@@ -2427,13 +2434,28 @@ export class Simulation {
 				me.cargo = { from: here.id, cost: 30 };
 				return say(`You load a cart with ${BIOMES[this.c.biome[here.cell]].name.toLowerCase()} goods from ${here.name}.`);
 			}
+			case 'companion':
+				return say(hireCompanion(this) || `Your fellowship grows.`);
+			case 'goto': {
+				if (arg === undefined) return '';
+				return this.startTravel(arg) ?? say(`You set out for ${this.w.burgs[arg].name}.`);
+			}
+			case 'enlist': {
+				if (!pol?.alive) return 'You serve no realm.';
+				if (me.role === 'ruler' || me.role === 'general') return 'You already command.';
+				me.role = 'general';
+				me.martial = Math.min(20, me.martial + 1);
+				me.renown += 5;
+				return say(`You take a commission and lead the soldiers of ${pol.name}.`);
+			}
 			case 'sell': {
 				if (!me.cargo) return 'You carry nothing to sell.';
 				const from = this.w.burgs[me.cargo.from];
 				const d = Math.hypot(from.x - here.x, from.y - here.y) / 30;
 				const diff = this.c.biome[from.cell] !== this.c.biome[here.cell] ? 1.3 : 1;
 				const war = local && this.warsOf(local.id).length ? 1.4 : 1;
-				const price = Math.round(me.cargo.cost * (0.8 + d * 0.12) * diff * war * (0.85 + r() * 0.3) + me.stewardship);
+				const tip = this.tradeTip && this.tradeTip.burg === here.id && this.year <= this.tradeTip.until ? 2 : 1;
+				const price = Math.round(me.cargo.cost * (0.8 + d * 0.12) * diff * war * tip * (0.85 + r() * 0.3) + me.stewardship);
 				me.gold += price;
 				me.renown += 1;
 				me.cargo = undefined;
@@ -2934,7 +2956,7 @@ export class Simulation {
 		return {
 			year: this.year, month: this.month, mana: this.mana, manaMax: this.manaMax, sandbox: this.sandbox,
 			people: this.people, polities: this.polities, wars: this.wars, events: this.events,
-			allEvents: this.allEvents, historySnapshots: this.historySnapshots, uprisings: this.uprisings,
+			allEvents: this.allEvents, letters: this.letters, tradeTip: this.tradeTip, historySnapshots: this.historySnapshots, uprisings: this.uprisings,
 			plague: this.plague, basePop: this.basePop, avatar: this.avatar, travel: this.travel, pending: this.pending,
 			nextWar: this.nextWar, rng: this.rng.state(), plagueActive: this.plagueActive,
 			era: this.era, innovation: this.innovation, techs: Array.from(this.techs),
@@ -2947,6 +2969,8 @@ export class Simulation {
 		const s = new Simulation(world, true);
 		Object.assign(s, { year: d.year, month: d.month, mana: d.mana, manaMax: d.manaMax, sandbox: d.sandbox, people: d.people, polities: d.polities, wars: d.wars, events: d.events, plague: d.plague, basePop: d.basePop, avatar: d.avatar, travel: d.travel, pending: d.pending, plagueActive: d.plagueActive });
 		s.allEvents = d.allEvents ?? d.events?.slice() ?? [];
+		s.letters = d.letters ?? [];
+		s.tradeTip = d.tradeTip ?? null;
 		s.historySnapshots = (d.historySnapshots ?? []).map((snap: any) => ({
 			...snap,
 			surfaceStates: snap.surfaceStates instanceof Uint16Array ? snap.surfaceStates : new Uint16Array(snap.surfaceStates)

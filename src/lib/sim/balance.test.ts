@@ -25,3 +25,25 @@ describe('balance & genre voice', () => {
 		expect(reskin('cyberpunk', 'The bailiffs raided the granaries.')).toBe('The corp enforcers raided the protein vats.');
 	});
 });
+
+describe('avatar depth', () => {
+	it('offers ambitions, hires companions, and receives letters', async () => {
+		const { pickAmbition } = await import('./ambitions');
+		const cos = new Cosmos(generateUniverse({ seed: 'avatar', cells: 4000, states: 12 }, 1));
+		const s = cos.sims[0];
+		const p = s.candidates().find((x) => x.role !== 'ruler')!;
+		cos.choose(0, p.id);
+		cos.tick();
+		expect(p.ambitionChoices?.length).toBeGreaterThan(0);
+		pickAmbition(s, 'company');
+		p.gold = 200;
+		for (let k = 0; k < 3; k++) s.act('companion');
+		expect(p.companions?.length).toBe(3);
+		s.pending = null;
+		cos.tick();
+		expect(p.ambitionsDone).toContain('company');
+		p.renown = 80;
+		for (let m = 0; m < 36 && s.me; m++) { s.pending = null; cos.tick(); }
+		expect(s.letters.length).toBeGreaterThan(0);
+	});
+});

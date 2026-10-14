@@ -2,6 +2,7 @@
 	import type { GenreDef } from '#lib/gen/genre';
 	import type { Cosmos } from '#lib/sim/cosmos';
 	import type { Role } from '#lib/sim/types';
+	import { AMBITION_BY_ID, pickAmbition } from '#lib/sim/ambitions';
 
 	let { cosmos, pi, v, cell, layer, terms, onsay, onchanged, onfocus, onplanet }: {
 		cosmos: Cosmos; pi: number; v: number; cell: number; layer: number; terms: GenreDef['terms'];
@@ -130,6 +131,61 @@
 		</p>
 	</section>
 
+	{#if asim}
+		{@const amb = me.ambition ? AMBITION_BY_ID[me.ambition] : null}
+		{@const comps = (me.companions ?? []).map((id) => asim!.people[id]).filter((c) => c?.alive)}
+		<section class="ambition">
+			<h3>Ambition</h3>
+			{#if amb}
+				{@const pct = Math.min(1, amb.progress(asim, me))}
+				<div class="amb-row"><span class="amb-ico">{amb.icon}</span><div><strong>{amb.title}</strong><div class="small muted">{amb.desc} · reward {amb.reward.gold ? `${amb.reward.gold} gold ` : ''}{amb.reward.renown ? `${amb.reward.renown} renown` : ''}</div></div></div>
+				<div class="bar" role="progressbar" aria-valuenow={Math.round(pct * 100)} aria-valuemin="0" aria-valuemax="100"><div style="width:{pct * 100}%"></div></div>
+			{:else if me.ambitionChoices?.length}
+				<p class="small muted">Choose what this life is for:</p>
+				<div class="amb-choices">
+					{#each me.ambitionChoices as id (id)}
+						{@const a = AMBITION_BY_ID[id]}
+						<button class="btn amb-choice" onclick={() => { pickAmbition(asim!, id); onchanged(); }}><span class="amb-ico">{a.icon}</span><span><strong>{a.title}</strong><span class="small muted"> {a.desc}</span></span></button>
+					{/each}
+				</div>
+			{:else}
+				<p class="small muted">Let a month pass to find a new calling.</p>
+			{/if}
+			{#if me.ambitionsDone?.length}<p class="small muted">Fulfilled: {me.ambitionsDone.map((id) => AMBITION_BY_ID[id]?.icon ?? '').join(' ')}</p>{/if}
+		</section>
+
+		<section>
+			<h3>Fellowship</h3>
+			{#if comps.length}
+				<ul class="comps">
+					{#each comps as c (c.id)}
+						<li><strong>{c.name} {c.house}</strong> <span class="small muted">· ⚔{c.martial} ✉{c.diplomacy} ⚖{c.stewardship} 🗝{c.intrigue}</span></li>
+					{/each}
+				</ul>
+				<p class="small muted">Companions add their best skill to your encounter rolls.</p>
+			{:else}
+				<p class="small muted">You travel alone.</p>
+			{/if}
+			{#if comps.length < 3}<button class="btn" onclick={() => act('companion')}>Hire a companion (40 gold)</button>{/if}
+		</section>
+
+		{@const letters = asim.letters.slice(-6).reverse()}
+		{#if letters.length}
+			<section>
+				<h3>Letters</h3>
+				<ul class="letters">
+					{#each letters as l, i (l.y + ':' + i)}
+						<li>
+							<div class="small muted">Year {l.y} · from {l.from}</div>
+							<div>{l.text}</div>
+							{#if l.action && !l.read}<button class="btn small" onclick={() => { l.read = true; act(l.action!.act, l.action!.arg); }}>{l.action.label}</button>{/if}
+						</li>
+					{/each}
+				</ul>
+			</section>
+		{/if}
+	{/if}
+
 	<section>
 		<h3>Travel</h3>
 		{#if asim!.travel}
@@ -251,4 +307,13 @@
 	.rift { width: 100%; margin-top: 0.4rem; border-color: #c56cff; box-shadow: 0 0 12px rgba(197, 108, 255, 0.35); }
 	.link { background: none; border: 0; padding: 0; }
 	.note { font-size: 0.85rem; padding: 0.4rem; border: 1px dashed var(--accent); border-radius: 6px; }
+	.ambition { border: 1px solid var(--line); border-radius: 8px; padding: 0.6rem; }
+	.amb-row { display: flex; gap: 0.5rem; align-items: center; }
+	.amb-ico { font-size: 1.3rem; }
+	.amb-choices { display: flex; flex-direction: column; gap: 0.3rem; }
+	.amb-choice { display: flex; gap: 0.5rem; align-items: center; text-align: left; }
+	.bar { height: 6px; border-radius: 99px; background: var(--line); overflow: hidden; margin-top: 0.4rem; }
+	.bar div { height: 100%; background: var(--accent); }
+	.comps, .letters { list-style: none; margin: 0 0 0.4rem; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+	.letters li { border-left: 2px solid var(--accent); padding-left: 0.5rem; font-size: 0.9rem; }
 </style>
