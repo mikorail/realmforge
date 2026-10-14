@@ -74,9 +74,9 @@ export const MONSTER_ARCHETYPES: MonsterArchetype[] = [
 		maxHealth: 200,
 		armor: 0.30,
 		regen: 8,
-		trophy: 'White Tiger Divine Pelts & Claws',
-		nameTpl: ['Baihu the White Tiger of the West', 'The Frost-Maned Guardian', 'White Tiger of the Ridge'],
-		lore: 'A sacred celestial tiger of snow-clad ridges, embodying autumn winds, martial discipline, and divine wardenship.',
+		trophy: 'White Tiger Pelts & Claws',
+		nameTpl: ['The Frost-Maned Guardian', 'Snow-Ghost of the High Passes', 'White Tiger of the Ridge'],
+		lore: 'A colossal pale tiger of snow-clad ridges, silent as autumn wind, that warbands speak of only in whispers.',
 		habitatCheck: (w, c) => w.cells.h[c] > 40 && (w.cells.temp[c] < 5 || w.cells.biome[c] === 10)
 	},
 	{
@@ -89,7 +89,7 @@ export const MONSTER_ARCHETYPES: MonsterArchetype[] = [
 		armor: 0.30,
 		regen: 8,
 		trophy: 'Solar Lion Mane of Golden Light',
-		nameTpl: ['Aslan the Great Sun Lion', 'The Radiant Sovereign', 'Lion of the Golden Dawn'],
+		nameTpl: ['The Great Sun Lion', 'The Radiant Sovereign', 'Lion of the Golden Dawn'],
 		lore: 'An immortal noble lion with a mane of radiant sunlight, whose majestic roar dispels dark enchantments.',
 		habitatCheck: (w, c) => w.cells.h[c] >= 20 && (w.cells.biome[c] === 3 || w.cells.biome[c] === 5)
 	},
@@ -128,17 +128,17 @@ export const MONSTER_ARCHETYPES: MonsterArchetype[] = [
 		}
 	},
 	{
-		species: 'Thunderbird',
+		species: 'Storm Roc',
 		category: 'mythos',
 		tier: 'mythos',
-		icon: '⚡',
+		icon: '🦅',
 		power: 70,
 		maxHealth: 180,
 		armor: 0.20,
 		regen: 5,
-		trophy: 'Thunderbird Talons & Charged Feathers',
-		nameTpl: ['The Thunder-Bringer', 'Storm-Raptor of the Badlands', 'Wakinyan'],
-		lore: 'A mythic raptor whose eyes flash with jagged lightning and whose wingbeats thunder across canyons.',
+		trophy: 'Roc Talons & Dust-Storm Pinions',
+		nameTpl: ['The Storm Roc of the Badlands', 'Roc the Sky-Render', 'The Dune-Shadow Roc'],
+		lore: 'The roc of sailors\' and caravaneers\' tall tales, a bird vast enough to carry off an elephant; its wingbeats raise dust storms over the canyons.',
 		habitatCheck: (w, c) => w.cells.h[c] >= 20 && (w.cells.biome[c] === 1 || w.cells.biome[c] === 2)
 	},
 	{
