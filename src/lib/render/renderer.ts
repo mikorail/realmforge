@@ -14,7 +14,7 @@ interface Label {
 	id: number;
 }
 
-const HYPSO = ['#3a7a3a', '#5f9a48', '#8fb35a', '#c2c46a', '#d8b46a', '#c48e52', '#a06a44', '#8a5a44', '#b0a49a', '#f2f2f2'];
+export const HYPSO = ['#3a7a3a', '#5f9a48', '#8fb35a', '#c2c46a', '#d8b46a', '#c48e52', '#a06a44', '#8a5a44', '#b0a49a', '#f2f2f2'];
 
 /** walk edges that satisfy pred into vertex chains (for smooth coastlines / borders) */
 export function chains(e: Edges, pred: (a: number, b: number) => boolean): number[][] {

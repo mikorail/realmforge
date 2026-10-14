@@ -13,14 +13,17 @@
 	import type { Climate } from '#lib/gen/types';
 	import EncounterModal from './EncounterModal.svelte';
 	import GodPanel from './GodPanel.svelte';
+	import HoverCard from './HoverCard.svelte';
 	import InfoPanel from './InfoPanel.svelte';
+	import MapLegend from './MapLegend.svelte';
 	import MapView from './MapView.svelte';
 	// heavy panels load on first open (separate chunks)
 	const lazy = {
 		export: () => import('./ExportModal.svelte'),
 		dynasty: () => import('./DynastyModal.svelte'),
 		scrubber: () => import('./TimelineScrubber.svelte'),
-		completeSim: () => import('./CompleteSimModal.svelte')
+		completeSim: () => import('./CompleteSimModal.svelte'),
+		history: () => import('./HistoryModal.svelte')
 	};
 
 	let { cosmos, onquit }: { cosmos: Cosmos; onquit: () => void } = $props();
@@ -49,6 +52,7 @@
 	let dynastyRuler = $state<number | null>(null);
 	let scrubberOpen = $state(false);
 	let completeSimOpen = $state(false);
+	let historyOpen = $state(false);
 	let peeking = $state(true);
 	function togglePeeking() {
 		peeking = !peeking;
@@ -238,6 +242,7 @@
 			else if (e.key >= '1' && e.key <= '5') speed = [0, 1, 3, 12, 36][+e.key - 1];
 			else if (e.key === 'Escape') {
 				if (worldOpen) { worldOpen = false; return; }
+				if (historyOpen) return;
 				power = null; cell = -1;
 			}
 			else if (e.key === 'f') fit();
@@ -323,6 +328,7 @@
 		<div class="right">
 			<button class="btn" onclick={() => (completeSimOpen = true)} title="Fast-forward complete history preserving all annals & timeline snapshots">Complete Sim</button>
 			<button class="btn" class:on={scrubberOpen} onclick={() => (scrubberOpen = !scrubberOpen)} aria-pressed={scrubberOpen} title="Scrub past realm borders and eras">Timeline</button>
+			<button class="btn" onclick={() => (historyOpen = true)} title="Realm size over time and the family tree of splits and mergers">History</button>
 			<button class="btn" onclick={() => (exportOpen = true)} title="Export poster, vector map, or dossier">Export</button>
 			<button class="btn" onclick={() => { climate = structuredClone(cosmos.sims[pi].w.opts.climate); worldOpen = !worldOpen; }} aria-expanded={worldOpen}>Configure world</button>
 			<button class="btn" onclick={save}>Save</button>
@@ -364,13 +370,10 @@
 			</div>
 		{/if}
 
+		<MapLegend {sim} {world} {layer} {mode} {v} year={date.year} />
+
 		{#if hover && hover.cell >= 0}
-			{@const hc = hover.cell}
-			{@const L = world.layers[layer]}
-			{@const st = L.open[hc] ? sim.polities[L.state[hc]] : null}
-			<div class="tip" style="left:{hover.x + 14}px; top:{hover.y + 14}px">
-				{#if st?.alive && st.id}<span class="swatch" style="background:{st.color}"></span>{st.name}{:else}<span class="muted">{L.kind === 'surface' ? (world.cells.h[hc] < 20 ? 'Sea' : 'Unclaimed') : L.open[hc] ? 'Unclaimed' : 'Solid rock'}</span>{/if}
-			</div>
+			<HoverCard {sim} {world} {layer} cell={hover.cell} x={hover.x} y={hover.y} {v} />
 		{/if}
 
 		{#if toast}<div class="toast" role="status">{toast}</div>{/if}
@@ -442,6 +445,12 @@
 		{/await}
 	{/if}
 
+	{#if historyOpen}
+		{#await lazy.history() then { default: HistoryModal }}
+			<HistoryModal sim={cosmos.sims[pi]} {v} onclose={() => (historyOpen = false)} />
+		{/await}
+	{/if}
+
 	{#if completeSimOpen}
 		{#await lazy.completeSim() then { default: CompleteSimModal }}
 			<CompleteSimModal
@@ -470,7 +479,7 @@
 	.date { display: flex; flex-direction: column; line-height: 1.1; min-width: 9rem; }
 	.planets, .speed { display: flex; gap: 0.25rem; flex-wrap: wrap; }
 	.speed .btn { min-width: 2.4rem; padding: 0.3rem 0.4rem; font-size: 0.85rem; }
-	.right { margin-left: auto; display: flex; gap: 0.35rem; }
+	.right { margin-left: auto; display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: flex-end; }
 	.stage { position: relative; flex: 1; min-height: 0; }
 	.layerbar { position: absolute; left: 0.6rem; top: 0.6rem; display: flex; flex-direction: column; gap: 0.25rem; z-index: 2; }
 	.lay { background: var(--panel); display: flex; gap: 0.4rem; align-items: center; text-align: left; font-size: 0.85rem; }
@@ -491,7 +500,6 @@
 	.tabs { display: flex; gap: 0.3rem; padding: 0.6rem 3rem 0.5rem 0.6rem; border-bottom: 1px solid var(--line); }
 	.tabs .btn { flex: 1; font-family: var(--title); font-size: 0.85rem; }
 	.body { flex: 1; padding: 0.75rem; min-height: 0; }
-	.tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line); padding: 0.15rem 0.45rem; border-radius: 5px; font-size: 0.85rem; z-index: 2; white-space: nowrap; }
 	.toast { position: absolute; left: 50%; top: 0.8rem; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--accent); padding: 0.45rem 0.9rem; border-radius: 8px; z-index: 4; max-width: 90%; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35); }
 	.worldcfg { position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%); width: min(720px, calc(100% - 1.5rem)); max-height: 80dvh; overflow-y: auto; z-index: 6; background: var(--panel); color: var(--panel-ink); border: 1px solid var(--accent); border-radius: 12px; padding: 0.9rem; box-shadow: 0 20px 60px rgba(0,0,0,0.45); display: flex; flex-direction: column; gap: 0.6rem; }
 	.worldcfg h2 { font-size: 1.05rem; }

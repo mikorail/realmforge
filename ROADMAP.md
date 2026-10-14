@@ -88,10 +88,10 @@ Effort: S ≈ an hour, M ≈ a session, L ≈ multi-session. Do them in this ord
 - [x] **Planet-specific rules** (S) _(done: `worldrules/planets.ts`: ocean/ice/desert/volcanic/exotic)_: ocean worlds favour sea power, ice worlds halt winter campaigns.
 
 ### P6 · UX
-- [ ] **Map legend + hover cards** (S): realm ruler, ideology, wars on hover.
-- [ ] **History graphs** (M): realm size over time; realm "family tree" of splits/merges.
-- [ ] **Seed gallery** (S): curated presets ("Silk Road", "Shattered Isles", "Cyber Collapse").
-- [ ] **Split `Setup.svelte`** (1.6k lines, M) into tabbed steps; mobile density pass.
+- [x] **Map legend + hover cards** (S) _(done: collapsible per-mode legend; hover card with realm, form, ruler, ideology, wars, overlord, culture, faith, settlement)_: realm ruler, ideology, wars on hover.
+- [x] **History graphs** (M): realm size over time; realm "family tree" of splits/merges. _(done: HistoryModal, size lines from snapshots, tree parent inferred from capital cell in the last snapshot before founding)_
+- [x] **Seed gallery** (S): curated presets ("Silk Road", "Shattered Isles", "Cyber Collapse"). _(done: 10 presets in Setup)_
+- [x] **Split `Setup.svelte`** (1.6k lines, M) into tabbed steps; mobile density pass. _(done: components/setup/, 40px tap targets, Forge dock)_
 
 ### P7 · Performance & size
 - [x] **WebGL or tiled-raster terrain** (L) _(done: Canvas2D overview + per-zoom 512px tiles, vector overlays on top; not yet profiled at 200k in a browser)_: pre-render terrain tiles per zoom level; vector overlays only for borders/labels. Target: 200k cells pan at 60fps.

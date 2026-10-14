@@ -1,0 +1,28 @@
+/* Forge dock, keyboard focus, 40px tap targets, no horizontal scroll. Loaded after setup.css. */
+/* overflow-x: hidden would turn .setup into the scroll container and stop the dock from sticking to the viewport */
+.setup { overflow-x: clip; overflow-y: visible; }
+.setup .action-bar { margin: 1.25rem 0 0; }
+.setup .skip { position: absolute; left: -9999px; top: 0; }
+.setup .skip:focus { position: static; display: inline-block; margin-top: 0.5rem; background: var(--accent); color: var(--ink); border: 0; border-radius: 6px; padding: 0.5rem 0.9rem; }
+.setup .setup-tabs { flex-wrap: wrap; justify-content: center; overflow: visible; }
+.setup .tab-btn, .setup .lock, .setup .sphere-chip, .setup .btn, .setup .genre-card { min-height: 40px; }
+.setup .lock { min-width: 40px; }
+.setup .btn.tiny, .setup .btn.small { min-width: 40px; }
+.setup .field-input select, .setup .dim-select, .setup .seed-roll, .setup .seed-row input, .setup .dim-inputs input { min-height: 40px; }
+.setup .field-input input[type='range'], .setup .sub-slider input[type='range'] { min-height: 40px; }
+.setup .check-label, .setup .evolve { min-height: 40px; align-items: center; }
+.setup .check-label input, .setup .evolve input { width: 1.4rem; height: 1.4rem; flex: none; margin-top: 0; }
+.setup input:focus-visible, .setup select:focus-visible, .setup button:focus-visible, .setup [tabindex]:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.setup .panel-header h2 { flex-wrap: wrap; }
+.setup .field-title label { overflow-wrap: anywhere; }
+.setup .field-badge { white-space: normal; text-align: right; }
+.setup .panel-sub { overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+	.setup .tab-btn { flex: 1 1 calc(33% - 0.35rem); justify-content: center; padding: 0.4rem 0.4rem; font-size: 0.84rem; }
+	.setup .tab-btn .tab-icon { display: none; }
+	.setup .setup-tabs { padding: 0 0 0.5rem; gap: 0.3rem; }
+	.setup .action-bar { bottom: 0; border-radius: 12px 12px 0 0; }
+	.setup .action-bar .forge-btn { flex: 1 1 100%; }
+	.setup .grid-pair { grid-template-columns: 1fr; }
+	.setup .sub-field { margin-left: 0.4rem; }
+}
