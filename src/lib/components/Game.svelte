@@ -9,15 +9,18 @@
 	import { onMount } from 'svelte';
 	import AvatarPanel from './AvatarPanel.svelte';
 	import ClimatePanel from './ClimatePanel.svelte';
-	import DynastyModal from './DynastyModal.svelte';
 	import type { Climate } from '#lib/gen/types';
 	import EncounterModal from './EncounterModal.svelte';
-	import ExportModal from './ExportModal.svelte';
 	import GodPanel from './GodPanel.svelte';
 	import InfoPanel from './InfoPanel.svelte';
 	import MapView from './MapView.svelte';
-	import TimelineScrubber from './TimelineScrubber.svelte';
-	import CompleteSimModal from './CompleteSimModal.svelte';
+	// heavy panels load on first open (separate chunks)
+	const lazy = {
+		export: () => import('./ExportModal.svelte'),
+		dynasty: () => import('./DynastyModal.svelte'),
+		scrubber: () => import('./TimelineScrubber.svelte'),
+		completeSim: () => import('./CompleteSimModal.svelte')
+	};
 
 	let { cosmos, onquit }: { cosmos: Cosmos; onquit: () => void } = $props();
 
@@ -351,11 +354,13 @@
 
 		{#if scrubberOpen}
 			<div class="timeline-bar">
-				<TimelineScrubber
-					snapshots={sim.historySnapshots}
-					currentYear={sim.year}
-					onpreview={handleTimelinePreview}
-				/>
+				{#await lazy.scrubber() then { default: TimelineScrubber }}
+					<TimelineScrubber
+						snapshots={sim.historySnapshots}
+						currentYear={sim.year}
+						onpreview={handleTimelinePreview}
+					/>
+				{/await}
 			</div>
 		{/if}
 
@@ -410,39 +415,45 @@
 	{/if}
 
 	{#if exportOpen}
-		<ExportModal
-			{cosmos}
-			{pi}
-			{r}
-			onclose={() => (exportOpen = false)}
-			onsay={say}
-		/>
+		{#await lazy.export() then { default: ExportModal }}
+			<ExportModal
+				{cosmos}
+				{pi}
+				{r}
+				onclose={() => (exportOpen = false)}
+				onsay={say}
+			/>
+		{/await}
 	{/if}
 
 	{#if dynastyRuler !== null}
-		<DynastyModal
-			sim={cosmos.sims[pi]}
-			rulerId={dynastyRuler}
-			onclose={() => (dynastyRuler = null)}
-			onselectperson={(id) => {
-				const pers = sim.people[id];
-				if (!pers) return;
-				const c = pers.burg ? sim.w.burgs[pers.burg]?.cell : sim.polities[pers.state]?.capital;
-				if (c !== undefined && c >= 0) focus(c);
-			}}
-		/>
+		{#await lazy.dynasty() then { default: DynastyModal }}
+			<DynastyModal
+				sim={cosmos.sims[pi]}
+				rulerId={dynastyRuler}
+				onclose={() => (dynastyRuler = null)}
+				onselectperson={(id) => {
+					const pers = sim.people[id];
+					if (!pers) return;
+					const c = pers.burg ? sim.w.burgs[pers.burg]?.cell : sim.polities[pers.state]?.capital;
+					if (c !== undefined && c >= 0) focus(c);
+				}}
+			/>
+		{/await}
 	{/if}
 
 	{#if completeSimOpen}
-		<CompleteSimModal
-			{cosmos}
-			{pi}
-			onclose={() => (completeSimOpen = false)}
-			onsay={say}
-			onsave={save}
-			onopenscrubber={() => (scrubberOpen = true)}
-			onrefresh={() => { v++; needDraw = true; }}
-		/>
+		{#await lazy.completeSim() then { default: CompleteSimModal }}
+			<CompleteSimModal
+				{cosmos}
+				{pi}
+				onclose={() => (completeSimOpen = false)}
+				onsay={say}
+				onsave={save}
+				onopenscrubber={() => (scrubberOpen = true)}
+				onrefresh={() => { v++; needDraw = true; }}
+			/>
+		{/await}
 	{/if}
 </div>
 
