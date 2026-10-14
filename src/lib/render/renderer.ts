@@ -192,6 +192,11 @@ export function buildCellIndex(c: Cells, W: number, H: number): CellIndex {
 }
 
 /** ids of cells whose bounding box may overlap the world rect (deduplicated) */
+/** force a canvas to execute its pending drawing commands (cheap 1px readback) */
+function flush(g: Ctx2D | null | undefined) {
+	try { g?.getImageData(0, 0, 1, 1); } catch { /* tainted or unsupported: the work just happens later */ }
+}
+
 export function queryCells(ix: CellIndex, x0: number, y0: number, x1: number, y1: number): number[] {
 	const out: number[] = [];
 	const bx0 = Math.max(0, Math.floor(x0 / ix.cs)), bx1 = Math.min(ix.gx - 1, Math.floor(x1 / ix.cs));
@@ -249,6 +254,16 @@ export class MapRenderer {
 	private ov: Surface | null = null;
 	private ovS = 0;
 	private tiles = new Map<string, Surface>();
+	/** the previous terrain rasters stay on screen as stand-ins until the rebuilt ones are ready (no blank flash) */
+	private prevOv: Surface | null = null;
+	private prevOvS = 0;
+	private prevTiles: Map<string, Surface> | null = null;
+	/** overview being painted a slice per frame (a whole-map repaint in one go freezes big maps) */
+	private ovPending: Surface | null = null;
+	private ovGen: Generator<void> | null = null;
+	private ovCtx: Ctx2D | null = null;
+	private terrainBase = '';
+	private terrainWorld: World | null = null;
 	private refineRaf = 0;
 	private lastInteract = 0;
 	private P: { fills: [string, Path2D][]; borders: Path2D; labels: Label[]; fronts: Path2D; plague: [string, Path2D][]; select: Path2D | null } | null = null;
@@ -365,7 +380,7 @@ export class MapRenderer {
 	}
 
 	// ───────────────────────── caches ─────────────────────────
-	private buildTerrain() {
+	private buildTerrain(keepPrev = false) {
 		const w = this.world!;
 		const c = w.cells;
 		const th = this.theme;
@@ -461,7 +476,7 @@ export class MapRenderer {
 			}
 		}
 		this.T = { pal, ocean, land, landBase, cells, coast, rivers, ghost, layerOpen, layerCells };
-		this.dropRasters();
+		this.dropRasters(keepPrev);
 		if (this.indexWorld !== w) {
 			this.index = buildCellIndex(c, w.opts.width, w.opts.height);
 			this.indexWorld = w;
@@ -474,16 +489,61 @@ export class MapRenderer {
 		const g = ov?.getContext('2d') as Ctx2D | null | undefined;
 		if (ov && g) {
 			g.setTransform(s, 0, 0, s, 0, 0);
-			this.paintTerrain(g, 0, 0, W, H, s, null);
-			this.ov = ov;
+			this.ovPending = ov;
 			this.ovS = s;
+			this.ovCtx = g;
+			this.ovGen = this.paintTerrainGen(g, 0, 0, W, H, s, null);
 		}
 	}
 
-	private dropRasters() {
-		this.tiles.clear();
+	private dropRasters(keepPrev = false) {
+		if (keepPrev && (this.ov || this.tiles.size)) {
+			this.prevOv = this.ov ?? this.prevOv;
+			this.prevOvS = this.ov ? this.ovS : this.prevOvS;
+			this.prevTiles = this.tiles.size ? this.tiles : this.prevTiles;
+		} else {
+			this.prevOv = null;
+			this.prevTiles = null;
+		}
+		this.tiles = new Map();
 		this.ov = null;
+		this.ovPending = null;
+		this.ovGen = null;
 		this.ovS = 0;
+	}
+
+	/** advance the overview repaint until the time budget is spent; true when it is finished */
+	private stepOverview(budgetMs: number): boolean {
+		if (!this.ovGen) return true;
+		const t0 = performance.now();
+		for (;;) {
+			const step = this.ovGen.next();
+			// canvases only record drawing commands; a 1px readback forces this slice to actually be painted now,
+			// inside the budget, instead of as one big stall the first time the raster is drawn on screen
+			flush(this.ovCtx);
+			if (step.done) {
+				this.ov = this.ovPending;
+				this.ovPending = null;
+				this.ovGen = null;
+				return true;
+			}
+			if (performance.now() - t0 >= budgetMs) return false;
+		}
+	}
+
+	/** groups of one slice of cells at a time, so callers can yield between slices */
+	private *groupsChunked(col: Int32Array, ids: number[] | null): Generator<[string, Path2D][]> {
+		const CH = 600;
+		const n = ids ? ids.length : this.world!.cells.n;
+		for (let a = 0; a < n; a += CH) {
+			const b = Math.min(n, a + CH);
+			if (ids) yield this.groups(col, ids.slice(a, b));
+			else {
+				const range: number[] = [];
+				for (let i = a; i < b; i++) range.push(i);
+				yield this.groups(col, range);
+			}
+		}
 	}
 
 	/** group the given cells (all when ids is null) by palette index into one Path2D per colour */
@@ -508,6 +568,11 @@ export class MapRenderer {
 	 * transform is already world → pixels at scale s. ids === null paints every cell.
 	 */
 	private paintTerrain(g: Ctx2D, x0: number, y0: number, x1: number, y1: number, s: number, ix: CellIndex | null) {
+		for (const step of this.paintTerrainGen(g, x0, y0, x1, y1, s, ix)) void step;
+	}
+
+	/** same painter as a generator: yields between slices of cells so the overview can be spread over frames */
+	private *paintTerrainGen(g: Ctx2D, x0: number, y0: number, x1: number, y1: number, s: number, ix: CellIndex | null): Generator<void> {
 		const w = this.world!, T = this.T!, th = this.theme;
 		const L = w.layers[this.layer];
 		const { width: W, height: H } = w.opts;
@@ -521,7 +586,10 @@ export class MapRenderer {
 		g.clip();
 		g.fillStyle = th.oceanDeep;
 		g.fillRect(x0, y0, x1 - x0, y1 - y0);
-		for (const [col, p] of this.groups(T.ocean, ids)) { g.fillStyle = col; g.fill(p); g.strokeStyle = col; g.lineWidth = px(0.6); g.stroke(p); }
+		for (const part of this.groupsChunked(T.ocean, ids)) {
+			for (const [col, p] of part) { g.fillStyle = col; g.fill(p); g.strokeStyle = col; g.lineWidth = px(0.6); g.stroke(p); }
+			yield;
+		}
 		// shallow-water halo
 		g.strokeStyle = alpha(th.oceanShallow, 0.5);
 		g.lineWidth = px(9);
@@ -530,7 +598,10 @@ export class MapRenderer {
 		g.clip(T.land, 'evenodd');
 		g.fillStyle = T.landBase;
 		g.fill(T.land, 'evenodd');
-		for (const [col, p] of this.groups(T.cells, ids)) { g.fillStyle = col; g.fill(p); g.strokeStyle = col; g.lineWidth = px(0.6); g.stroke(p); }
+		for (const part of this.groupsChunked(T.cells, ids)) {
+			for (const [col, p] of part) { g.fillStyle = col; g.fill(p); g.strokeStyle = col; g.lineWidth = px(0.6); g.stroke(p); }
+			yield;
+		}
 		g.restore();
 		g.strokeStyle = th.river;
 		for (const [wd, p] of T.rivers) { g.lineWidth = Math.max(px(0.6), wd); g.stroke(p); }
@@ -547,10 +618,16 @@ export class MapRenderer {
 				g.save();
 				g.translate(6, 10);
 				g.fillStyle = 'rgba(20,30,50,0.35)';
-				for (const [, p] of this.groups(T.layerCells, ix ? queryCells(ix, x0 - 6, y0 - 10, x1 - 6, y1 - 10) : null)) g.fill(p);
+				for (const part of this.groupsChunked(T.layerCells, ix ? queryCells(ix, x0 - 6, y0 - 10, x1 - 6, y1 - 10) : null)) {
+					for (const [, p] of part) g.fill(p);
+					yield;
+				}
 				g.restore();
 			}
-			for (const [col, p] of this.groups(T.layerCells, ids)) { g.fillStyle = col; g.fill(p); g.strokeStyle = col; g.lineWidth = px(0.6); g.stroke(p); }
+			for (const part of this.groupsChunked(T.layerCells, ids)) {
+				for (const [col, p] of part) { g.fillStyle = col; g.fill(p); g.strokeStyle = col; g.lineWidth = px(0.6); g.stroke(p); }
+				yield;
+			}
 			const lp = L.kind === 'deep' ? th.deep : L.kind === 'sky' ? th.sky : th.sea;
 			g.strokeStyle = L.kind === 'sky' ? '#7a8fb0' : shade(lp[1], 0.3);
 			g.lineWidth = px(1.5);
@@ -572,6 +649,7 @@ export class MapRenderer {
 		const x0 = (i * TILE - 1) / s, y0 = (j * TILE - 1) / s;
 		g.setTransform(s, 0, 0, s, -x0 * s, -y0 * s);
 		this.paintTerrain(g, x0, y0, x0 + (TILE + 2) / s, y0 + (TILE + 2) / s, s, this.index);
+		flush(g);
 		const key = `${z}|${i}|${j}`;
 		this.tiles.set(key, surf);
 		while (this.tiles.size > TILE_CACHE) this.tiles.delete(this.tiles.keys().next().value!);
@@ -601,18 +679,27 @@ export class MapRenderer {
 			ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 		}
 		ctx.imageSmoothingEnabled = true;
-		ctx.imageSmoothingQuality = 'high';
 		const kd = this.k * dpr;
-		if (this.ov && this.ov.width && this.ov.height) {
-			const f = kd / this.ovS;
-			ctx.setTransform(f, 0, 0, f, dpr * this.tx, dpr * this.ty);
-			ctx.drawImage(this.ov, 0, 0);
-		}
-		const z = Math.ceil(2 * Math.log2(kd) - 1e-9);
-		if (!this.index || 2 ** (z / 2) <= this.ovS * 1.001) return true;
 		// visible world rect
 		const vx0 = Math.max(0, -this.tx / this.k), vy0 = Math.max(0, -this.ty / this.k);
 		const vx1 = Math.min(W, (this.w - this.tx) / this.k), vy1 = Math.min(H, (this.h - this.ty) / this.k);
+		// with the old overview still visible there is no hurry: take a small bite per frame so the sim and panning stay smooth
+		const ovDone = this.stepOverview(this.prevOv ? Math.min(budgetMs, 10) : budgetMs);
+		// draw only the visible part of a raster: scaling a whole 2048px overview to a huge size every frame is very slow
+		const cropped = (surf: Surface, sc: number) => {
+			if (!surf.width || !surf.height || vx1 <= vx0 || vy1 <= vy0) return;
+			ctx.imageSmoothingQuality = kd / sc > 2 ? 'low' : 'high';
+			ctx.setTransform(1, 0, 0, 1, 0, 0);
+			ctx.drawImage(surf, vx0 * sc, vy0 * sc, (vx1 - vx0) * sc, (vy1 - vy0) * sc, (vx0 * this.k + this.tx) * dpr, (vy0 * this.k + this.ty) * dpr, (vx1 - vx0) * kd, (vy1 - vy0) * kd);
+		};
+		if (this.prevOv && this.prevOvS) cropped(this.prevOv, this.prevOvS);
+		const ovNow = this.ov ?? (this.prevOv ? null : this.ovPending);
+		if (ovNow) cropped(ovNow, this.ovS);
+		const z = Math.ceil(2 * Math.log2(kd) - 1e-9);
+		if (!this.index || 2 ** (z / 2) <= this.ovS * 1.001) {
+			if (ovDone && this.prevOv) { this.prevOv = null; this.prevTiles = null; }
+			return ovDone;
+		}
 		if (vx1 <= vx0 || vy1 <= vy0) return true;
 		const range = (zz: number) => {
 			const s = 2 ** (zz / 2);
@@ -620,8 +707,23 @@ export class MapRenderer {
 		};
 		const [i0, j0, i1, j1] = range(z);
 		const t0 = performance.now();
-		let complete = true;
+		let complete = ovDone;
 		const have: [Surface, number, number][] = [];
+		const put0 = (zz: number, list: [Surface, number, number][]) => {
+			const f = kd / 2 ** (zz / 2);
+			ctx.setTransform(f, 0, 0, f, dpr * this.tx, dpr * this.ty);
+			for (const [t, i, j] of list) if (t.width && t.height) ctx.drawImage(t, 1, 1, TILE + 1, TILE + 1, i * TILE, j * TILE, TILE + 1, TILE + 1);
+		};
+		// the previous generation of tiles stays visible until the rebuilt ones replace it
+		if (this.prevTiles) {
+			for (const zz of [z - 4, z - 3, z - 2, z - 1, z + 1, z]) {
+				if (2 ** (zz / 2) <= this.prevOvS) continue;
+				const [a0, b0, a1, b1] = range(zz);
+				const list: [Surface, number, number][] = [];
+				for (let j = b0; j <= b1; j++) for (let i = a0; i <= a1; i++) { const t = this.prevTiles.get(`${zz}|${i}|${j}`); if (t) list.push([t, i, j]); }
+				if (list.length) put0(zz, list);
+			}
+		}
 		for (let j = j0; j <= j1; j++)
 			for (let i = i0; i <= i1; i++) {
 				let t = this.cachedTile(`${z}|${i}|${j}`);
@@ -646,6 +748,7 @@ export class MapRenderer {
 			}
 		}
 		put(z, have);
+		if (complete) { this.prevOv = null; this.prevTiles = null; }
 		return complete;
 	}
 
@@ -755,7 +858,10 @@ export class MapRenderer {
 		const th = this.theme;
 		const tk = `${this.layer}|${this.mode}|${this.terrainVersion}|${th.tint}|${th.oceanDeep}|${th.coast}|${th.glow}|${this.dpr}`;
 		if (tk !== this.terrainKey) {
-			this.buildTerrain();
+			const base = `${this.layer}|${this.mode}|${th.tint}|${th.oceanDeep}|${th.coast}|${th.glow}|${this.dpr}`;
+			this.buildTerrain(base === this.terrainBase && this.terrainWorld === w);
+			this.terrainBase = base;
+			this.terrainWorld = w;
 			this.terrainKey = tk;
 			this.politicalKey = '';
 		}
