@@ -68,10 +68,10 @@ Effort: S ≈ an hour, M ≈ a session, L ≈ multi-session. Do them in this ord
 - [ ] **Perspective names** (S): one war, two names per culture ("the Liberation" / "the Betrayal").
 
 ### P3 · Naming
-- [ ] **Name grammar per sphere** (M): patronymics (Norse -son, Slavic -ovich, Arabic ibn), clan-first order (Sinic/Japonic), day names (Akan), epithets ("the Bold", "Iron-Hand"), regnal numbers ("Kofi III").
-- [ ] **Semantic place names** (M): per-culture morpheme dictionary (river, hill, new, white…) so names share recognizable roots.
-- [ ] **Name drift over centuries** (S): old towns erode to new forms; keep the archaic name in history.
-- [ ] **Name quality filter** (S): max length ~12, near-duplicate rejection, consonant-cluster limits, slur blocklist.
+- [x] **Name grammar per sphere** (M): patronymics (Norse -son, Slavic -ovich, Arabic ibn), clan-first order (Sinic/Japonic), day names (Akan), epithets ("the Bold", "Iron-Hand"), regnal numbers ("Kofi III"). *(`fullPersonName` + helpers done; engine still calls `personName`, wiring pending)*
+- [x] **Semantic place names** (M): per-culture morpheme dictionary (river, hill, new, white…) so names share recognizable roots.
+- [x] **Name drift over centuries** (S): old towns erode to new forms; keep the archaic name in history. *(pure `driftName` done; engine call sites still to wire, see names.ts docs)*
+- [x] **Name quality filter** (S): max length ~12, near-duplicate rejection, consonant-cluster limits, slur blocklist.
 
 ### P4 · Culture that plays differently
 - [ ] **Behavioural culture traits** (M): seafaring (more sea routes/colonies), martial honour (fewer peace offers), mercantile (caravans/treasury), ancestral (resists reform), etc.; derived from sphere + biome.
