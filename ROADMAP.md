@@ -52,7 +52,53 @@
 - Deep time: climate epochs, migrations, dialects becoming new cultures.
 - Fixes: quest targets, riot digest names, lair and disaster place names, all-vowel names, zero-size snapshot crash, era test flakiness.
 
-## Next
+## Next — prioritized TODO (agreed 2026-10-14)
+Effort: S ≈ an hour, M ≈ a session, L ≈ multi-session. Do them in this order; commit after each item.
+
+### P1 · Foundation (unlocks everything else)
+- [ ] **Sim in a Web Worker** (L): move `Cosmos` off the main thread; UI gets snapshots (state arrays + panel view-models) via `postMessage`; god/avatar actions become messages. Keeps 100k+ maps and 36×/fast-forward smooth.
+- [ ] **Incremental indexes** (M): per-realm living people, per-realm cell lists and per-layer contested-edge lists maintained on change, instead of scanning `cells` / all-time `people` every tick/year.
+- [ ] **Split `engine.ts`** (~3k lines, L): extract economy, diplomacy/wars, lifecycle, faith, avatar, god powers into modules behind one `SimContext`; engine keeps only tick orchestration.
+
+### P2 · Story quality
+- [ ] **Event chains** (M): events carry a `cause` id; famine → riot → coup → new dynasty; chronicle prose cites causes ("because of the famine of Y112…").
+- [ ] **Named eras per realm** (S): every 20 years summarize stats into an era title ("The Troubles of X", "The Long Peace").
+- [ ] **Great people biographies** (M): track a few notable figures per century; auto-written bio from their events.
+- [ ] **Rare world moments** (S): world councils, great crusades, first contact between layers / planets.
+- [ ] **Perspective names** (S): one war, two names per culture ("the Liberation" / "the Betrayal").
+
+### P3 · Naming
+- [ ] **Name grammar per sphere** (M): patronymics (Norse -son, Slavic -ovich, Arabic ibn), clan-first order (Sinic/Japonic), day names (Akan), epithets ("the Bold", "Iron-Hand"), regnal numbers ("Kofi III").
+- [ ] **Semantic place names** (M): per-culture morpheme dictionary (river, hill, new, white…) so names share recognizable roots.
+- [ ] **Name drift over centuries** (S): old towns erode to new forms; keep the archaic name in history.
+- [ ] **Name quality filter** (S): max length ~12, near-duplicate rejection, consonant-cluster limits, slur blocklist.
+
+### P4 · Culture that plays differently
+- [ ] **Behavioural culture traits** (M): seafaring (more sea routes/colonies), martial honour (fewer peace offers), mercantile (caravans/treasury), ancestral (resists reform), etc.; derived from sphere + biome.
+- [ ] **Culture card** (S): food, dress, architecture, holidays per culture; also in the Markdown dossier export.
+- [ ] **Feast-day calendar** (S): 2–3 named holidays per realm, culture-flavoured month names.
+- [ ] **Language spread** (M): trade lingua franca along busy routes; conquered peoples shift language over generations.
+- [ ] **Art movements & religious orders** (M): spread, split and suppression like faiths.
+
+### P5 · Genre & layers completeness
+- [ ] **Genre-aware tech tree** (M): re-skin the 75 inventions per genre (cyberpunk: neural lace, orbital elevator…).
+- [ ] **Genre monster/wonder reskins** (S): dragon → rogue mech, Tower of Magic → corporate spire, etc.
+- [ ] **Replace `Thunderbird` archetype** (S): sacred to several Indigenous nations; swap for a non-sacred folklore creature.
+- [ ] **Cross-layer politics** (M): surface taxes undercity trade, sky blockades, undersea port control.
+- [ ] **Planet-specific rules** (S): ocean worlds favour sea power, ice worlds halt winter campaigns.
+
+### P6 · UX
+- [ ] **Map legend + hover cards** (S): realm ruler, ideology, wars on hover.
+- [ ] **History graphs** (M): realm size over time; realm "family tree" of splits/merges.
+- [ ] **Seed gallery** (S): curated presets ("Silk Road", "Shattered Isles", "Cyber Collapse").
+- [ ] **Split `Setup.svelte`** (1.6k lines, M) into tabbed steps; mobile density pass.
+
+### P7 · Performance & size
+- [ ] **WebGL or tiled-raster terrain** (L): pre-render terrain tiles per zoom level; vector overlays only for borders/labels. Target: 200k cells pan at 60fps.
+- [ ] **Delta + compressed saves** (M): store changed arrays only; compress `allEvents` (5–10× smaller).
+- [ ] **Lazy-load heavy panels** (S): Export, Dynasty, CompleteSim, God/Avatar on demand.
+
+### Older backlog
 - Review the base `Thunderbird` monster archetype (sacred to several Indigenous nations) and swap it for a non-sacred folklore creature.
 - Genre-aware tech names (the 75 inventions are still fantasy-to-solarpunk generic) and per-genre monster reskins.
 - More sphere content: per-sphere architecture styles for map icons, sphere-specific quests.
