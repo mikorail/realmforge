@@ -37,6 +37,13 @@
 			<div class="field-input">
 				<input id="f-deep-dens" type="range" min="0.2" max="3" step="0.1" bind:value={store.s.density.deep} />
 			</div>
+			<div class="field-head">
+				<div class="field-title"><label for="f-deep-det">Cavern detail</label></div>
+				<span class="field-badge">×{store.s.layerDetail.deep}</span>
+			</div>
+			<div class="field-input">
+				<input id="f-deep-det" type="range" min="0.5" max="2" step="0.1" bind:value={store.s.layerDetail.deep} />
+			</div>
 		</div>
 	{/if}
 
@@ -50,6 +57,8 @@
 			<div class="sub-slider">
 				<span class="sub-badge">Density: ×{store.s.density.sky}</span>
 				<input type="range" min="0.2" max="3" step="0.1" bind:value={store.s.density.sky} aria-label="Sky layer density" />
+				<span class="sub-badge">Isle detail: ×{store.s.layerDetail.sky}</span>
+				<input type="range" min="0.5" max="2" step="0.1" bind:value={store.s.layerDetail.sky} aria-label="Sky isle detail" />
 			</div>
 		{/if}
 	</div>
@@ -64,6 +73,8 @@
 			<div class="sub-slider">
 				<span class="sub-badge">Density: ×{store.s.density.sea}</span>
 				<input type="range" min="0.2" max="3" step="0.1" bind:value={store.s.density.sea} aria-label="Sea shelf density" />
+				<span class="sub-badge">Shelf detail: ×{store.s.layerDetail.sea}</span>
+				<input type="range" min="0.5" max="2" step="0.1" bind:value={store.s.layerDetail.sea} aria-label="Sea shelf detail" />
 			</div>
 		{/if}
 	</div>

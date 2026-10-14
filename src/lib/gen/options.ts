@@ -60,6 +60,7 @@ export const DEFAULTS: Omit<GenOptions, 'seed'> = {
 	seaLevel: 0,
 	rivers: 1,
 	density: { deep: 1, sky: 1, sea: 1 },
+	layerDetail: { deep: 1, sky: 1, sea: 1 },
 	climate: CLIMATE_DEFAULT
 };
 
@@ -67,6 +68,9 @@ export const DEFAULTS: Omit<GenOptions, 'seed'> = {
 export function withDefaults(o: Partial<GenOptions> & { seed: string }): GenOptions {
 	const out = { ...DEFAULTS, ...o } as GenOptions;
 	out.density = { ...DEFAULTS.density, ...(o.density ?? {}) };
+	const ld = { ...DEFAULTS.layerDetail, ...(o.layerDetail ?? {}) };
+	for (const k of ['deep', 'sky', 'sea'] as const) ld[k] = Math.min(2, Math.max(0.5, Number.isFinite(ld[k]) ? ld[k] : 1));
+	out.layerDetail = ld;
 	out.climate = { ...climateFor(out.planet), ...(o.climate ?? {}) };
 	if (!out.climate.winds || out.climate.winds.length !== 6) out.climate.winds = [...DEFAULT_WINDS];
 	return out;
