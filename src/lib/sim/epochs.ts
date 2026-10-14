@@ -17,6 +17,8 @@ export interface ClimateEpoch {
 	/** accumulated change applied so far */
 	dT: number;
 	dP: number;
+	/** chronicle event that announced it (cause of famines and migrations) */
+	ev?: number;
 }
 
 const EPOCH_TEXT: Record<ClimateEpoch['kind'], { name: string; start: string; end: string; dT: number; dP: number }> = {
@@ -39,8 +41,9 @@ function climateEpochs(sim: Simulation) {
 		if (sim.year > 40 && r.chance(1 / 180)) {
 			const kind = r.pick(['ice', 'warm', 'drought', 'pluvial'] as const);
 			const len = r.int(40, 120);
-			sim.epoch = { kind, start: sim.year, end: sim.year + len, dT: 0, dP: 0 };
-			sim.log('disaster', EPOCH_TEXT[kind].start.replace('{world}', sim.w.name));
+			const ev = sim.log('disaster', EPOCH_TEXT[kind].start.replace('{world}', sim.w.name), undefined, undefined, 'epoch');
+			ev.detail = EPOCH_TEXT[kind].name;
+			sim.epoch = { kind, start: sim.year, end: sim.year + len, dT: 0, dP: 0, ev: ev.id };
 		}
 		return;
 	}
@@ -94,7 +97,7 @@ function migrations(sim: Simulation) {
 	to.stability = Math.max(0, to.stability - 3);
 	to.pop += settled.length * 0.2;
 	const why = sim.epoch?.kind === 'ice' ? 'fleeing the cold' : sim.epoch?.kind === 'drought' ? 'fleeing the drought' : 'fleeing turmoil';
-	sim.log('found', `Waves of ${sim.w.cultures[migrant].name} folk, ${why}, cross from ${from.name} and settle the borderlands of ${to.name}.`, settled[0], to.id);
+	sim.log('found', `Waves of ${sim.w.cultures[migrant].name} folk, ${why}, cross from ${from.name} and settle the borderlands of ${to.name}.`, settled[0], to.id, 'migration', why === 'fleeing turmoil' ? undefined : sim.epoch?.ev);
 	sim.dirty.political = true;
 }
 

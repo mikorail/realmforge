@@ -55,7 +55,7 @@ export function vassalizeAfterWar(sim: Simulation, w: War, winner: War['winner']
 		l.overlord = win.id;
 		l.vassalSince = sim.year;
 		l.allies = [];
-		sim.log('peace', `Humbled, ${l.fullName} bends the knee and becomes a vassal of ${win.name}, paying yearly tribute.`, sim.w.burgs[l.capital]?.cell, l.id);
+		sim.log('peace', `Humbled, ${l.fullName} bends the knee and becomes a vassal of ${win.name}, paying yearly tribute.`, sim.w.burgs[l.capital]?.cell, l.id, 'vassal', w.ev);
 	}
 }
 

@@ -1,7 +1,8 @@
 /** People: creation, ageing and death, succession crises, cast pruning, luminaries. */
 import type { Simulation } from '../engine';
 import { clamp } from '../../rng';
-import { makeName, personName } from '../../gen/names';
+import { fullPersonName, makeName } from '../../gen/names';
+import { onRulerDeath, rulerName } from '../story/people';
 import { TRAITS, TRAIT_FX } from '../content';
 import { narrateDeath, narrateHeirlessCrisis } from '../chronicle';
 import { createLuminary, LUMINARY_PROFILES } from '../luminaries';
@@ -18,11 +19,14 @@ export function makePerson(sim: Simulation, culture: number, state: number, burg
 		const t = r.pick(TRAITS);
 		if (!traits.includes(t)) traits.push(t);
 	}
+	const gp = par?.parent ? sim.people[par.parent] : null;
+	const fn = fullPersonName(L, sim.w.cultures[culture]?.sphere || undefined, { house: par?.house, father: par?.name, ancestors: [par?.name, gp?.name].filter((x): x is string => !!x) });
 	const stat = () => r.int(1, 8) + (role === 'ruler' || role === 'hero' || role === 'villain' || role === 'prophet' ? 2 : 0);
 	const p: Person = {
 		id: sim.people.length,
-		name: personName(L),
-		house: par ? par.house : makeName(L, 'house'),
+		name: fn.given,
+		house: fn.house,
+		plain: fn.plain,
 		born: sim.year - age,
 		culture,
 		religion: sim.polities[state]?.religion || sim.c.religion[sim.w.burgs[burg]?.cell ?? 0] || culture,
@@ -109,13 +113,14 @@ export function kill(sim: Simulation, p: Person, cause: string) {
 	p.died = sim.year;
 	p.cause = cause;
 	const pol = sim.polities[p.state];
+	if (p.role === 'ruler' || p.role === 'villain') onRulerDeath(sim, p);
 	if ((p.role === 'ruler' || p.role === 'villain') && pol?.alive && pol.ruler === p.id) {
 		const heir = sim.people[pol.heir];
 		if (heir?.alive) {
 			sim.crown(pol, heir);
 			const isChild = sim.ageOf(heir) < 16;
 			pol.stability -= isChild ? 12 : 4;
-			const deathText = narrateDeath(sim.rng, p.name, p.house, pol.name, cause, heir.name, isChild, sim.ageOf(heir));
+			const deathText = narrateDeath(sim.rng, rulerName(p), p.house, pol.name, cause, heir.name, isChild, sim.ageOf(heir));
 			sim.log('death', deathText, sim.w.burgs[pol.capital].cell, pol.id);
 			if (p.id === sim.avatar) sim.avatar = heir.id;
 		} else {
@@ -135,6 +140,7 @@ export function kill(sim: Simulation, p: Person, cause: string) {
 			} else {
 				const claimant = sim.makePerson(pol.culture, pol.id, pol.capital, 'ruler', sim.rng.int(20, 45));
 				claimant.house = makeName(sim.lang(pol.culture), 'house');
+				claimant.plain = undefined;
 				sim.crown(pol, claimant);
 				pol.stability -= 25;
 				const heirlessText = narrateHeirlessCrisis(sim.rng, p.name, p.house, pol.name, cause, claimant.house);

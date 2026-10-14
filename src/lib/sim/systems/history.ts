@@ -2,14 +2,17 @@
 import type { Simulation } from '../engine';
 import { reskin } from '../genrepacks';
 import type { ChronEvent, EventKind } from '../types';
+import { linkEvent } from '../story/chains';
 
 const MAX_EVENTS = 600;
 
-export function log(sim: Simulation, kind: EventKind, text: string, cell?: number, state?: number) {
+export function log(sim: Simulation, kind: EventKind, text: string, cell?: number, state?: number, tag?: string, cause?: number): ChronEvent {
 	const ev: ChronEvent = { id: sim.nextEventId++, y: sim.year, m: sim.month, kind, text: reskin(sim.voice, text), cell, state };
 	sim.events.push(ev);
 	if (sim.events.length > MAX_EVENTS) sim.events.splice(0, sim.events.length - MAX_EVENTS);
 	sim.allEvents.push(ev);
+	linkEvent(sim, ev, tag, cause);
+	return ev;
 }
 
 export function takeHistorySnapshot(sim: Simulation) {

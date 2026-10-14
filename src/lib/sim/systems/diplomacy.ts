@@ -101,7 +101,7 @@ export function declareWar(sim: Simulation, a: number, b: number, reason?: strin
 	sim.addRel(a, b, -40);
 	const joined = defenders.length > 1 ? `Pledging mutual defense, the levies of ${defenders.slice(1).map((d) => sim.polities[d].name).join(', ')} rally to ${pb.name}'s side.` : undefined;
 	const warText = narrateWar(sim.rng, pa.fullName, pb.fullName, name, reason, joined);
-	sim.log('war', warText, sim.w.burgs[pb.capital].cell, a);
+	w.ev = sim.log('war', warText, sim.w.burgs[pb.capital].cell, a).id;
 	return w;
 }
 
@@ -126,7 +126,7 @@ export function finishWar(sim: Simulation, w: War, winner: War['winner']) {
 	const d = w.defenders.map((x) => sim.polities[x].name).join(' & ') || 'the defenders';
 	const winnerText = winner === 'attackers' ? a : winner === 'defenders' ? d : '';
 	const peaceText = narratePeace(sim.rng, w.name, sim.year - w.start, winner ?? 'white', winnerText);
-	sim.log('peace', peaceText);
+	sim.log('peace', peaceText, undefined, undefined, 'peace', w.ev);
 	const win = winner === 'attackers' ? w.attackers : winner === 'defenders' ? w.defenders : [];
 	const lose = winner === 'attackers' ? w.defenders : winner === 'defenders' ? w.attackers : [];
 	for (const x of win) { sim.polities[x].stability += 8; sim.polities[x].treasury += 15; }
@@ -143,7 +143,7 @@ export function finishWar(sim: Simulation, w: War, winner: War['winner']) {
 			if (sim.rng.chance(0.35)) {
 				const transRes = transitionRegime(defeated, victor.ideology, 'conquest', sim.year, sim.rng, sim.people, { victorName: victor.name });
 				for (const ev of transRes.events) {
-					sim.log(ev.kind, ev.text, ev.cell, ev.state);
+					sim.log(ev.kind, ev.text, ev.cell, ev.state, 'regime', w.ev);
 				}
 				sim.addRel(victor.id, defeated.id, 50);
 				sim.dirty.political = true;

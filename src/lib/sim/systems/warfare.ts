@@ -120,7 +120,7 @@ export function takeCell(sim: Simulation, cell: number, taker: number, war?: War
 	const loserName = loser?.name ?? 'the frontier';
 	if (loser && loser.capital === bid) {
 		const siegeText = narrateSiege(sim.rng, winnerName, loserName, b.name, true);
-		sim.log('capture', siegeText, cell, taker);
+		sim.log('capture', siegeText, cell, taker, 'capital');
 		loser.stability -= 20;
 		loser.treasury *= 0.6;
 		if (winner) winner.treasury += 20;

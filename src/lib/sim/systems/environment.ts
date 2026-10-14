@@ -11,7 +11,7 @@ export function seedPlague(sim: Simulation, cell: number, v = 1) {
 	sim.plagueActive = true;
 	sim.plague[cell] = Math.max(sim.plague[cell], v);
 	const b = sim.c.burg[cell] ? sim.w.burgs[sim.c.burg[cell]] : null;
-	sim.log('disaster', narrateDisaster(sim.rng, 'plague', b?.name ?? 'the frontier'), cell, sim.c.state[cell]);
+	sim.log('disaster', narrateDisaster(sim.rng, 'plague', b?.name ?? 'the frontier'), cell, sim.c.state[cell], 'plague');
 	sim.dirty.political = true;
 }
 
