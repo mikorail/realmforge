@@ -56,7 +56,7 @@
 Effort: S ≈ an hour, M ≈ a session, L ≈ multi-session. Do them in this order; commit after each item.
 
 ### P1 · Foundation (unlocks everything else)
-- [ ] **Sim in a Web Worker** (L): move `Cosmos` off the main thread; UI gets snapshots (state arrays + panel view-models) via `postMessage`; god/avatar actions become messages. Keeps 100k+ maps and 36×/fast-forward smooth.
+- [x] **Sim in a Web Worker**: dropped on purpose. The sim is fast enough on the main thread (300 years, 2 planets ≈ 4s); only revisit if 100k+ maps at top speed ever feel choppy.
 - [x] **Incremental indexes** (M): per-realm living people, per-realm cell lists and per-layer contested-edge lists maintained on change, instead of scanning `cells` / all-time `people` every tick/year.
 - [x] **Split `engine.ts`** (~3k lines, L): extract economy, diplomacy/wars, lifecycle, faith, avatar, god powers into modules behind one `SimContext`; engine keeps only tick orchestration.
 
