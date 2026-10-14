@@ -52,7 +52,7 @@
 - Deep time: climate epochs, migrations, dialects becoming new cultures.
 - Fixes: quest targets, riot digest names, lair and disaster place names, all-vowel names, zero-size snapshot crash, era test flakiness.
 
-## Next — prioritized TODO (agreed 2026-10-14)
+## Next: prioritized TODO (agreed 2026-10-14)
 Effort: S ≈ an hour, M ≈ a session, L ≈ multi-session. Do them in this order; commit after each item.
 
 ### P1 · Foundation (unlocks everything else)
