@@ -57,8 +57,8 @@ Effort: S ≈ an hour, M ≈ a session, L ≈ multi-session. Do them in this ord
 
 ### P1 · Foundation (unlocks everything else)
 - [ ] **Sim in a Web Worker** (L): move `Cosmos` off the main thread; UI gets snapshots (state arrays + panel view-models) via `postMessage`; god/avatar actions become messages. Keeps 100k+ maps and 36×/fast-forward smooth.
-- [ ] **Incremental indexes** (M): per-realm living people, per-realm cell lists and per-layer contested-edge lists maintained on change, instead of scanning `cells` / all-time `people` every tick/year.
-- [ ] **Split `engine.ts`** (~3k lines, L): extract economy, diplomacy/wars, lifecycle, faith, avatar, god powers into modules behind one `SimContext`; engine keeps only tick orchestration.
+- [x] **Incremental indexes** (M): per-realm living people, per-realm cell lists and per-layer contested-edge lists maintained on change, instead of scanning `cells` / all-time `people` every tick/year.
+- [x] **Split `engine.ts`** (~3k lines, L): extract economy, diplomacy/wars, lifecycle, faith, avatar, god powers into modules behind one `SimContext`; engine keeps only tick orchestration.
 
 ### P2 · Story quality
 - [ ] **Event chains** (M): events carry a `cause` id; famine → riot → coup → new dynasty; chronicle prose cites causes ("because of the famine of Y112…").
