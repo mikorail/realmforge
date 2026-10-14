@@ -8,6 +8,7 @@ import { isGoodWord, nameIssue, tidy } from './naming/quality';
 export type { Lang, GlossPart } from './naming/core';
 export { gloss, glossText, dictionary, MEANINGS } from './naming/lexicon';
 export { givenName, dayName, clanOf, patronym, epithet, withEpithet, regnalName, toRoman, nextRegnalNumber, type Gender } from './naming/grammar';
+export { driftName, driftStages } from './naming/drift';
 export { nameIssue, wordIssue, isGoodWord, isNearDuplicate, isOffensive, tidy } from './naming/quality';
 
 /**
