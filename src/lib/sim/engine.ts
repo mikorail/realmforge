@@ -38,6 +38,7 @@ import { updateIntrigue } from './intrigue';
 import { spawnQuest, updateQuests } from './quests';
 import { assignPatronDeity, processPantheonInterventions } from './pantheon';
 import { processYearlyUprisings } from './uprisings';
+import { packEncounters, packLine, reskin } from './genrepacks';
 import { vassalizeAfterWar, yearlyConsolidation } from './consolidation';
 import type { ArmyToken, ChronEvent, CovertMission, Effects, Encounter, EventKind, HistorySnapshot, IdeologyKind, Monster, LegendaryPlace, Person, Polity, Quest, Role, Travel, UprisingRecord, War } from './types';
 
@@ -248,7 +249,7 @@ export class Simulation {
 	}
 	private nextEventId = 1;
 	log(kind: EventKind, text: string, cell?: number, state?: number) {
-		const ev: ChronEvent = { id: this.nextEventId++, y: this.year, m: this.month, kind, text, cell, state };
+		const ev: ChronEvent = { id: this.nextEventId++, y: this.year, m: this.month, kind, text: reskin(this.w.opts.genre, text), cell, state };
 		this.events.push(ev);
 		if (this.events.length > MAX_EVENTS) this.events.splice(0, this.events.length - MAX_EVENTS);
 		this.allEvents.push(ev);
@@ -1614,11 +1615,11 @@ export class Simulation {
 			if (roll < 0.2) {
 				p.stability += 15;
 				p.treasury += 30;
-				this.log('misc', narrateMiscEvent(this.rng, 'golden_age', cap.name, p.name), cap.cell, p.id);
+				this.log('misc', packLine(this.w.opts.genre, 'golden', this.rng, { realm: p.name, town: cap.name }) ?? narrateMiscEvent(this.rng, 'golden_age', cap.name, p.name), cap.cell, p.id);
 			} else if (roll < 0.35) {
 				for (let i = 0; i < this.c.n; i++) if (this.c.state[i] === p.id) this.c.pop[i] *= 0.85;
 				p.stability -= 10;
-				this.log('disaster', narrateDisaster(this.rng, 'famine', cap.name, p.name), cap.cell, p.id);
+				this.log('disaster', packLine(this.w.opts.genre, 'famine', this.rng, { realm: p.name, town: cap.name }) ?? narrateDisaster(this.rng, 'famine', cap.name, p.name), cap.cell, p.id);
 			} else if (roll < 0.45) {
 				const towns = this.w.burgs.filter((b) => b.alive && b.state === p.id);
 				if (towns.length) {
@@ -2317,8 +2318,8 @@ export class Simulation {
 			this.travel = null;
 			const b = this.w.burgs[me.burg];
 			this.log('avatar', `You arrive at ${b.name}.`, b.cell);
-			if (this.rng.chance(0.55)) this.pending = this.rng.pick(ENCOUNTERS);
-		} else if (this.rng.chance(0.12)) this.pending = this.rng.pick(ENCOUNTERS);
+			if (this.rng.chance(0.55)) this.pending = this.encounter();
+		} else if (this.rng.chance(0.12)) this.pending = this.encounter();
 	}
 
 	resolve(optIndex: number): { ok: boolean; text: string } {
@@ -2364,7 +2365,7 @@ export class Simulation {
 				return say(`You labour a month in ${here.name} and earn ${g} gold.`);
 			}
 			case 'adventure':
-				this.pending = r.pick(ENCOUNTERS);
+				this.pending = this.encounter();
 				return '';
 			case 'train': {
 				if (me.gold < 25) return 'Training costs 25 gold.';
@@ -2861,6 +2862,15 @@ export class Simulation {
 			}
 		}
 		return '';
+	}
+
+	/** draw from the base deck plus the genre's own deck (weighted ×2 so it feels present) */
+	encounter(): Encounter {
+		const extra = packEncounters(this.w.opts.genre);
+		const deck = [...ENCOUNTERS, ...extra, ...extra];
+		const e = this.rng.pick(deck);
+		const g = this.w.opts.genre;
+		return { ...e, title: reskin(g, e.title), text: reskin(g, e.text), options: e.options.map((o) => ({ ...o, label: reskin(g, o.label), win: { ...o.win, text: reskin(g, o.win.text) }, lose: o.lose && { ...o.lose, text: reskin(g, o.lose.text) } })) };
 	}
 
 	/** set by Cosmos so time skips advance every planet together */

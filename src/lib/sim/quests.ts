@@ -93,7 +93,9 @@ export function spawnQuest(
 	if (!candidates.length) return null;
 
 	const hero = rng.pick(candidates);
-	const kind = rng.pick<QuestKind>(['subjugation', 'treasure', 'rescue', 'expedition']);
+	// no living beast → no monster hunt (otherwise the hero 'fells' a region name)
+	const kinds: QuestKind[] = monsters.some((m) => m.alive) ? ['subjugation', 'treasure', 'rescue', 'expedition'] : ['treasure', 'rescue', 'expedition'];
+	const kind = rng.pick<QuestKind>(kinds);
 	const tpl = QUEST_TEMPLATES[kind];
 
 	let targetCell = hero.burg ? world.burgs[hero.burg].cell : rng.int(0, world.cells.n - 1);

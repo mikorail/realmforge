@@ -1,6 +1,7 @@
 import type { Rng } from '../rng';
 import type { Person, Polity, UprisingKind, UprisingRecord } from './types';
 import type { Simulation } from './engine';
+import { packCult, packLine } from './genrepacks';
 
 export interface UprisingEvent {
 	kind: 'uprising';
@@ -36,6 +37,7 @@ export function processYearlyUprisings(sim: Simulation): UprisingEvent[] {
 	const scale = Math.min(1, 10 / alivePolities.length);
 	const roll = (p: number) => rng.chance(p * scale);
 	const digest = new Map<string, { kind: string; towns: string[]; realm: string; cell: number; state: number }>();
+	const genre = sim.w.opts.genre;
 	const rest = (pol: Polity) => sim.unrestUntil.set(pol.id, sim.year + rng.int(3, 8));
 
 	for (const pol of alivePolities) {
@@ -79,7 +81,7 @@ export function processYearlyUprisings(sim: Simulation): UprisingEvent[] {
 			// routine riots are folded into one yearly digest line; only a riot that tips into revolt is narrated
 			const severe = pol.stability <= 15 && pol.cells >= 10 && towns.length > 1;
 			if (severe) {
-				events.push({ kind: 'uprising', text: narrateRiot(rng, subtype, town.name, pol.name), cell: town.cell, state: pol.id });
+				events.push({ kind: 'uprising', text: packLine(genre, `riot.${subtype}`, rng, { town: town.name, realm: pol.name }) ?? narrateRiot(rng, subtype, town.name, pol.name), cell: town.cell, state: pol.id });
 				rest(pol);
 			} else {
 				const key = `${pol.id}:${subtype}`;
@@ -100,7 +102,7 @@ export function processYearlyUprisings(sim: Simulation): UprisingEvent[] {
 		if (roll(cultChance)) {
 			rest(pol);
 			const town = rng.pick(towns);
-			const cultName = rng.pick(CULT_NAMES);
+			const cultName = packCult(genre, rng) ?? rng.pick(CULT_NAMES);
 			const subtypes = ['doomsday_cult', 'eldritch_cult', 'blood_coven', 'flagellant_order'] as const;
 			const subtype = rng.pick(subtypes);
 
@@ -122,7 +124,7 @@ export function processYearlyUprisings(sim: Simulation): UprisingEvent[] {
 			};
 			sim.uprisings.push(newUprising);
 
-			const text = narrateCult(rng, subtype, cultName, town.name, pol.name);
+			const text = packLine(genre, 'cult', rng, { cult: cultName, town: town.name, realm: pol.name }) ?? narrateCult(rng, subtype, cultName, town.name, pol.name);
 			events.push({ kind: 'uprising', text, cell: town.cell, state: pol.id, uprisingId: newUprising.id });
 		}
 
@@ -170,7 +172,7 @@ export function processYearlyUprisings(sim: Simulation): UprisingEvent[] {
 			};
 			sim.uprisings.push(newUprising);
 
-			const text = narrateProphet(rng, subtype, prophet.name, town.name, pol.name);
+			const text = packLine(genre, 'prophet', rng, { name: prophet.name, town: town.name, realm: pol.name }) ?? narrateProphet(rng, subtype, prophet.name, town.name, pol.name);
 			events.push({ kind: 'uprising', text, cell: town.cell, state: pol.id, uprisingId: newUprising.id });
 		}
 
@@ -214,7 +216,7 @@ export function processYearlyUprisings(sim: Simulation): UprisingEvent[] {
 			};
 			sim.uprisings.push(newUprising);
 
-			const text = narrateHero(rng, subtype, hero.name, town.name, pol.name);
+			const text = packLine(genre, 'hero', rng, { name: hero.name, town: town.name, realm: pol.name }) ?? narrateHero(rng, subtype, hero.name, town.name, pol.name);
 			events.push({ kind: 'uprising', text, cell: town.cell, state: pol.id, uprisingId: newUprising.id });
 		}
 
@@ -225,14 +227,14 @@ export function processYearlyUprisings(sim: Simulation): UprisingEvent[] {
 			pol.army = +(Math.max(0.5, pol.army * 0.78)).toFixed(1);
 			pol.stability = Math.max(5, pol.stability - 10);
 
-			const text = narrateMutiny(rng, town.name, pol.name);
+			const text = packLine(genre, 'mutiny', rng, { fort: town.name, realm: pol.name }) ?? narrateMutiny(rng, town.name, pol.name);
 			events.push({ kind: 'uprising', text, cell: town.cell, state: pol.id });
 		}
 	}
 
 	if (digest.size) {
 		const LABEL: Record<string, string> = { bread_riot: 'bread riots', tax_riot: 'tax riots', conscription_riot: 'draft riots', sectarian_riot: 'sectarian clashes' };
-		const parts = [...digest.values()].slice(0, 6).map((d) => `${LABEL[d.kind] ?? d.kind} in ${d.towns.join(', ')} (${d.realm})`);
+		const parts = [...digest.values()].slice(0, 6).map((d) => `${LABEL[d.kind] ?? d.kind} in ${d.towns.join(', ')}${d.towns.length === 1 && d.towns[0] === d.realm ? '' : ` (${d.realm})`}`);
 		const more = digest.size > 6 ? `, and ${digest.size - 6} more` : '';
 		const first = [...digest.values()][0];
 		events.push({ kind: 'uprising', text: `Unrest of the year: ${parts.join('; ')}${more}.`, cell: first.cell, state: first.state });
