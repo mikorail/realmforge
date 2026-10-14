@@ -89,6 +89,92 @@ function groupPaths(c: Cells, colorOf: (i: number) => string | null): [string, P
 	return [...m];
 }
 
+type Surface = HTMLCanvasElement | OffscreenCanvas;
+type Ctx2D = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+
+/** raster tile edge in device pixels (each tile canvas carries a 1px apron to hide seams) */
+const TILE = 512;
+const TILE_CACHE = 72;
+/** the always-available whole-world raster is at most this many pixels wide/tall */
+const OVERVIEW_MAX = 2048;
+/** tiles are rendered for a scale s and shown at s·(0.71..1]; line widths assume the middle of that band */
+const LW_FIT = 0.85;
+
+/** a canvas of at least 1×1 pixels, or null (drawImage throws on 0×0 sources) */
+function makeSurface(w: number, h: number): Surface | null {
+	w = Math.ceil(w);
+	h = Math.ceil(h);
+	if (!(w > 0 && h > 0)) return null;
+	if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(w, h);
+	if (typeof document === 'undefined') return null;
+	const c = document.createElement('canvas');
+	c.width = w;
+	c.height = h;
+	return c;
+}
+
+/** uniform-grid bucket index of cell polygon bounding boxes, so a tile only paints the cells it touches */
+export interface CellIndex {
+	cs: number;
+	gx: number;
+	gy: number;
+	start: Int32Array;
+	items: Int32Array;
+	stamp: Uint32Array;
+	tick: number;
+}
+
+export function buildCellIndex(c: Cells, W: number, H: number): CellIndex {
+	const cs = Math.max(4, Math.sqrt((W * H) / Math.max(1, c.n)) * 6);
+	const gx = Math.max(1, Math.ceil(W / cs)), gy = Math.max(1, Math.ceil(H / cs));
+	const box = new Int32Array(c.n * 4);
+	const count = new Int32Array(gx * gy + 1);
+	const xy = c.polyXY;
+	const clampX = (v: number) => Math.max(0, Math.min(gx - 1, Math.floor(v / cs)));
+	const clampY = (v: number) => Math.max(0, Math.min(gy - 1, Math.floor(v / cs)));
+	for (let i = 0; i < c.n; i++) {
+		const s = c.polyStart[i], e = c.polyStart[i + 1];
+		let x0 = c.x[i], y0 = c.y[i], x1 = x0, y1 = y0;
+		for (let k = s; k < e; k++) {
+			const x = xy[2 * k], y = xy[2 * k + 1];
+			if (x < x0) x0 = x; else if (x > x1) x1 = x;
+			if (y < y0) y0 = y; else if (y > y1) y1 = y;
+		}
+		const bx0 = clampX(x0), bx1 = clampX(x1), by0 = clampY(y0), by1 = clampY(y1);
+		box[4 * i] = bx0; box[4 * i + 1] = by0; box[4 * i + 2] = bx1; box[4 * i + 3] = by1;
+		for (let by = by0; by <= by1; by++) for (let bx = bx0; bx <= bx1; bx++) count[by * gx + bx + 1]++;
+	}
+	for (let b = 1; b < count.length; b++) count[b] += count[b - 1];
+	const start = count.slice();
+	const items = new Int32Array(start[start.length - 1]);
+	const fill = start.slice(0, gx * gy);
+	for (let i = 0; i < c.n; i++)
+		for (let by = box[4 * i + 1]; by <= box[4 * i + 3]; by++)
+			for (let bx = box[4 * i]; bx <= box[4 * i + 2]; bx++) items[fill[by * gx + bx]++] = i;
+	return { cs, gx, gy, start, items, stamp: new Uint32Array(c.n), tick: 0 };
+}
+
+/** ids of cells whose bounding box may overlap the world rect (deduplicated) */
+export function queryCells(ix: CellIndex, x0: number, y0: number, x1: number, y1: number): number[] {
+	const out: number[] = [];
+	const bx0 = Math.max(0, Math.floor(x0 / ix.cs)), bx1 = Math.min(ix.gx - 1, Math.floor(x1 / ix.cs));
+	const by0 = Math.max(0, Math.floor(y0 / ix.cs)), by1 = Math.min(ix.gy - 1, Math.floor(y1 / ix.cs));
+	if (bx1 < bx0 || by1 < by0) return out;
+	if (++ix.tick >= 0xffffffff) { ix.stamp.fill(0); ix.tick = 1; }
+	const t = ix.tick;
+	for (let by = by0; by <= by1; by++)
+		for (let bx = bx0; bx <= bx1; bx++) {
+			const b = by * ix.gx + bx;
+			for (let k = ix.start[b]; k < ix.start[b + 1]; k++) {
+				const i = ix.items[k];
+				if (ix.stamp[i] === t) continue;
+				ix.stamp[i] = t;
+				out.push(i);
+			}
+		}
+	return out;
+}
+
 export interface Overlay {
 	rifts: Set<number>;
 	avatarBurg: number;
@@ -118,7 +204,16 @@ export class MapRenderer {
 	previewHistoryStates: Uint16Array | null = null;
 	private terrainKey = '';
 	private politicalKey = '';
-	private T: { ocean: [string, Path2D][]; land: Path2D; landBase: string; cells: [string, Path2D][]; coast: Path2D; rivers: [number, Path2D][]; ghost: Path2D | null; layerOpen: Path2D | null; layerCells: [string, Path2D][] } | null = null;
+	/** static terrain: per-cell palette indices (-1 = not painted) + smoothed global paths; rasterised into tiles */
+	private T: { pal: string[]; ocean: Int32Array; land: Path2D; landBase: string; cells: Int32Array; coast: Path2D; rivers: [number, Path2D][]; ghost: Path2D | null; layerOpen: Path2D | null; layerCells: Int32Array | null } | null = null;
+	private index: CellIndex | null = null;
+	private indexWorld: World | null = null;
+	/** whole-world raster (fallback while tiles render, and the only level when zoomed out) */
+	private ov: Surface | null = null;
+	private ovS = 0;
+	private tiles = new Map<string, Surface>();
+	private refineRaf = 0;
+	private lastInteract = 0;
 	private P: { fills: [string, Path2D][]; borders: Path2D; labels: Label[]; fronts: Path2D; plague: [string, Path2D][]; select: Path2D | null } | null = null;
 	politicalVersion = 0;
 	terrainVersion = 0;
@@ -132,12 +227,12 @@ export class MapRenderer {
 
 	/** cheap frame: last full render, re-transformed to the current camera */
 	drawSnapshot() {
-		if (!this.snap || !this.snap.width || !this.snap.height) return this.draw();
+		if (!this.snap || !this.snap.width || !this.snap.height || !this.world || !this.T) return this.draw();
+		this.lastInteract = performance.now();
 		const ctx = this.ctx;
 		const f = this.k / this.snapCam.k;
-		ctx.setTransform(1, 0, 0, 1, 0, 0);
-		ctx.fillStyle = this.theme.oceanDeep;
-		ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+		// cached terrain rasters fill the edges the old snapshot does not cover (no tile rendering here)
+		this.blitTerrain(0);
 		ctx.setTransform(f, 0, 0, f, this.dpr * (this.tx - this.snapCam.tx * f), this.dpr * (this.ty - this.snapCam.ty * f));
 		ctx.drawImage(this.snap, 0, 0);
 		ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -229,7 +324,20 @@ export class MapRenderer {
 		const th = this.theme;
 		const L = w.layers[this.layer];
 		const isWater = (i: number) => c.h[i] < SEA;
-		const ocean = groupPaths(c, (i) => {
+		const pal: string[] = [];
+		const palIx = new Map<string, number>();
+		const colourIndex = (colorOf: (i: number) => string | null) => {
+			const out = new Int32Array(c.n);
+			for (let i = 0; i < c.n; i++) {
+				const col = colorOf(i);
+				if (!col) { out[i] = -1; continue; }
+				let ix = palIx.get(col);
+				if (ix === undefined) { ix = pal.length; pal.push(col); palIx.set(col, ix); }
+				out[i] = ix;
+			}
+			return out;
+		};
+		const ocean = colourIndex((i) => {
 			if (!isWater(i)) return null;
 			if (w.features[c.feature[i]]?.type === 'lake') return th.lake;
 			const d = Math.min(8, -c.dist[i]);
@@ -257,7 +365,7 @@ export class MapRenderer {
 		};
 		const tint = (col: string) => (th.tintAmt ? mix(col, th.tint, th.tintAmt) : col);
 		const muted = this.mode === 'political' || this.mode === 'culture' || this.mode === 'religion' || this.mode === 'population';
-		const cells = groupPaths(c, (i) => {
+		const cells = colourIndex((i) => {
 			if (isWater(i)) return null;
 			let base: string;
 			if (this.mode === 'height') base = HYPSO[Math.min(9, Math.floor(((c.h[i] - SEA) / (100 - SEA)) * 10))];
@@ -279,15 +387,15 @@ export class MapRenderer {
 			rivers.push([Math.min(4, 0.5 + Math.sqrt(r.flux) * 0.06 * Math.sqrt(c.n / 10000)), p]);
 		}
 		let layerOpen: Path2D | null = null;
-		let layerCells: [string, Path2D][] = [];
+		let layerCells: Int32Array | null = null;
 		if (L.kind !== 'surface') {
 			layerOpen = new Path2D();
 			for (const ch of chains(w.edges, (a, b) => L.open[a] !== L.open[b])) smooth(layerOpen, w.edges, ch);
-			const pal = L.kind === 'deep' ? th.deep : L.kind === 'sky' ? th.sky : th.sea;
-			layerCells = groupPaths(c, (i) => {
+			const lp = L.kind === 'deep' ? th.deep : L.kind === 'sky' ? th.sky : th.sea;
+			layerCells = colourIndex((i) => {
 				if (!L.open[i]) return null;
 				const t = (Math.sin(c.x[i] * 0.05 + L.depth) + Math.cos(c.y[i] * 0.04)) * 0.25 + 0.5;
-				return mix(pal[0], pal[1], Math.round(t * 4) / 4 * 0.8);
+				return mix(lp[0], lp[1], Math.round(t * 4) / 4 * 0.8);
 			});
 		}
 		let ghost: Path2D | null = null;
@@ -305,7 +413,203 @@ export class MapRenderer {
 				}
 			}
 		}
-		this.T = { ocean, land, landBase, cells, coast, rivers, ghost, layerOpen, layerCells };
+		this.T = { pal, ocean, land, landBase, cells, coast, rivers, ghost, layerOpen, layerCells };
+		this.dropRasters();
+		if (this.indexWorld !== w) {
+			this.index = buildCellIndex(c, w.opts.width, w.opts.height);
+			this.indexWorld = w;
+		}
+		// whole-world raster, rendered once per terrain key
+		const { width: W, height: H } = w.opts;
+		const z = Math.floor(2 * Math.log2(OVERVIEW_MAX / Math.max(W, H)));
+		const s = 2 ** (z / 2);
+		const ov = makeSurface(W * s, H * s);
+		const g = ov?.getContext('2d') as Ctx2D | null | undefined;
+		if (ov && g) {
+			g.setTransform(s, 0, 0, s, 0, 0);
+			this.paintTerrain(g, 0, 0, W, H, s, null);
+			this.ov = ov;
+			this.ovS = s;
+		}
+	}
+
+	private dropRasters() {
+		this.tiles.clear();
+		this.ov = null;
+		this.ovS = 0;
+	}
+
+	/** group the given cells (all when ids is null) by palette index into one Path2D per colour */
+	private groups(col: Int32Array, ids: number[] | null): [string, Path2D][] {
+		const c = this.world!.cells, pal = this.T!.pal;
+		const m = new Map<number, Path2D>();
+		const add = (i: number) => {
+			const k = col[i];
+			if (k < 0) return;
+			let p = m.get(k);
+			if (!p) m.set(k, (p = new Path2D()));
+			addCell(p, c, i);
+		};
+		if (ids) for (const i of ids) add(i);
+		else for (let i = 0; i < c.n; i++) add(i);
+		return [...m].map(([k, p]) => [pal[k], p]);
+	}
+
+	/**
+	 * Paint the static terrain (ocean depth, halo, land/biome/height shading, rivers, coast,
+	 * exotic-layer dimming + plane) for the world rect [x0,x1]×[y0,y1] into a raster whose
+	 * transform is already world → pixels at scale s. ids === null paints every cell.
+	 */
+	private paintTerrain(g: Ctx2D, x0: number, y0: number, x1: number, y1: number, s: number, ix: CellIndex | null) {
+		const w = this.world!, T = this.T!, th = this.theme;
+		const L = w.layers[this.layer];
+		const { width: W, height: H } = w.opts;
+		const px = (n: number) => (n * this.dpr) / (s * LW_FIT);
+		const ids = ix ? queryCells(ix, x0, y0, x1, y1) : null;
+		g.lineJoin = 'round';
+		g.lineCap = 'round';
+		g.save();
+		g.beginPath();
+		g.rect(0, 0, W, H);
+		g.clip();
+		g.fillStyle = th.oceanDeep;
+		g.fillRect(x0, y0, x1 - x0, y1 - y0);
+		for (const [col, p] of this.groups(T.ocean, ids)) { g.fillStyle = col; g.fill(p); g.strokeStyle = col; g.lineWidth = px(0.6); g.stroke(p); }
+		// shallow-water halo
+		g.strokeStyle = alpha(th.oceanShallow, 0.5);
+		g.lineWidth = px(9);
+		g.stroke(T.coast);
+		g.save();
+		g.clip(T.land, 'evenodd');
+		g.fillStyle = T.landBase;
+		g.fill(T.land, 'evenodd');
+		for (const [col, p] of this.groups(T.cells, ids)) { g.fillStyle = col; g.fill(p); g.strokeStyle = col; g.lineWidth = px(0.6); g.stroke(p); }
+		g.restore();
+		g.strokeStyle = th.river;
+		for (const [wd, p] of T.rivers) { g.lineWidth = Math.max(px(0.6), wd); g.stroke(p); }
+		g.strokeStyle = th.coast;
+		g.lineWidth = px(1.3);
+		if (th.glow) { g.shadowColor = th.coast; g.shadowBlur = th.glow; }
+		g.stroke(T.coast);
+		g.shadowBlur = 0;
+		// exotic layer: dim the surface, then draw the plane on top
+		if (L.kind !== 'surface' && T.layerOpen && T.layerCells) {
+			g.fillStyle = this.layerDim();
+			g.fillRect(x0, y0, x1 - x0, y1 - y0);
+			if (L.kind === 'sky') {
+				g.save();
+				g.translate(6, 10);
+				g.fillStyle = 'rgba(20,30,50,0.35)';
+				for (const [, p] of this.groups(T.layerCells, ix ? queryCells(ix, x0 - 6, y0 - 10, x1 - 6, y1 - 10) : null)) g.fill(p);
+				g.restore();
+			}
+			for (const [col, p] of this.groups(T.layerCells, ids)) { g.fillStyle = col; g.fill(p); g.strokeStyle = col; g.lineWidth = px(0.6); g.stroke(p); }
+			const lp = L.kind === 'deep' ? th.deep : L.kind === 'sky' ? th.sky : th.sea;
+			g.strokeStyle = L.kind === 'sky' ? '#7a8fb0' : shade(lp[1], 0.3);
+			g.lineWidth = px(1.5);
+			g.stroke(T.layerOpen);
+		}
+		g.restore();
+	}
+
+	private layerDim() {
+		const L = this.world!.layers[this.layer];
+		return L.kind === 'deep' ? `rgba(8,5,3,${0.62 + L.depth * 0.08})` : L.kind === 'sea' ? 'rgba(2,20,30,0.55)' : this.theme.glow ? 'rgba(10,18,40,0.6)' : 'rgba(200,225,255,0.35)';
+	}
+
+	private renderTile(z: number, i: number, j: number): Surface | null {
+		const s = 2 ** (z / 2);
+		const surf = makeSurface(TILE + 2, TILE + 2);
+		const g = surf?.getContext('2d') as Ctx2D | null | undefined;
+		if (!surf || !g || !this.index) return null;
+		const x0 = (i * TILE - 1) / s, y0 = (j * TILE - 1) / s;
+		g.setTransform(s, 0, 0, s, -x0 * s, -y0 * s);
+		this.paintTerrain(g, x0, y0, x0 + (TILE + 2) / s, y0 + (TILE + 2) / s, s, this.index);
+		const key = `${z}|${i}|${j}`;
+		this.tiles.set(key, surf);
+		while (this.tiles.size > TILE_CACHE) this.tiles.delete(this.tiles.keys().next().value!);
+		return surf;
+	}
+
+	private cachedTile(key: string): Surface | undefined {
+		const t = this.tiles.get(key);
+		if (t) { this.tiles.delete(key); this.tiles.set(key, t); } // LRU touch
+		return t;
+	}
+
+	/**
+	 * Background + static terrain from rasters: the whole-world overview, then tiles of the
+	 * half-octave level matching the camera. Renders missing tiles for up to budgetMs;
+	 * returns false when some visible tile is still missing (coarser rasters stand in).
+	 */
+	private blitTerrain(budgetMs: number): boolean {
+		const w = this.world!, ctx = this.ctx, dpr = this.dpr;
+		const L = w.layers[this.layer];
+		const { width: W, height: H } = w.opts;
+		ctx.setTransform(1, 0, 0, 1, 0, 0);
+		ctx.fillStyle = this.theme.oceanDeep;
+		ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+		if (L.kind !== 'surface') {
+			ctx.fillStyle = this.layerDim();
+			ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+		}
+		ctx.imageSmoothingEnabled = true;
+		ctx.imageSmoothingQuality = 'high';
+		const kd = this.k * dpr;
+		if (this.ov && this.ov.width && this.ov.height) {
+			const f = kd / this.ovS;
+			ctx.setTransform(f, 0, 0, f, dpr * this.tx, dpr * this.ty);
+			ctx.drawImage(this.ov, 0, 0);
+		}
+		const z = Math.ceil(2 * Math.log2(kd) - 1e-9);
+		if (!this.index || 2 ** (z / 2) <= this.ovS * 1.001) return true;
+		// visible world rect
+		const vx0 = Math.max(0, -this.tx / this.k), vy0 = Math.max(0, -this.ty / this.k);
+		const vx1 = Math.min(W, (this.w - this.tx) / this.k), vy1 = Math.min(H, (this.h - this.ty) / this.k);
+		if (vx1 <= vx0 || vy1 <= vy0) return true;
+		const range = (zz: number) => {
+			const s = 2 ** (zz / 2);
+			return [Math.floor((vx0 * s) / TILE), Math.floor((vy0 * s) / TILE), Math.floor((vx1 * s - 1e-6) / TILE), Math.floor((vy1 * s - 1e-6) / TILE)];
+		};
+		const [i0, j0, i1, j1] = range(z);
+		const t0 = performance.now();
+		let complete = true;
+		const have: [Surface, number, number][] = [];
+		for (let j = j0; j <= j1; j++)
+			for (let i = i0; i <= i1; i++) {
+				let t = this.cachedTile(`${z}|${i}|${j}`);
+				if (!t && performance.now() - t0 < budgetMs) t = this.renderTile(z, i, j) ?? undefined;
+				if (t) have.push([t, i, j]);
+				else complete = false;
+			}
+		const put = (zz: number, list: [Surface, number, number][]) => {
+			const f = kd / 2 ** (zz / 2);
+			ctx.setTransform(f, 0, 0, f, dpr * this.tx, dpr * this.ty);
+			// 1px apron on each side; the extra pixel overlaps the neighbour so no seam shows
+			for (const [t, i, j] of list) if (t.width && t.height) ctx.drawImage(t, 1, 1, TILE + 1, TILE + 1, i * TILE, j * TILE, TILE + 1, TILE + 1);
+		};
+		if (!complete) {
+			// stand-ins: any cached coarser (then finer) level covering the gaps
+			for (const zz of [z - 4, z - 3, z - 2, z - 1, z + 1]) {
+				if (2 ** (zz / 2) <= this.ovS) continue;
+				const [a0, b0, a1, b1] = range(zz);
+				const list: [Surface, number, number][] = [];
+				for (let j = b0; j <= b1; j++) for (let i = a0; i <= a1; i++) { const t = this.tiles.get(`${zz}|${i}|${j}`); if (t) list.push([t, i, j]); }
+				if (list.length) put(zz, list);
+			}
+		}
+		put(z, have);
+		return complete;
+	}
+
+	/** keep rendering missing tiles on later frames, but never while the user is panning */
+	private scheduleRefine() {
+		if (this.refineRaf || typeof requestAnimationFrame === 'undefined') return;
+		this.refineRaf = requestAnimationFrame(() => {
+			this.refineRaf = 0;
+			if (performance.now() - this.lastInteract < 160) this.scheduleRefine();
+			else this.draw();
+		});
 	}
 
 	private buildPolitical() {
@@ -391,7 +695,7 @@ export class MapRenderer {
 		const ctx = this.ctx;
 		if (!w || !s) return;
 		const th = this.theme;
-		const tk = `${this.layer}|${this.mode}|${this.terrainVersion}|${th.tint}`;
+		const tk = `${this.layer}|${this.mode}|${this.terrainVersion}|${th.tint}|${th.oceanDeep}|${th.coast}|${th.glow}|${this.dpr}`;
 		if (tk !== this.terrainKey) {
 			this.buildTerrain();
 			this.terrainKey = tk;
@@ -408,53 +712,11 @@ export class MapRenderer {
 		const k = this.k;
 		const px = (n: number) => n / k; // screen px → world units
 
-		ctx.setTransform(1, 0, 0, 1, 0, 0);
-		ctx.fillStyle = th.oceanDeep;
-		ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+		// ── static terrain from cached rasters (overview + zoom-level tiles) ──
+		if (!this.blitTerrain(40)) this.scheduleRefine();
 		ctx.setTransform(this.dpr * k, 0, 0, this.dpr * k, this.dpr * this.tx, this.dpr * this.ty);
 		ctx.lineJoin = 'round';
 		ctx.lineCap = 'round';
-
-		// ── surface base ──
-		for (const [col, p] of T.ocean) { ctx.fillStyle = col; ctx.fill(p); ctx.strokeStyle = col; ctx.lineWidth = px(0.6); ctx.stroke(p); }
-		// shallow-water halo
-		ctx.strokeStyle = alpha(th.oceanShallow, 0.5);
-		ctx.lineWidth = px(9);
-		ctx.stroke(T.coast);
-		ctx.save();
-		ctx.clip(T.land, 'evenodd');
-		ctx.fillStyle = T.landBase;
-		ctx.fill(T.land, 'evenodd');
-		for (const [col, p] of T.cells) { ctx.fillStyle = col; ctx.fill(p); ctx.strokeStyle = col; ctx.lineWidth = px(0.6); ctx.stroke(p); }
-		ctx.restore();
-		// rivers
-		ctx.strokeStyle = th.river;
-		for (const [wd, p] of T.rivers) { ctx.lineWidth = Math.max(px(0.6), wd); ctx.stroke(p); }
-		ctx.strokeStyle = th.coast;
-		ctx.lineWidth = px(1.3);
-		if (th.glow) { ctx.shadowColor = th.coast; ctx.shadowBlur = th.glow; }
-		ctx.stroke(T.coast);
-		ctx.shadowBlur = 0;
-
-		// ── exotic layer: dim the surface, then draw the plane on top ──
-		if (L.kind !== 'surface' && T.layerOpen) {
-			ctx.setTransform(1, 0, 0, 1, 0, 0);
-			ctx.fillStyle = L.kind === 'deep' ? `rgba(8,5,3,${0.62 + L.depth * 0.08})` : L.kind === 'sea' ? 'rgba(2,20,30,0.55)' : th.glow ? 'rgba(10,18,40,0.6)' : 'rgba(200,225,255,0.35)';
-			ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-			ctx.setTransform(this.dpr * k, 0, 0, this.dpr * k, this.dpr * this.tx, this.dpr * this.ty);
-			if (L.kind === 'sky') {
-				ctx.save();
-				ctx.translate(6, 10);
-				ctx.fillStyle = 'rgba(20,30,50,0.35)';
-				for (const [, p] of T.layerCells) ctx.fill(p);
-				ctx.restore();
-			}
-			for (const [col, p] of T.layerCells) { ctx.fillStyle = col; ctx.fill(p); ctx.strokeStyle = col; ctx.lineWidth = px(0.6); ctx.stroke(p); }
-			const pal = L.kind === 'deep' ? th.deep : L.kind === 'sky' ? th.sky : th.sea;
-			ctx.strokeStyle = L.kind === 'sky' ? '#7a8fb0' : shade(pal[1], 0.3);
-			ctx.lineWidth = px(1.5);
-			ctx.stroke(T.layerOpen);
-		}
 
 		// ── cross-layer peeking contour ──
 		if (this.showGhost && T.ghost) {
