@@ -97,7 +97,7 @@ export function processYearlyUprisings(sim: Simulation): UprisingEvent[] {
 		}
 
 		// 2. Secret Cult Awakenings
-		const undergroundOrEldritch = towns.some((t) => sim.burgLayer(t) > 0 || sim.w.cultures[t.culture]?.sphere === 'Eldritch');
+		const undergroundOrEldritch = towns.some((t) => sim.burgLayer(t) > 0 || sim.w.cultures[t.culture]?.sphere === 'eldritch');
 		const cultChance = undergroundOrEldritch ? 0.16 : 0.09;
 		if (roll(cultChance)) {
 			rest(pol);

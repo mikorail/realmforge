@@ -2,6 +2,7 @@ import type { Rng } from '../rng';
 import type { World } from '../gen/types';
 import type { ChronEvent, Monster } from './types';
 import { neighbors } from '../gen/grid';
+import { SPHERE_CREATURES } from './spherelore';
 
 export interface MonsterArchetype {
 	species: string;
@@ -215,6 +216,20 @@ export const MONSTER_ARCHETYPES: MonsterArchetype[] = [
 ];
 
 /** Spawn world monsters during world generation */
+/** a readable lair name: the settlement in the cell, or the nearest one */
+function lairNear(world: World, cell: number): string {
+	const c = world.cells;
+	const bId = c.burg[cell];
+	if (bId) return `Lair near ${world.burgs[bId].name}`;
+	let best = -1, bd = Infinity;
+	for (const b of world.burgs) {
+		if (!b.id || !b.alive || b.layer !== 'surface') continue;
+		const d = (b.x - c.x[cell]) ** 2 + (b.y - c.y[cell]) ** 2;
+		if (d < bd) { bd = d; best = b.id; }
+	}
+	return best > 0 ? `Wilds beyond ${world.burgs[best].name}` : 'The trackless wilds';
+}
+
 export function generateMonsters(world: World, rng: Rng): Monster[] {
 	const c = world.cells;
 	const monsters: Monster[] = [];
@@ -235,8 +250,7 @@ export function generateMonsters(world: World, rng: Rng): Monster[] {
 
 		const cell = rng.pick(candidates);
 		const name = rng.pick(arch.nameTpl);
-		const bId = c.burg[cell];
-		const lairName = bId ? `Lair near ${world.burgs[bId].name}` : `Wilds of Cell ${cell}`;
+		const lairName = lairNear(world, cell);
 
 		monsters.push({
 			id: nextId++,
@@ -264,6 +278,24 @@ export function generateMonsters(world: World, rng: Rng): Monster[] {
 		});
 
 		if (monsters.length >= 8) break;
+	}
+
+	// folklore creatures of the spheres actually present on this world (up to 4)
+	const folkPool = rng.shuffle(SPHERE_CREATURES);
+	let folkCount = 0;
+	for (const arch of folkPool) {
+		if (folkCount >= 4) break;
+		const candidates: number[] = [];
+		for (let i = 0; i < c.n; i++) if (arch.habitatCheck(world, i, 0)) candidates.push(i);
+		if (!candidates.length) continue;
+		const cell = rng.pick(candidates);
+		monsters.push({
+			id: nextId++, name: rng.pick(arch.nameTpl), species: arch.species, tier: arch.tier, category: arch.category, icon: arch.icon,
+			cell, layer: 0, x: c.x[cell], y: c.y[cell], power: arch.power, health: arch.maxHealth, maxHealth: arch.maxHealth, alive: true,
+			lairCell: cell, lairName: lairNear(world, cell), behavior: rng.pick(['dormant', 'roaming']), lore: arch.lore, armor: arch.armor,
+			regen: arch.regen, trophy: arch.trophy, hardToKill: arch.armor >= 0.3
+		});
+		folkCount++;
 	}
 
 	return monsters;

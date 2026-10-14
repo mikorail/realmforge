@@ -75,6 +75,8 @@ export function makeLang(seed: string, sphereId?: string): Lang {
 		sphere: sp
 	};
 	L.maxSyl = sp?.maxSyl ?? Math.min(3, L.minSyl + rng.int(0, 1));
+	// a syllable shape with no consonant slot makes all-vowel words; guarantee one
+	if (!/[CSLFN]/.test(L.struct)) L.struct = 'C' + L.struct;
 	L.genitive = morpheme(L, 'of');
 	L.definite = morpheme(L, 'the');
 	return L;
@@ -146,6 +148,8 @@ export function makeName(L: Lang, key = ''): string {
 		}
 		let name = cap(spell(L, raw));
 		if (name.length > 11) continue;
+		// every name needs a consonant and no run of 3+ vowels (vowel-heavy spheres otherwise yield 'Ueooei')
+		if (!/[^aeiouyáéíóúâêôàèìòùäöüøåāīẹọɛɔə'\s-]/i.test(name) || /[aeiouyáéíóúâêôäöüøåāīẹọɛɔə]{3,}/i.test(name)) continue;
 		const affixes = key === 'city' ? L.sphere?.city : key === 'land' ? L.sphere?.land : undefined;
 		if (affixes?.length && L.rng() < 0.45) {
 			const a = L.rng.pick(affixes);
@@ -158,7 +162,7 @@ export function makeName(L: Lang, key = ''): string {
 		L.used.add(name);
 		return name;
 	}
-	const fallback = cap(spell(L, word(L, key))) + L.used.size;
+	const fallback = cap(spell(L, L.rng.pick(L.cons.split('')) + word(L, key) + L.rng.pick(L.cons.split(''))));
 	L.used.add(fallback);
 	return fallback;
 }

@@ -40,6 +40,7 @@ import { assignPatronDeity, processPantheonInterventions } from './pantheon';
 import { processYearlyUprisings } from './uprisings';
 import { packEncounters, packLine, reskin } from './genrepacks';
 import { vassalizeAfterWar, yearlyConsolidation } from './consolidation';
+import { yearlySphereLore } from './spherelore';
 import type { ArmyToken, ChronEvent, CovertMission, Effects, Encounter, EventKind, HistorySnapshot, IdeologyKind, Monster, LegendaryPlace, Person, Polity, Quest, Role, Travel, UprisingRecord, War } from './types';
 
 export type Power =
@@ -517,6 +518,7 @@ export class Simulation {
 		this.yearlyMonsterHunts();
 		this.yearlyPantheon();
 		this.yearlyUprisings();
+		yearlySphereLore(this);
 		yearlyConsolidation(this);
 		this.pruneMinorPeople();
 		this.compactArchive();

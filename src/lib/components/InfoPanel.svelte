@@ -23,7 +23,7 @@
 		fall: '☗', rebel: '✊', disaster: '☄', god: '✦', avatar: '◆',
 		faith: '☥', misc: '•', capture: '⛫', monster: '🐉', wonder: '🏛',
 		luminary: '📜', tech: '💡', coup: '👑', intrigue: '🗡', quest: '🗺',
-		eco_disaster: '🌪', uprising: '🔥'
+		eco_disaster: '🌪', uprising: '🔥', culture: '🏮'
 	};
 
 	let filter = $state<EventKind | 'all'>('all');
@@ -410,7 +410,7 @@
 			</div>
 		{:else}
 			<div class="row filters">
-				{#each (['all', 'war', 'peace', 'fall', 'death', 'rebel', 'uprising', 'disaster', 'monster', 'wonder', 'luminary', 'tech', 'god'] as const) as k}
+				{#each (['all', 'war', 'peace', 'fall', 'death', 'rebel', 'uprising', 'culture', 'disaster', 'monster', 'wonder', 'luminary', 'tech', 'god'] as const) as k}
 					<button class="chip" class:on={filter === k} onclick={() => (filter = k as EventKind | 'all')}>{k === 'all' ? 'All' : `${KIND_ICON[k as EventKind]} ${k}`}</button>
 				{/each}
 			</div>

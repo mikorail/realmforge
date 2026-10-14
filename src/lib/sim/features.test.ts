@@ -459,7 +459,8 @@ describe('studio and simulation expansions', () => {
 		}
 
 		// Tick simulation and check for monster updates, luminaries spawning, and tech tree
-		for (let m = 0; m < 36; m++) sim.tick();
+		// (10 years: luminary births are random, a 3-year window was flaky)
+		for (let m = 0; m < 120; m++) sim.tick();
 
 		const luminaries = sim.people.filter((p) => ['magician', 'thinker', 'artist', 'athlete', 'inventor'].includes(p.role));
 		expect(luminaries.length).toBeGreaterThanOrEqual(1);

@@ -183,7 +183,8 @@ export type EventKind =
 	| 'intrigue'
 	| 'quest'
 	| 'eco_disaster'
-	| 'uprising';
+	| 'uprising'
+	| 'culture';
 
 export type UprisingKind = 'riot' | 'cult' | 'prophet' | 'hero' | 'mutiny' | 'slave_revolt';
 
@@ -220,7 +221,7 @@ export interface Monster {
 	name: string;
 	species: string;
 	tier: 'legendary' | 'mythos' | 'apex' | 'dread' | 'cataclysm';
-	category: 'biblical' | 'guardian' | 'mythos' | 'dragon' | 'sea_terror' | 'herd';
+	category: 'biblical' | 'guardian' | 'mythos' | 'dragon' | 'sea_terror' | 'herd' | 'folklore';
 	icon: string;
 	cell: number;
 	layer: number;
