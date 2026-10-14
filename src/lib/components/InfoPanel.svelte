@@ -7,6 +7,7 @@
 	import { SPECIES_BY_ID } from '#lib/gen/species';
 	import { ERAS, DISCOVERIES, TECH_BRANCHES, type TechBranch } from '#lib/sim/tech';
 	import { synthesizeAnnualAnnals, compileAnnalsBookMarkdown } from '#lib/sim/chronicle';
+	import { annalsAppendix, biography, rulerName } from '#lib/sim/story/index';
 	import { IDEOLOGIES } from '#lib/sim/politics';
 
 	let { sim, v, cell, layer, terms, onfocus, onselect, ondynasty }: {
@@ -32,7 +33,7 @@
 
 	async function copyAnnals() {
 		const evList = sim.allEvents && sim.allEvents.length ? sim.allEvents : sim.events;
-		const text = compileAnnalsBookMarkdown(evList, sim.w.name, 1000);
+		const text = compileAnnalsBookMarkdown(evList, sim.w.name, 1000, annalsAppendix(sim));
 		try {
 			await navigator.clipboard.writeText(text);
 			copiedAnnals = true;
@@ -112,6 +113,12 @@
 		const enemies = wars.flatMap((w) => (w.attackers.includes(p.id) ? w.defenders : w.attackers)).map((id) => sim.polities[id]);
 		const speciesDef = SPECIES_BY_ID[p.species ?? 'human'] ?? SPECIES_BY_ID['human'];
 		return { p, ruler, heir: heir?.alive ? heir : null, wars, enemies, allies: p.allies.map((a) => sim.polities[a]), layerName: sim.w.layers[p.layer]?.name, speciesDef };
+	});
+
+	const rulerBio = $derived.by(() => {
+		void v;
+		const id = realm?.ruler?.id;
+		return id ? biography(sim, id) : null;
 	});
 
 	const realmArtifacts = $derived.by(() => {
@@ -256,9 +263,21 @@
 				{@const rulerSp = SPECIES_BY_ID[realm.ruler.species ?? 'human'] ?? realm.speciesDef}
 				<div class="stat">
 					<span>Ruler</span>
-					<span>{realm.ruler.name} {realm.ruler.house}, {sim.ageOf(realm.ruler)} <span class="muted small">({rulerSp.icon} {rulerSp.name})</span></span>
+					<span>{rulerName(realm.ruler)} {realm.ruler.house}, {sim.ageOf(realm.ruler)} <span class="muted small">({rulerSp.icon} {rulerSp.name})</span></span>
 				</div>
 				<div class="small muted">{realm.ruler.traits.join(' · ')} · ⚔{realm.ruler.martial} ✉{realm.ruler.diplomacy} ⚖{realm.ruler.stewardship} 🗝{realm.ruler.intrigue}</div>
+			{/if}
+			{#if p.era}
+				<div class="stat small" title={p.eras?.map((e) => `${e.name} (${e.from}-${e.to})`).join('\n')}><span>Era</span><span>{p.era}</span></div>
+			{/if}
+			{#if rulerBio}
+				<details class="small" style="margin: 4px 0;">
+					<summary>Biography of the ruler</summary>
+					<p class="muted">{rulerBio.summary}</p>
+					<ul class="list">
+						{#each rulerBio.entries as e (e.id ?? e.text)}<li><span class="muted">Y{e.y}</span> {e.text}</li>{/each}
+					</ul>
+				</details>
 			{/if}
 			{#if realm.heir}<div class="stat"><span>Heir</span><span>{realm.heir.name}, {sim.ageOf(realm.heir)}</span></div>{/if}
 			<div class="grid2 nums">
