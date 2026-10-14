@@ -3,6 +3,7 @@ import type { Simulation } from '../engine';
 import { clamp } from '../../rng';
 import { narrateFall, narrateRelicLoot, narrateSiege } from '../chronicle';
 import { destroyWonder } from '../wonders';
+import { noteConquest } from '../culture';
 import type { ArmyToken, Polity, War } from '../types';
 
 export function monthlyWars(sim: Simulation) {
@@ -106,6 +107,7 @@ export function takeCell(sim: Simulation, cell: number, taker: number, war?: War
 	const st = sim.st(layer);
 	const old = st[cell];
 	st[cell] = taker;
+	if (layer === 0) noteConquest(sim, cell, taker);
 	sim.fronts.rekey(sim.w, cell, layer);
 	if (layer === 0) c.pop[cell] *= 0.93;
 	const bid = sim.lb[layer][cell];

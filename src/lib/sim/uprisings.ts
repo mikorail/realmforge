@@ -2,6 +2,7 @@ import type { Rng } from '../rng';
 import type { Person, Polity, UprisingKind, UprisingRecord } from './types';
 import type { Simulation } from './engine';
 import { packCult, packLine } from './genrepacks';
+import { cultureMod } from './culture';
 
 export interface UprisingEvent {
 	kind: 'uprising';
@@ -35,13 +36,15 @@ export function processYearlyUprisings(sim: Simulation): UprisingEvent[] {
 	// Unrest is budgeted for the whole world: more realms → lower odds each, so the Chronicle
 	// isn't drowned once a world fragments. Each realm also rests a few years after a notable event.
 	const scale = Math.min(1, 10 / alivePolities.length);
-	const roll = (p: number) => rng.chance(p * scale);
+	let cultureUnrest = 1; // set per realm below: ancestral and pious peoples riot less
+	const roll = (p: number) => rng.chance(p * scale * cultureUnrest);
 	const digest = new Map<string, { kind: string; towns: string[]; realm: string; cell: number; state: number }>();
 	const genre = sim.voice;
 	const rest = (pol: Polity) => sim.unrestUntil.set(pol.id, sim.year + rng.int(3, 8));
 
 	for (const pol of alivePolities) {
 		if ((sim.unrestUntil.get(pol.id) ?? 0) > sim.year) continue;
+		cultureUnrest = cultureMod(sim, pol, 'unrest');
 		const towns = sim.idx.burgsIn(sim.w.burgs, pol.id).filter((b) => b.id && b.alive && b.state === pol.id);
 		if (!towns.length) continue;
 

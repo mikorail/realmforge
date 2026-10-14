@@ -10,6 +10,7 @@ import { narrateColonization, narrateDisaster, narrateFounding, narrateMiscEvent
 import { generateFactionsForPolity, formatRegimeTitle } from '../politics';
 import { assignPatronDeity } from '../pantheon';
 import { packLine } from '../genrepacks';
+import { cultureMod } from '../culture';
 import type { IdeologyKind, Person, Polity } from '../types';
 
 export function rebellions(sim: Simulation) {
@@ -143,7 +144,7 @@ export function colonize(sim: Simulation) {
 		if (li === 0 && BIOMES[c.biome[i]].hab === 0) continue;
 		for (const j of neighbors(c, i)) {
 			const s = S[j];
-			if (s && sim.open(li, j) && sim.polities[s].alive && r.chance(0.25 * sim.polities[s].expansionism)) {
+			if (s && sim.open(li, j) && sim.polities[s].alive && r.chance(0.25 * sim.polities[s].expansionism * cultureMod(sim, sim.polities[s], 'colonize'))) {
 				S[i] = s;
 				const bid = sim.lb[li][i];
 				if (bid) {

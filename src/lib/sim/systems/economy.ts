@@ -5,6 +5,7 @@ import { ERAS, checkNextDiscovery, type TechDiscovery } from '../tech';
 import { buildWonder } from '../wonders';
 import type { LegendaryPlace } from '../types';
 import { cellsByState } from '../indexes';
+import { cultureMod } from '../culture';
 
 export function demographics(sim: Simulation) {
 	const c = sim.c;
@@ -34,10 +35,10 @@ export function economy(sim: Simulation) {
 		if (!p.alive) continue;
 		const ruler = sim.ruler(p);
 		const wars = sim.warsOf(p.id).length;
-		const income = p.pop * p.tax * (0.8 + (ruler?.stewardship ?? 5) * 0.04);
+		const income = p.pop * p.tax * (0.8 + (ruler?.stewardship ?? 5) * 0.04) * cultureMod(sim, p, 'trade');
 		const upkeep = p.army * 0.6;
 		p.treasury += income - upkeep;
-		const target = p.pop * (wars ? 0.05 : 0.02);
+		const target = p.pop * (wars ? 0.05 : 0.02) * cultureMod(sim, p, 'army');
 		if (p.army < target && p.treasury > 0) {
 			const add = Math.min(target - p.army, p.pop * 0.01, p.treasury / 2);
 			p.army += add;

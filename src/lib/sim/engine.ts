@@ -14,6 +14,7 @@ import { generateFactionsForPolity } from './politics';
 import { assignPatronDeity } from './pantheon';
 import { yearlyConsolidation } from './consolidation';
 import { yearlySphereLore } from './spherelore';
+import { monthlyFeasts, newCultureState, yearlyCulture } from './culture';
 import { yearlyLayerLife } from './layerlife';
 import { yearlyEpochs, type ClimateEpoch } from './epochs';
 import { checkAmbition, yearlyLetters, type Letter } from './ambitions';
@@ -82,6 +83,8 @@ export class Simulation {
 	/** avatar inbox (ambitions.ts) */
 	letters: Letter[] = [];
 	tradeTip: { burg: number; until: number } | null = null;
+	/** culture state: movements, orders, lingua franca, conquest assimilation (culture/) */
+	cx = newCultureState();
 	/** active climate epoch (epochs.ts) */
 	epoch: ClimateEpoch | null = null;
 	era = 0;
@@ -344,6 +347,7 @@ export class Simulation {
 				this.log(ev.kind, ev.text, ev.cell, ev.state);
 			}
 		}
+		monthlyFeasts(this);
 		avatar.advanceTravel(this);
 		checkAmbition(this);
 	}
@@ -381,6 +385,7 @@ export class Simulation {
 		yearly.yearlyPantheon(this);
 		yearly.yearlyUprisings(this);
 		yearlySphereLore(this);
+		yearlyCulture(this);
 		yearlyLayerLife(this);
 		yearlyLetters(this);
 		yearlyEpochs(this);
@@ -531,7 +536,7 @@ export class Simulation {
 			nextWar: this.nextWar, rng: this.rng.state(), plagueActive: this.plagueActive,
 			era: this.era, innovation: this.innovation, techs: Array.from(this.techs),
 			wonders: this.wonders, monsters: this.monsters,
-			missions: this.missions, quests: this.quests
+			missions: this.missions, quests: this.quests, cx: this.cx
 		};
 	}
 
@@ -556,6 +561,7 @@ export class Simulation {
 		s.monsters = d.monsters ?? [];
 		s.missions = d.missions ?? [];
 		s.quests = d.quests ?? [];
+		s.cx = { ...newCultureState(), ...(d.cx ?? {}) };
 		s.computeBorders();
 		s.updateVoice();
 		return s;
