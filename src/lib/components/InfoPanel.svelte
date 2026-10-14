@@ -8,6 +8,8 @@
 	import { ERAS, DISCOVERIES, TECH_BRANCHES, type TechBranch } from '#lib/sim/tech';
 	import { synthesizeAnnualAnnals, compileAnnalsBookMarkdown } from '#lib/sim/chronicle';
 	import { IDEOLOGIES } from '#lib/sim/politics';
+	import CultureCard from './CultureCard.svelte';
+	import CultureLists from './CultureLists.svelte';
 
 	let { sim, v, cell, layer, terms, onfocus, onselect, ondynasty }: {
 		sim: Simulation; v: number; cell: number; layer: number; terms: GenreDef['terms'];
@@ -26,6 +28,7 @@
 		eco_disaster: '🌪', uprising: '🔥', culture: '🏮'
 	};
 
+	let cultureCardId = $state<number | null>(null);
 	let filter = $state<EventKind | 'all'>('all');
 	let chronMode = $state<'annals' | 'timeline'>('annals');
 	let copiedAnnals = $state(false);
@@ -204,7 +207,7 @@
 				{@const sp = SPECIES_BY_ID[info.cult.species ?? 'human'] ?? SPECIES_BY_ID['human']}
 				<div class="stat">
 					<span>Culture</span>
-					<span><span class="swatch" style="background:{info.cult.color}"></span>{info.cult.name} <span class="muted">({sp.icon} {sp.name})</span></span>
+					<span><span class="swatch" style="background:{info.cult.color}"></span><button class="link" onclick={() => (cultureCardId = info.cult?.id ?? null)} title="Open culture card">{info.cult.name}</button> <span class="muted">({sp.icon} {sp.name})</span></span>
 				</div>
 			{/if}
 			{#if info.rel && info.rel.id}
@@ -365,6 +368,8 @@
 			{/each}
 		</ul>
 	</section>
+
+	<CultureLists {sim} {v} {onfocus} />
 
 	<section class="chronicle-section">
 		<div class="row between chronicle-header">
@@ -640,6 +645,10 @@
 			{/each}
 		</div>
 	</section>
+{/if}
+
+{#if cultureCardId !== null}
+	<CultureCard {sim} cultureId={cultureCardId} onclose={() => (cultureCardId = null)} />
 {/if}
 
 <style>

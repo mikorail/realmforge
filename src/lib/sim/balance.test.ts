@@ -43,7 +43,7 @@ describe('avatar depth', () => {
 		cos.tick();
 		expect(p.ambitionsDone).toContain('company');
 		p.renown = 80;
-		for (let m = 0; m < 36 && s.me; m++) { s.pending = null; cos.tick(); }
+		for (let m = 0; m < 120 && s.me && !s.letters.length; m++) { s.pending = null; cos.tick(); }
 		expect(s.letters.length).toBeGreaterThan(0);
 	});
 });

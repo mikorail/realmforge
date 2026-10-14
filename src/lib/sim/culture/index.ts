@@ -65,7 +65,7 @@ function linguaFranca(sim: Simulation) {
 }
 
 /** conquered cells slowly take the conqueror's culture */
-function assimilate(sim: Simulation) {
+export function assimilate(sim: Simulation) {
 	const cx = sim.cx, c = sim.c, r = sim.rng;
 	const shifted = new Map<number, number>();
 	for (const key of Object.keys(cx.conquered)) {
