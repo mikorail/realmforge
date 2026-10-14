@@ -1,0 +1,42 @@
+:root {
+	--accent: #c9a45c;
+	--ink: #2b2116;
+	--bg: #16120d;
+	--panel: rgba(250, 243, 226, 0.94);
+	--panel-ink: #2b2116;
+	--muted: #7a6a55;
+	--line: rgba(43, 33, 22, 0.18);
+	--danger: #b03a2e;
+	--title: Cinzel, serif;
+	--body: 'EB Garamond', Georgia, serif;
+	color-scheme: light;
+}
+:root[data-neon] {
+	--panel: rgba(12, 12, 24, 0.92);
+	--panel-ink: #e6f1ff;
+	--muted: #8a93b0;
+	--line: rgba(140, 160, 255, 0.2);
+	color-scheme: dark;
+}
+* { box-sizing: border-box; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--panel-ink); font-family: var(--body); overscroll-behavior: none; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: 0.45; }
+input, select { font: inherit; color: inherit; }
+h1, h2, h3 { font-family: var(--title); font-weight: 600; margin: 0; letter-spacing: 0.04em; }
+.btn {
+	border: 1px solid var(--line); background: transparent; border-radius: 6px; padding: 0.35rem 0.7rem; line-height: 1.2;
+	transition: background 0.15s, border-color 0.15s;
+}
+.btn:hover:not(:disabled) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.btn.on { background: var(--accent); color: var(--ink); border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--ink); border-color: var(--accent); font-weight: 600; }
+.chip { font-size: 0.8rem; padding: 0.1rem 0.45rem; border-radius: 99px; border: 1px solid var(--line); white-space: nowrap; }
+.muted { color: var(--muted); }
+.row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+.stat { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.15rem 0; border-bottom: 1px dotted var(--line); font-size: 0.95rem; }
+.swatch { display: inline-block; width: 0.8em; height: 0.8em; border-radius: 2px; vertical-align: -0.05em; margin-right: 0.3em; border: 1px solid rgba(0,0,0,0.3); }
+.scroll { overflow-y: auto; scrollbar-width: thin; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
