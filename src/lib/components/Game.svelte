@@ -479,7 +479,7 @@
 	.date { display: flex; flex-direction: column; line-height: 1.1; min-width: 9rem; }
 	.planets, .speed { display: flex; gap: 0.25rem; flex-wrap: wrap; }
 	.speed .btn { min-width: 2.4rem; padding: 0.3rem 0.4rem; font-size: 0.85rem; }
-	.right { margin-left: auto; display: flex; gap: 0.35rem; }
+	.right { margin-left: auto; display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: flex-end; }
 	.stage { position: relative; flex: 1; min-height: 0; }
 	.layerbar { position: absolute; left: 0.6rem; top: 0.6rem; display: flex; flex-direction: column; gap: 0.25rem; z-index: 2; }
 	.lay { background: var(--panel); display: flex; gap: 0.4rem; align-items: center; text-align: left; font-size: 0.85rem; }

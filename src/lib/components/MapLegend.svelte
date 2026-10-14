@@ -105,6 +105,7 @@
 	.mk { display: inline-block; width: 1.1rem; height: 0; margin-right: 0.3rem; vertical-align: middle; border-top: 2px solid currentColor; }
 	.mk.war { border-top: 2px dashed var(--danger); }
 	@media (max-width: 760px) {
-		.legend { bottom: 3.7rem; max-width: calc(100% - 1.2rem); }
+		.legend { bottom: 6.6rem; max-width: calc(100% - 1.2rem); }
+		.lbody { max-height: 30dvh; }
 	}
 </style>
