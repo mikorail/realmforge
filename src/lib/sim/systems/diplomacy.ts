@@ -5,6 +5,7 @@ import { narratePeace, narrateWar } from '../chronicle';
 import { transitionRegime } from '../politics';
 import { vassalizeAfterWar } from '../consolidation';
 import type { War } from '../types';
+import { cultureMod } from '../culture';
 
 export function computeBorders(sim: Simulation) {
 	const { edges } = sim.w;
@@ -72,7 +73,7 @@ export function aiWars(sim: Simulation) {
 		if (sim.warsOf(p.id).length >= 1 || p.stability < 30 || p.overlord) continue;
 		const ruler = sim.ruler(p);
 		const aggression = 0.12 + (ruler?.traits.includes('Ambitious') ? 0.12 : 0) + (ruler?.traits.includes('Cruel') ? 0.05 : 0) - (ruler?.traits.includes('Content') ? 0.08 : 0);
-		if (!r.chance(aggression)) continue;
+		if (!r.chance(aggression * cultureMod(sim, p, 'aggression'))) continue;
 		const targets = sim.neighborsOf(p.id).filter((t) => {
 			const tp = sim.polities[t];
 			if (!tp.alive || p.allies.includes(t) || sim.atWar(p.id, t) || tp.overlord === p.id || (tp.overlord && tp.overlord === p.overlord)) return false;
@@ -114,6 +115,9 @@ export function endWars(sim: Simulation) {
 		let chance = 0.08 + years * 0.06;
 		if (aExh < 0.35 || dExh < 0.35) chance += 0.4;
 		if (w.attackers.includes(sim.playerState()) || w.defenders.includes(sim.playerState())) chance *= 0.3; // the player sues for peace themselves
+		// proud cultures hold out, insular ones tire early: mean over the belligerents
+		const sides = [...w.attackers, ...w.defenders];
+		chance *= sides.reduce((s, id) => s + cultureMod(sim, sim.polities[id], 'peace'), 0) / Math.max(1, sides.length);
 		if (!sim.rng.chance(chance)) continue;
 		sim.finishWar(w, w.score > 8 ? 'attackers' : w.score < -4 ? 'defenders' : 'white');
 	}

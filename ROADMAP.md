@@ -74,11 +74,11 @@ Effort: S ≈ an hour, M ≈ a session, L ≈ multi-session. Do them in this ord
 - [x] **Name quality filter** (S): max length ~12, near-duplicate rejection, consonant-cluster limits, slur blocklist.
 
 ### P4 · Culture that plays differently
-- [ ] **Behavioural culture traits** (M): seafaring (more sea routes/colonies), martial honour (fewer peace offers), mercantile (caravans/treasury), ancestral (resists reform), etc.; derived from sphere + biome.
-- [ ] **Culture card** (S): food, dress, architecture, holidays per culture; also in the Markdown dossier export.
-- [ ] **Feast-day calendar** (S): 2–3 named holidays per realm, culture-flavoured month names.
-- [ ] **Language spread** (M): trade lingua franca along busy routes; conquered peoples shift language over generations.
-- [ ] **Art movements & religious orders** (M): spread, split and suppression like faiths.
+- [x] **Behavioural culture traits** (M): seafaring (more sea routes/colonies), martial honour (fewer peace offers), mercantile (caravans/treasury), ancestral (resists reform), etc.; derived from sphere + biome.
+- [x] **Culture card** (S): food, dress, architecture, holidays per culture; also in the Markdown dossier export.
+- [x] **Feast-day calendar** (S): 2–3 named holidays per realm, culture-flavoured month names.
+- [x] **Language spread** (M): trade lingua franca along busy routes; conquered peoples shift language over generations.
+- [x] **Art movements & religious orders** (M): spread, split and suppression like faiths.
 
 ### P5 · Genre & layers completeness
 - [x] **Genre-aware tech tree** (M): re-skin the 75 inventions per genre (cyberpunk: neural lace, orbital elevator…).

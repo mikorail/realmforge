@@ -10,6 +10,7 @@ import { updateIntrigue } from '../intrigue';
 import { spawnQuest, updateQuests } from '../quests';
 import { processPantheonInterventions } from '../pantheon';
 import { processYearlyUprisings } from '../uprisings';
+import { cultureMod } from '../culture';
 
 export function yearlyUprisings(sim: Simulation) {
 	const upEvents = processYearlyUprisings(sim);
@@ -22,7 +23,7 @@ export function yearlyPolitics(sim: Simulation) {
 	for (const pol of sim.polities) {
 		if (!pol.alive || !pol.id) continue;
 		const hasWars = sim.warsOf(pol.id).length > 0;
-		const { events, regimeChanged } = updatePolitics(pol, sim.people, sim.year, sim.rng, hasWars);
+		const { events, regimeChanged } = updatePolitics(pol, sim.people, sim.year, sim.rng, hasWars, cultureMod(sim, pol, 'reform'));
 		for (const ev of events) {
 			sim.log(ev.kind, ev.text, ev.cell, ev.state);
 		}

@@ -4,6 +4,7 @@
 	import type { MapMode, MapRenderer } from '#lib/render/renderer';
 	import { THEMES } from '#lib/render/theme';
 	import { saveGame } from '#lib/save';
+	import { calendarCulture, monthName } from '#lib/sim/culture/index';
 	import type { Cosmos } from '#lib/sim/cosmos';
 	import type { Power } from '#lib/sim/engine';
 	import { onMount } from 'svelte';
@@ -294,7 +295,6 @@
 		}
 	}
 
-	const months = ['Frostmoot', 'Thawmonth', 'Seedtide', 'Rainmoon', 'Bloomtide', 'Highsun', 'Emberfall', 'Harvest', 'Leafturn', 'Mistmoon', 'Darkening', 'Longnight'];
 	const modes: [MapMode, string][] = [['political', 'Realms'], ['biome', 'Biomes'], ['height', 'Relief'], ['culture', 'Cultures'], ['religion', 'Faiths'], ['population', 'People']];
 </script>
 
@@ -313,7 +313,7 @@
 		{/if}
 		<div class="date">
 			<strong>Year {date.year}</strong>
-			<span class="muted small">{months[date.month]} · {date.age}</span>
+			<span class="muted small">{monthName(world, calendarCulture(sim), date.month)} · {date.age}</span>
 		</div>
 		<div class="speed" role="group" aria-label="Time">
 			{#each [[0, '❚❚'], [1, '▶'], [3, '▶▶'], [12, '▶▶▶'], [36, '⏩']] as [sp, label] (sp)}

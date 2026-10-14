@@ -364,7 +364,9 @@ export function updatePolitics(
 	people: Person[],
 	year: number,
 	rng: Rng,
-	hasActiveWars: boolean
+	hasActiveWars: boolean,
+	/** culture modifier on the chance of peaceful reform (culture/profile.ts `reform`) */
+	reformMod = 1
 ): { events: ChronEvent[]; regimeChanged: boolean } {
 	const events: ChronEvent[] = [];
 	let regimeChanged = false;
@@ -405,7 +407,7 @@ export function updatePolitics(
 		const reformist = pol.factions.find(
 			(f) => (f.ideology === 'republic' || f.ideology === 'communal' || f.ideology === 'technocracy') && f.influence >= 50 && f.militancy <= 40
 		);
-		if (reformist && rng.chance(0.20)) {
+		if (reformist && rng.chance(0.20 * reformMod)) {
 			const res = transitionRegime(pol, reformist.ideology, 'reform', year, rng, people);
 			events.push(...res.events);
 			regimeChanged = true;

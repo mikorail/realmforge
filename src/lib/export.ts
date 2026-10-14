@@ -5,6 +5,8 @@ import type { MapMode } from './render/renderer';
 import type { MapTheme } from './render/theme';
 import type { Simulation } from './sim/engine';
 import { synthesizeAnnualAnnals } from './sim/chronicle';
+import { cultureCard, cultureCardMarkdown } from './sim/culture/card';
+import { monthName, realmFeasts } from './sim/culture';
 
 /** Trigger a browser file download */
 export function downloadFile(content: string | Blob, filename: string, mimeType = 'text/plain') {
@@ -120,6 +122,7 @@ export function generateWorldGazetteer(world: World, sim: Simulation): string {
 		lines.push(`- **Military**: ${(p.army * 1000).toFixed(0)} standing troops | Stability: ${p.stability.toFixed(0)}/100`);
 		lines.push(`- **Treasury**: ${p.treasury.toFixed(1)} gold (Tax rate: ${(p.tax * 100).toFixed(0)}%)`);
 		lines.push(`- **Culture**: ${cult ? cult.name : 'Unknown'} | **Faith**: ${rel ? rel.name : 'Secular'}`);
+		lines.push(`- **Feast days**: ${realmFeasts(world, p).map((f) => `${f.name} (${monthName(world, p.culture, f.month)})`).join('; ')}`);
 		const allies = p.allies.map((id) => sim.polities[id]?.name).filter(Boolean);
 		if (allies.length) lines.push(`- **Alliances**: ${allies.join(', ')}`);
 		const wars = sim.warsOf(p.id);
@@ -141,6 +144,19 @@ export function generateWorldGazetteer(world: World, sim: Simulation): string {
 		if (!c.id) continue;
 		lines.push(`- **${c.name}**: Sphere of ${c.sphere || 'General'}.`);
 	}
+
+	lines.push(`\n## Culture Cards\n`);
+	for (const c of world.cultures) {
+		const card = c.id ? cultureCard(sim, c.id) : null;
+		if (card) lines.push(...cultureCardMarkdown(card), ``);
+	}
+
+	lines.push(`## Art Movements and Religious Orders\n`);
+	const liveMoves = sim.cx.movements.filter((m) => m.status === 'rising' || m.status === 'flourishing');
+	const liveOrders = sim.cx.orders.filter((o) => o.status === 'rising' || o.status === 'flourishing');
+	if (!liveMoves.length && !liveOrders.length) lines.push(`*No movements or orders are currently active.*`);
+	for (const m of liveMoves) lines.push(`- **${m.name}** (${m.kind}, since year ${m.founded}): patronised by ${m.realms.map((id) => sim.polities[id]?.name).join(', ')}.`);
+	for (const o of liveOrders) lines.push(`- **${o.name}** (${o.kind} order of ${world.religions[o.faith]?.name ?? 'the faith'}, since year ${o.founded}): houses in ${o.realms.map((id) => sim.polities[id]?.name).join(', ')}.`);
 
 	lines.push(`\n## Active Wars\n`);
 	const activeWars = sim.wars.filter((w) => !w.end);
