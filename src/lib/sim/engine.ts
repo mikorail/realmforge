@@ -38,6 +38,7 @@ import { updateIntrigue } from './intrigue';
 import { spawnQuest, updateQuests } from './quests';
 import { assignPatronDeity, processPantheonInterventions } from './pantheon';
 import { processYearlyUprisings } from './uprisings';
+import { vassalizeAfterWar, yearlyConsolidation } from './consolidation';
 import type { ArmyToken, ChronEvent, CovertMission, Effects, Encounter, EventKind, HistorySnapshot, IdeologyKind, Monster, LegendaryPlace, Person, Polity, Quest, Role, Travel, UprisingRecord, War } from './types';
 
 export type Power =
@@ -140,6 +141,8 @@ export class Simulation {
 	quests: Quest[] = [];
 	missions: CovertMission[] = [];
 	uprisings: UprisingRecord[] = [];
+	/** polity id → year its next notable uprising may happen */
+	unrestUntil = new Map<number, number>();
 	era = 0;
 	innovation = 0;
 	techs = new Set<string>();
@@ -511,7 +514,41 @@ export class Simulation {
 		this.yearlyMonsterHunts();
 		this.yearlyPantheon();
 		this.yearlyUprisings();
+		yearlyConsolidation(this);
+		this.pruneMinorPeople();
+		this.compactArchive();
 		this.recount();
+	}
+
+	/**
+	 * Keep the living cast bounded: once the world holds more notable people than it can
+	 * meaningfully track, the least renowned commoners fade from the annals (no log line).
+	 * Rulers, heirs, generals, the avatar and anyone mid-quest are never pruned.
+	 */
+	private pruneMinorPeople() {
+		const aliveRealms = this.polities.filter((p) => p.alive && p.id).length;
+		const cap = 150 + aliveRealms * 6;
+		const alive = this.people.filter((p) => p.alive && p.id);
+		if (alive.length <= cap) return;
+		const busy = new Set<number>();
+		for (const q of this.quests ?? []) if (!q.completed) busy.add(q.heroId);
+		const keepRole = new Set(['ruler', 'heir', 'general']);
+		const candidates = alive
+			.filter((p) => p.id !== this.avatar && !busy.has(p.id) && !(keepRole.has(p.role) && this.polities[p.state]?.alive) && !p.magnumOpus)
+			.sort((a, b) => a.renown - b.renown);
+		for (const p of candidates.slice(0, alive.length - cap)) {
+			p.alive = false;
+			p.died = this.year;
+			p.cause = 'faded from the annals';
+		}
+	}
+
+	/** major events are kept forever; routine ones older than 60 years are dropped once the archive is large */
+	private compactArchive() {
+		if (this.allEvents.length < 25000) return;
+		const MINOR = new Set(['uprising', 'intrigue', 'misc', 'luminary', 'quest', 'avatar', 'capture', 'birth', 'tech']);
+		const cutoff = this.year - 60;
+		this.allEvents = this.allEvents.filter((e) => e.y >= cutoff || !MINOR.has(e.kind));
 	}
 
 	private yearlyUprisings() {
@@ -947,13 +984,13 @@ export class Simulation {
 		const r = this.rng;
 		for (const p of this.polities) {
 			if (!p.alive || p.id === this.playerState()) continue;
-			if (this.warsOf(p.id).length >= 1 || p.stability < 30) continue;
+			if (this.warsOf(p.id).length >= 1 || p.stability < 30 || p.overlord) continue;
 			const ruler = this.ruler(p);
 			const aggression = 0.12 + (ruler?.traits.includes('Ambitious') ? 0.12 : 0) + (ruler?.traits.includes('Cruel') ? 0.05 : 0) - (ruler?.traits.includes('Content') ? 0.08 : 0);
 			if (!r.chance(aggression)) continue;
 			const targets = this.neighborsOf(p.id).filter((t) => {
 				const tp = this.polities[t];
-				if (!tp.alive || p.allies.includes(t) || this.atWar(p.id, t)) return false;
+				if (!tp.alive || p.allies.includes(t) || this.atWar(p.id, t) || tp.overlord === p.id || (tp.overlord && tp.overlord === p.overlord)) return false;
 				return this.rel(p.id, t) < -20 && this.strength([p.id]) > this.strength([t, ...tp.allies.filter((x) => this.neighborsOf(t).length)]) * 1.15;
 			});
 			if (!targets.length) continue;
@@ -966,6 +1003,8 @@ export class Simulation {
 		const pa = this.polities[a], pb = this.polities[b];
 		const attackers = [a];
 		const defenders = [b, ...pb.allies.filter((x) => this.polities[x].alive && x !== a && !this.atWar(x, b))];
+		// a suzerain defends its vassals
+		if (pb.overlord && pb.overlord !== a && this.polities[pb.overlord]?.alive && !defenders.includes(pb.overlord)) defenders.push(pb.overlord);
 		// attacker's allies may join
 		for (const al of pa.allies) if (this.polities[al].alive && !defenders.includes(al) && this.rng.chance(0.5)) attackers.push(al);
 		const tpl = this.rng.pick(WAR_NAMES);
@@ -1183,6 +1222,7 @@ export class Simulation {
 		for (const x of win) { this.polities[x].stability += 8; this.polities[x].treasury += 15; }
 		for (const x of lose) { this.polities[x].stability -= 10; this.polities[x].treasury -= 10; }
 		for (const x of w.attackers) for (const y of w.defenders) this.addRel(x, y, 25);
+		vassalizeAfterWar(this, w, winner);
 
 		// Post-war Enforced Regime Change:
 		// Decisive victory (|score| >= 10) with opposing ideologies can impose a sister system

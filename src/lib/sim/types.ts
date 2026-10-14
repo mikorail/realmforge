@@ -105,6 +105,11 @@ export interface Polity {
 	reformedSystemYear?: number;
 	previousForm?: string;
 	systemChangeCause?: string;
+	/** suzerain polity id when this realm is a vassal */
+	overlord?: number;
+	vassalSince?: number;
+	/** set when absorbed peacefully / by union / annexation */
+	mergedInto?: number;
 }
 
 export interface War {

@@ -31,7 +31,15 @@ export function processYearlyUprisings(sim: Simulation): UprisingEvent[] {
 	const alivePolities = sim.polities.filter((p) => p.id && p.alive && p.cells > 0);
 	if (!alivePolities.length) return events;
 
+	// Unrest is budgeted for the whole world: more realms → lower odds each, so the Chronicle
+	// isn't drowned once a world fragments. Each realm also rests a few years after a notable event.
+	const scale = Math.min(1, 10 / alivePolities.length);
+	const roll = (p: number) => rng.chance(p * scale);
+	const digest = new Map<string, { kind: string; towns: string[]; realm: string; cell: number; state: number }>();
+	const rest = (pol: Polity) => sim.unrestUntil.set(pol.id, sim.year + rng.int(3, 8));
+
 	for (const pol of alivePolities) {
+		if ((sim.unrestUntil.get(pol.id) ?? 0) > sim.year) continue;
 		const towns = sim.w.burgs.filter((b) => b.id && b.alive && b.state === pol.id);
 		if (!towns.length) continue;
 
@@ -41,7 +49,7 @@ export function processYearlyUprisings(sim: Simulation): UprisingEvent[] {
 		const highTax = pol.tax >= 0.20;
 		const lowStab = pol.stability < 35;
 
-		if ((highTax || lowStab || longWar) && rng.chance(0.24)) {
+		if ((highTax || lowStab || longWar) && roll(0.3)) {
 			const town = rng.pick(towns);
 			let subtype: 'bread_riot' | 'tax_riot' | 'conscription_riot' | 'sectarian_riot' = 'bread_riot';
 
@@ -68,8 +76,17 @@ export function processYearlyUprisings(sim: Simulation): UprisingEvent[] {
 				pol.stability = Math.max(5, pol.stability - rng.int(7, 13));
 			}
 
-			const text = narrateRiot(rng, subtype, town.name, pol.name);
-			events.push({ kind: 'uprising', text, cell: town.cell, state: pol.id });
+			// routine riots are folded into one yearly digest line; only a riot that tips into revolt is narrated
+			const severe = pol.stability <= 15 && pol.cells >= 10 && towns.length > 1;
+			if (severe) {
+				events.push({ kind: 'uprising', text: narrateRiot(rng, subtype, town.name, pol.name), cell: town.cell, state: pol.id });
+				rest(pol);
+			} else {
+				const key = `${pol.id}:${subtype}`;
+				const d = digest.get(key) ?? { kind: subtype, towns: [], realm: pol.name, cell: town.cell, state: pol.id };
+				d.towns.push(town.name);
+				digest.set(key, d);
+			}
 
 			// Severe unrest can ignite an ideological revolt if realm is already on the brink
 			if (pol.stability <= 15 && pol.cells >= 10 && towns.length > 1 && rng.chance(0.35)) {
@@ -80,7 +97,8 @@ export function processYearlyUprisings(sim: Simulation): UprisingEvent[] {
 		// 2. Secret Cult Awakenings
 		const undergroundOrEldritch = towns.some((t) => sim.burgLayer(t) > 0 || sim.w.cultures[t.culture]?.sphere === 'Eldritch');
 		const cultChance = undergroundOrEldritch ? 0.16 : 0.09;
-		if (rng.chance(cultChance)) {
+		if (roll(cultChance)) {
+			rest(pol);
 			const town = rng.pick(towns);
 			const cultName = rng.pick(CULT_NAMES);
 			const subtypes = ['doomsday_cult', 'eldritch_cult', 'blood_coven', 'flagellant_order'] as const;
@@ -109,7 +127,8 @@ export function processYearlyUprisings(sim: Simulation): UprisingEvent[] {
 		}
 
 		// 3. Charismatic Prophets and Messianic Movements
-		if (rng.chance(0.11)) {
+		if (roll(0.11)) {
+			rest(pol);
 			const town = rng.pick(towns);
 			const prophet = sim.makePerson(town.culture, pol.id, town.id, 'prophet', rng.int(28, 56));
 			prophet.traits = [...new Set([...prophet.traits, 'Prophet', 'Visionary', 'Zealot'])];
@@ -157,7 +176,8 @@ export function processYearlyUprisings(sim: Simulation): UprisingEvent[] {
 
 		// 4. Folk Heroes and Popular Champions
 		const heroChance = pol.stability < 45 || activeWars.length > 0 ? 0.16 : 0.08;
-		if (rng.chance(heroChance)) {
+		if (roll(heroChance)) {
+			rest(pol);
 			const town = rng.pick(towns);
 			const hero = sim.makePerson(town.culture, pol.id, town.id, 'hero', rng.int(20, 38));
 			hero.martial = rng.int(16, 24);
@@ -199,7 +219,8 @@ export function processYearlyUprisings(sim: Simulation): UprisingEvent[] {
 		}
 
 		// 5. Military Mutinies
-		if (activeWars.length > 0 && pol.treasury <= 5 && pol.stability < 30 && rng.chance(0.20)) {
+		if (activeWars.length > 0 && pol.treasury <= 5 && pol.stability < 30 && roll(0.2)) {
+			rest(pol);
 			const town = rng.pick(towns);
 			pol.army = +(Math.max(0.5, pol.army * 0.78)).toFixed(1);
 			pol.stability = Math.max(5, pol.stability - 10);
@@ -209,6 +230,13 @@ export function processYearlyUprisings(sim: Simulation): UprisingEvent[] {
 		}
 	}
 
+	if (digest.size) {
+		const LABEL: Record<string, string> = { bread_riot: 'bread riots', tax_riot: 'tax riots', conscription_riot: 'draft riots', sectarian_riot: 'sectarian clashes' };
+		const parts = [...digest.values()].slice(0, 6).map((d) => `${LABEL[d.kind] ?? d.kind} in ${d.towns.join(', ')} (${d.realm})`);
+		const more = digest.size > 6 ? `, and ${digest.size - 6} more` : '';
+		const first = [...digest.values()][0];
+		events.push({ kind: 'uprising', text: `Unrest of the year: ${parts.join('; ')}${more}.`, cell: first.cell, state: first.state });
+	}
 	return events;
 }
 

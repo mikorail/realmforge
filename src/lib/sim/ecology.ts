@@ -160,7 +160,8 @@ export function processAnthropogenicDisasters(
 
 		// 6. Over-Farming Dust Bowl (arid plains / steppes)
 		if ((biome === 1 || biome === 2 || biome === 3) && prec < 35 && pop > 0.9 && rng.chance(0.3)) {
-			const locName = bId ? world.burgs[bId].name : `Territories of Cell ${cell}`;
+			const near = bId ? world.burgs[bId] : world.burgs.filter((b) => b.id && b.alive && b.layer === 'surface').reduce<typeof world.burgs[0] | null>((best, b) => (!best || (b.x - world.cells.x[cell]) ** 2 + (b.y - world.cells.y[cell]) ** 2 < (best.x - world.cells.x[cell]) ** 2 + (best.y - world.cells.y[cell]) ** 2 ? b : best), null);
+			const locName = bId ? world.burgs[bId].name : near ? `the hinterlands of ${near.name}` : 'the wild frontier';
 			c.pop[cell] = Math.max(0.05, c.pop[cell] * 0.7);
 			if (pol?.alive) {
 				pol.stability = Math.max(5, pol.stability - 7);
