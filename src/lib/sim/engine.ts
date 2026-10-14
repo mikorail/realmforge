@@ -42,6 +42,7 @@ import { packEncounters, packLine, reskin } from './genrepacks';
 import { vassalizeAfterWar, yearlyConsolidation } from './consolidation';
 import { yearlySphereLore } from './spherelore';
 import { yearlyLayerLife } from './layerlife';
+import { yearlyEpochs, type ClimateEpoch } from './epochs';
 import { checkAmbition, companionBonus, hireCompanion, yearlyLetters, type Letter } from './ambitions';
 import type { ArmyToken, ChronEvent, CovertMission, Effects, Encounter, EventKind, HistorySnapshot, IdeologyKind, Monster, LegendaryPlace, Person, Polity, Quest, Role, Travel, UprisingRecord, War } from './types';
 
@@ -152,6 +153,8 @@ export class Simulation {
 	/** avatar inbox (ambitions.ts) */
 	letters: Letter[] = [];
 	tradeTip: { burg: number; until: number } | null = null;
+	/** active climate epoch (epochs.ts) */
+	epoch: ClimateEpoch | null = null;
 	era = 0;
 	innovation = 0;
 	techs = new Set<string>();
@@ -529,6 +532,7 @@ export class Simulation {
 		yearlySphereLore(this);
 		yearlyLayerLife(this);
 		yearlyLetters(this);
+		yearlyEpochs(this);
 		yearlyConsolidation(this);
 		this.pruneMinorPeople();
 		this.compactArchive();
@@ -2264,7 +2268,7 @@ export class Simulation {
 	}
 
 	/** Configure World, live: re-run climate + precipitation + biomes; people rescale to the new carrying capacity. */
-	reclimate(cl: Climate) {
+	reclimate(cl: Climate, silent = false) {
 		const c = this.c;
 		const w = this.w;
 		w.opts = withDefaults({ ...w.opts, climate: { ...cl, winds: [...cl.winds] } });
@@ -2280,7 +2284,7 @@ export class Simulation {
 		for (let i = 0; i < c.n; i++) c.pop[i] = old[i] > 0 ? (cur[i] * next[i]) / old[i] : next[i] * 0.3;
 		this.basePop = next;
 		this.recount();
-		this.log('god', `The heavens shift and winds veer: the global climate of ${this.w.name} is permanently remade by divine will.`);
+		if (!silent) this.log('god', `The heavens shift and winds veer: the global climate of ${this.w.name} is permanently remade by divine will.`);
 		this.dirty.terrain = true;
 		this.dirty.political = true;
 	}
@@ -2956,7 +2960,7 @@ export class Simulation {
 		return {
 			year: this.year, month: this.month, mana: this.mana, manaMax: this.manaMax, sandbox: this.sandbox,
 			people: this.people, polities: this.polities, wars: this.wars, events: this.events,
-			allEvents: this.allEvents, letters: this.letters, tradeTip: this.tradeTip, historySnapshots: this.historySnapshots, uprisings: this.uprisings,
+			allEvents: this.allEvents, letters: this.letters, tradeTip: this.tradeTip, epoch: this.epoch, historySnapshots: this.historySnapshots, uprisings: this.uprisings,
 			plague: this.plague, basePop: this.basePop, avatar: this.avatar, travel: this.travel, pending: this.pending,
 			nextWar: this.nextWar, rng: this.rng.state(), plagueActive: this.plagueActive,
 			era: this.era, innovation: this.innovation, techs: Array.from(this.techs),
@@ -2971,6 +2975,7 @@ export class Simulation {
 		s.allEvents = d.allEvents ?? d.events?.slice() ?? [];
 		s.letters = d.letters ?? [];
 		s.tradeTip = d.tradeTip ?? null;
+		s.epoch = d.epoch ?? null;
 		s.historySnapshots = (d.historySnapshots ?? []).map((snap: any) => ({
 			...snap,
 			surfaceStates: snap.surfaceStates instanceof Uint16Array ? snap.surfaceStates : new Uint16Array(snap.surfaceStates)
