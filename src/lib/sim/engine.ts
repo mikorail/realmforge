@@ -30,6 +30,8 @@ import * as yearly from './systems/yearly';
 import * as godpowers from './systems/godpowers';
 import * as avatar from './systems/avatar';
 import { FrontIndex, OpenCells, SimIndex } from './indexes';
+import { yearlyCrossLayer } from './worldrules/crosslayer';
+import { extraColonize, navalMult, yearlyPlanetRules } from './worldrules/planets';
 import type { Power } from './systems/godpowers';
 
 export { POWERS, type Power } from './systems/godpowers';
@@ -291,7 +293,7 @@ export class Simulation {
 			if (!p.alive) continue;
 			const g = this.general(p);
 			const lead = Math.max(this.ruler(p)?.martial ?? 0, g?.martial ?? 0);
-			s += p.army * (1 + lead * 0.04) * (0.6 + p.stability / 250);
+			s += p.army * (1 + lead * 0.04) * (0.6 + p.stability / 250) * navalMult(this, id);
 		}
 		return s;
 	}
@@ -333,7 +335,7 @@ export class Simulation {
 		this.mana = Math.min(this.manaMax, this.mana + 1.5);
 		warfare.monthlyWars(this);
 		environment.spreadPlague(this);
-		if (this.month % 3 === 0) realms.colonize(this);
+		if (this.month % 3 === 0) { realms.colonize(this); extraColonize(this); }
 		if (this.month % 2 === 0) {
 			this.caravans = updateCaravans(this.caravans, this.w, this.rng);
 			this.updateArmyTokens();
@@ -385,6 +387,8 @@ export class Simulation {
 		yearlyLetters(this);
 		yearlyEpochs(this);
 		yearlyConsolidation(this);
+		yearlyCrossLayer(this);
+		yearlyPlanetRules(this);
 		lifecycle.pruneMinorPeople(this);
 		history.compactArchive(this);
 		this.recount();

@@ -84,8 +84,8 @@ Effort: S ≈ an hour, M ≈ a session, L ≈ multi-session. Do them in this ord
 - [ ] **Genre-aware tech tree** (M): re-skin the 75 inventions per genre (cyberpunk: neural lace, orbital elevator…).
 - [ ] **Genre monster/wonder reskins** (S): dragon → rogue mech, Tower of Magic → corporate spire, etc.
 - [ ] **Replace `Thunderbird` archetype** (S): sacred to several Indigenous nations; swap for a non-sacred folklore creature.
-- [ ] **Cross-layer politics** (M): surface taxes undercity trade, sky blockades, undersea port control.
-- [ ] **Planet-specific rules** (S): ocean worlds favour sea power, ice worlds halt winter campaigns.
+- [x] **Cross-layer politics** (M) _(done: `worldrules/crosslayer.ts`, yearly shaft tax/tax revolts, sky blockades, sea tolls + embargoes)_: surface taxes undercity trade, sky blockades, undersea port control.
+- [x] **Planet-specific rules** (S) _(done: `worldrules/planets.ts`: ocean/ice/desert/volcanic/exotic)_: ocean worlds favour sea power, ice worlds halt winter campaigns.
 
 ### P6 · UX
 - [ ] **Map legend + hover cards** (S): realm ruler, ideology, wars on hover.

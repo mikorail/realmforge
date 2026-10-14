@@ -3,6 +3,7 @@ import type { Simulation } from '../engine';
 import { clamp } from '../../rng';
 import { narrateFall, narrateRelicLoot, narrateSiege } from '../chronicle';
 import { destroyWonder } from '../wonders';
+import { campaignHalted } from '../worldrules/planets';
 import type { ArmyToken, Polity, War } from '../types';
 
 export function monthlyWars(sim: Simulation) {
@@ -28,6 +29,7 @@ export function monthlyWars(sim: Simulation) {
 			resync = false;
 		}
 		w.months++;
+		if (campaignHalted(sim)) continue; // ice worlds: winter halts the fronts
 		const sa = sim.strength(w.attackers), sd = sim.strength(w.defenders) * 1.1;
 		const ratio = sa / Math.max(0.01, sd);
 		// front cells: defender cells adjacent to attacker cells (and vice versa)
