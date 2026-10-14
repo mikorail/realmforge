@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { downloadFile, generateSvgMap, generateWorldGazetteer, renderPosterPng } from '#lib/export';
 	import { compileAnnalsBookMarkdown } from '#lib/sim/chronicle';
+	import { annalsAppendix } from '#lib/sim/story/index';
 	import type { MapRenderer } from '#lib/render/renderer';
 	import type { Cosmos } from '#lib/sim/cosmos';
 	import { getShareUrl } from '#lib/share';
@@ -52,7 +53,7 @@
 
 	function exportCompleteAnnals() {
 		const evList = sim.allEvents && sim.allEvents.length ? sim.allEvents : sim.events;
-		const md = compileAnnalsBookMarkdown(evList, world.name, 1000);
+		const md = compileAnnalsBookMarkdown(evList, world.name, 1000, annalsAppendix(sim));
 		downloadFile(md, `${world.name.toLowerCase().replace(/\s+/g, '-')}-complete-annals.md`, 'text/markdown');
 		onsay('Complete historical annals book downloaded.');
 	}

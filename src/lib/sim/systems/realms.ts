@@ -11,6 +11,8 @@ import { generateFactionsForPolity, formatRegimeTitle } from '../politics';
 import { assignPatronDeity } from '../pantheon';
 import { packLine } from '../genrepacks';
 import type { IdeologyKind, Person, Polity } from '../types';
+import { findCause } from '../story/chains';
+import { rulerName } from '../story/people';
 
 export function rebellions(sim: Simulation) {
 	for (const pol of sim.polities) {
@@ -126,7 +128,9 @@ export function revolt(sim: Simulation, pol: Polity, nearCell?: number, leader?:
 	sim.computeBorders();
 	sim.dirty.political = true;
 	const rebelText = narrateRebellion(sim.rng, town.name, pol.name, np.fullName, sim.ruler(np).name, rebelIdeology);
-	sim.log('rebel', rebelText, town.cell, id);
+	const revoltEv = sim.log('rebel', rebelText, town.cell, id, 'revolt', findCause(sim, 'revolt', pol.id));
+	const newRuler = sim.ruler(np);
+	sim.log('misc', `${rulerName(newRuler)} is acclaimed ruler of ${np.fullName}.`, town.cell, id, 'reign', revoltEv.id);
 	if (r.chance(0.8)) sim.declareWar(pol.id, id, 'to crush the rebels');
 	return np;
 }
@@ -207,11 +211,11 @@ export function randomEvents(sim: Simulation) {
 		if (roll < 0.2) {
 			p.stability += 15;
 			p.treasury += 30;
-			sim.log('misc', packLine(sim.voice, 'golden', sim.rng, { realm: p.name, town: cap.name }) ?? narrateMiscEvent(sim.rng, 'golden_age', cap.name, p.name), cap.cell, p.id);
+			sim.log('misc', packLine(sim.voice, 'golden', sim.rng, { realm: p.name, town: cap.name }) ?? narrateMiscEvent(sim.rng, 'golden_age', cap.name, p.name), cap.cell, p.id, 'golden');
 		} else if (roll < 0.35) {
 			for (let i = 0; i < sim.c.n; i++) if (sim.c.state[i] === p.id) sim.c.pop[i] *= 0.85;
 			p.stability -= 10;
-			sim.log('disaster', packLine(sim.voice, 'famine', sim.rng, { realm: p.name, town: cap.name }) ?? narrateDisaster(sim.rng, 'famine', cap.name, p.name), cap.cell, p.id);
+			sim.log('disaster', packLine(sim.voice, 'famine', sim.rng, { realm: p.name, town: cap.name }) ?? narrateDisaster(sim.rng, 'famine', cap.name, p.name), cap.cell, p.id, 'famine');
 		} else if (roll < 0.45) {
 			const towns = sim.idx.burgsIn(sim.w.burgs, p.id).filter((b) => b.alive && b.state === p.id);
 			if (towns.length) {
@@ -231,9 +235,10 @@ export function randomEvents(sim: Simulation) {
 				const plotter = sim.general(p);
 				if (plotter && plotter.intrigue + plotter.martial > ruler.intrigue + 10 && p.stability < 40) {
 					const coupText = narratePalaceCoup(sim.rng, plotter.name, ruler.name, p.name);
-					sim.log('rebel', coupText, cap.cell, p.id);
+					const coupEv = sim.log('rebel', coupText, cap.cell, p.id, 'coup', findCause(sim, 'coup', p.id));
 					sim.kill(ruler, 'the coup');
 					sim.crown(p, plotter);
+					sim.log('misc', `${rulerName(plotter)} takes the throne of ${p.name}.`, cap.cell, p.id, 'reign', coupEv.id);
 				}
 			}
 		}

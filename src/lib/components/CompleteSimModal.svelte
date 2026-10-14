@@ -2,6 +2,7 @@
 	import { downloadFile } from '#lib/export';
 	import type { Cosmos } from '#lib/sim/cosmos';
 	import { compileAnnalsBookMarkdown } from '#lib/sim/chronicle';
+	import { annalsAppendix } from '#lib/sim/story/index';
 
 	let {
 		cosmos,
@@ -107,7 +108,7 @@
 
 	function downloadAnnals() {
 		const evList = sim.allEvents && sim.allEvents.length ? sim.allEvents : sim.events;
-		const md = compileAnnalsBookMarkdown(evList, world.name, 1000);
+		const md = compileAnnalsBookMarkdown(evList, world.name, 1000, annalsAppendix(sim));
 		downloadFile(md, `${world.name.toLowerCase().replace(/\s+/g, '-')}-complete-annals.md`, 'text/markdown');
 		onsay('Complete historical annals book downloaded.');
 	}

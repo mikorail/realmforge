@@ -61,16 +61,16 @@ Effort: S ≈ an hour, M ≈ a session, L ≈ multi-session. Do them in this ord
 - [x] **Split `engine.ts`** (~3k lines, L): extract economy, diplomacy/wars, lifecycle, faith, avatar, god powers into modules behind one `SimContext`; engine keeps only tick orchestration.
 
 ### P2 · Story quality
-- [ ] **Event chains** (M): events carry a `cause` id; famine → riot → coup → new dynasty; chronicle prose cites causes ("because of the famine of Y112…").
-- [ ] **Named eras per realm** (S): every 20 years summarize stats into an era title ("The Troubles of X", "The Long Peace").
-- [ ] **Great people biographies** (M): track a few notable figures per century; auto-written bio from their events.
-- [ ] **Rare world moments** (S): world councils, great crusades, first contact between layers / planets.
-- [ ] **Perspective names** (S): one war, two names per culture ("the Liberation" / "the Betrayal").
+- [x] **Event chains** (M): events carry a `cause` id; famine → riot → coup → new dynasty; chronicle prose cites causes ("because of the famine of Y112…"). *(done: `sim/story/chains.ts`)*
+- [x] **Named eras per realm** (S): every 20 years summarize stats into an era title ("The Troubles of X", "The Long Peace"). *(done: `story/eras.ts`)*
+- [x] **Great people biographies** (M): track a few notable figures per century; auto-written bio from their events. *(done: `biography()` in `story/people.ts`)*
+- [x] **Rare world moments** (S): world councils, great crusades, first contact between layers / planets. *(done: `story/moments.ts`)*
+- [x] **Perspective names** (S): one war, two names per culture ("the Liberation" / "the Betrayal"). *(done: `nameWars`)*
 
 ### P3 · Naming
-- [x] **Name grammar per sphere** (M): patronymics (Norse -son, Slavic -ovich, Arabic ibn), clan-first order (Sinic/Japonic), day names (Akan), epithets ("the Bold", "Iron-Hand"), regnal numbers ("Kofi III"). *(`fullPersonName` + helpers done; engine still calls `personName`, wiring pending)*
+- [x] **Name grammar per sphere** (M): patronymics (Norse -son, Slavic -ovich, Arabic ibn), clan-first order (Sinic/Japonic), day names (Akan), epithets ("the Bold", "Iron-Hand"), regnal numbers ("Kofi III"). *(wired: `makePerson`, `crown`, `kill`)*
 - [x] **Semantic place names** (M): per-culture morpheme dictionary (river, hill, new, white…) so names share recognizable roots.
-- [x] **Name drift over centuries** (S): old towns erode to new forms; keep the archaic name in history. *(pure `driftName` done; engine call sites still to wire, see names.ts docs)*
+- [x] **Name drift over centuries** (S): old towns erode to new forms; keep the archaic name in history. *(wired: `story/drift.ts`)*
 - [x] **Name quality filter** (S): max length ~12, near-duplicate rejection, consonant-cluster limits, slur blocklist.
 
 ### P4 · Culture that plays differently

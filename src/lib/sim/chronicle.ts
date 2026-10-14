@@ -1,5 +1,6 @@
 import type { Rng } from '../rng';
 import type { ChronEvent, EventKind, IdeologyKind } from './types';
+import { eventTextWithCause, indexEvents } from './story/chains';
 
 export interface AnnalEntry {
 	year: number;
@@ -476,13 +477,14 @@ export function synthesizeAnnualAnnals(
 		byYear.set(e.y, list);
 	}
 
+	const byId = indexEvents(events);
 	const sortedYears = [...byYear.keys()].sort((a, b) => b - a).slice(0, maxYears);
 	const annals: AnnalEntry[] = [];
 
 	for (const y of sortedYears) {
 		const yearEvents = byYear.get(y)!;
 		const headline = deriveYearHeadline(yearEvents);
-		const prose = weaveYearProse(yearEvents, y, worldName);
+		const prose = weaveYearProse(yearEvents, y, worldName, byId);
 
 		annals.push({
 			year: y,
@@ -514,17 +516,17 @@ function deriveYearHeadline(events: ChronEvent[]): string {
 }
 
 /** Weave multiple individual events into a cohesive historical narrative paragraph */
-function weaveYearProse(events: ChronEvent[], year: number, worldName: string): string {
+function weaveYearProse(events: ChronEvent[], year: number, worldName: string, byId: ReadonlyMap<number, ChronEvent>): string {
 	if (events.length === 0) {
 		return `The year ${year} passed in tranquility across ${worldName}, with seasons turning without major upheaval recorded in the archives.`;
 	}
 
 	if (events.length === 1) {
-		return events[0].text;
+		return eventTextWithCause(events[0], byId);
 	}
 
 	// Weave 2 to 4 major events with literary transitions
-	const sentences = events.map((e) => e.text.trim());
+	const sentences = events.map((e) => eventTextWithCause(e, byId));
 	const parts: string[] = [];
 
 	for (let i = 0; i < sentences.length; i++) {
@@ -554,7 +556,8 @@ function lowercaseFirst(str: string): string {
 }
 
 /** Compile all chronicle annals into an exportable, formatted Markdown chronicle book */
-export function compileAnnalsBookMarkdown(events: readonly ChronEvent[], worldName: string, maxYears = 1000): string {
+export function compileAnnalsBookMarkdown(events: readonly ChronEvent[], worldName: string, maxYears = 1000, appendix = ''): string {
+	const byId = indexEvents(events);
 	const annals = synthesizeAnnualAnnals(events, worldName, maxYears);
 	const lines: string[] = [
 		`# The Annals of ${worldName}`,
@@ -573,11 +576,12 @@ export function compileAnnalsBookMarkdown(events: readonly ChronEvent[], worldNa
 		if (a.events.length > 1) {
 			lines.push('*Key occurrences:*');
 			for (const e of a.events) {
-				lines.push(`- **Month ${e.m + 1}** (${e.kind}): ${e.text}`);
+				lines.push(`- **Month ${e.m + 1}** (${e.kind}): ${eventTextWithCause(e, byId)}`);
 			}
 			lines.push('');
 		}
 	}
 
+	if (appendix) lines.push('---', '', appendix);
 	return lines.join('\n');
 }

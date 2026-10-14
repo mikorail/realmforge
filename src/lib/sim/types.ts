@@ -69,6 +69,10 @@ export interface Person {
 	companions?: number[];
 	companionOf?: number;
 	rival?: number;
+	/** story layer (sim/story): regnal number in their realm, epithet earned at death, sphere-ordered everyday name */
+	regnal?: number;
+	epithet?: string;
+	plain?: string;
 }
 
 export interface Polity {
@@ -118,6 +122,12 @@ export interface Polity {
 	vassalSince?: number;
 	/** set when absorbed peacefully / by union / annexation */
 	mergedInto?: number;
+	/** story layer: named eras (every 20 years), the current one, and the realm's rulers in order */
+	eras?: { from: number; to: number; name: string }[];
+	era?: string;
+	/** land held when the last era was named (growth/decline between eras) */
+	eraCells?: number;
+	reigns?: { id: number; given: string; from: number }[];
 }
 
 export interface War {
@@ -132,6 +142,10 @@ export interface War {
 	months: number;
 	startArmy: [number, number];
 	winner?: 'attackers' | 'defenders' | 'white';
+	/** chronicle event that declared it (cause chains) */
+	ev?: number;
+	/** perspective names: [attackers' culture name, attackers' name for it, defenders' culture name, defenders' name for it] */
+	aliases?: [string, string, string, string];
 }
 
 export type CovertOpKind = 'sabotage' | 'incite_revolt' | 'assassinate' | 'siphon' | 'sow_distrust';
@@ -222,6 +236,10 @@ export interface ChronEvent {
 	cell?: number;
 	state?: number;
 	detail?: string;
+	/** id of an earlier event that led to this one (story/chains.ts) */
+	cause?: number;
+	/** what sort of event it is for cause chains: famine, plague, riot, revolt, coup, capital, war, epoch ... */
+	tag?: string;
 }
 
 export interface Monster {

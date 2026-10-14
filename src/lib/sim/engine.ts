@@ -32,6 +32,7 @@ import * as avatar from './systems/avatar';
 import { FrontIndex, OpenCells, SimIndex } from './indexes';
 import { yearlyCrossLayer } from './worldrules/crosslayer';
 import { extraColonize, navalMult, yearlyPlanetRules } from './worldrules/planets';
+import { newStory, onCrown, yearlyStory, type StoryState } from './story';
 import type { Power } from './systems/godpowers';
 
 export { POWERS, type Power } from './systems/godpowers';
@@ -86,6 +87,8 @@ export class Simulation {
 	tradeTip: { burg: number; until: number } | null = null;
 	/** active climate epoch (epochs.ts) */
 	epoch: ClimateEpoch | null = null;
+	/** story layer state: world moments, contacts (story/) */
+	story: StoryState = newStory();
 	era = 0;
 	innovation = 0;
 	techs = new Set<string>();
@@ -205,8 +208,8 @@ export class Simulation {
 		for (const [y, n] of AGES) if (this.year >= y) name = n;
 		return name;
 	}
-	log(kind: EventKind, text: string, cell?: number, state?: number) {
-		return history.log(this, kind, text, cell, state);
+	log(kind: EventKind, text: string, cell?: number, state?: number, tag?: string, cause?: number) {
+		return history.log(this, kind, text, cell, state, tag, cause);
 	}
 	blankPerson(): Person {
 		return { id: 0, name: '', house: '', born: 0, culture: 0, religion: 0, state: 0, burg: 0, role: 'wanderer', martial: 0, diplomacy: 0, stewardship: 0, intrigue: 0, health: 0, gold: 0, renown: 0, alive: false, traits: [], parent: 0 };
@@ -225,6 +228,7 @@ export class Simulation {
 		person.state = pol.id;
 		person.burg = pol.capital;
 		pol.ruler = person.id;
+		onCrown(this, pol, person);
 		if (pol.heir === person.id) pol.heir = 0;
 		this.idx.touch();
 	}
@@ -389,6 +393,7 @@ export class Simulation {
 		yearlyConsolidation(this);
 		yearlyCrossLayer(this);
 		yearlyPlanetRules(this);
+		yearlyStory(this);
 		lifecycle.pruneMinorPeople(this);
 		history.compactArchive(this);
 		this.recount();
@@ -530,7 +535,7 @@ export class Simulation {
 		return {
 			year: this.year, month: this.month, mana: this.mana, manaMax: this.manaMax, sandbox: this.sandbox,
 			people: this.people, polities: this.polities, wars: this.wars, events: this.events,
-			allEvents: this.allEvents, letters: this.letters, tradeTip: this.tradeTip, epoch: this.epoch, historySnapshots: this.historySnapshots, uprisings: this.uprisings,
+			allEvents: this.allEvents, story: this.story, letters: this.letters, tradeTip: this.tradeTip, epoch: this.epoch, historySnapshots: this.historySnapshots, uprisings: this.uprisings,
 			plague: this.plague, basePop: this.basePop, avatar: this.avatar, travel: this.travel, pending: this.pending,
 			nextWar: this.nextWar, rng: this.rng.state(), plagueActive: this.plagueActive,
 			era: this.era, innovation: this.innovation, techs: Array.from(this.techs),
@@ -543,6 +548,7 @@ export class Simulation {
 		const s = new Simulation(world, true);
 		Object.assign(s, { year: d.year, month: d.month, mana: d.mana, manaMax: d.manaMax, sandbox: d.sandbox, people: d.people, polities: d.polities, wars: d.wars, events: d.events, plague: d.plague, basePop: d.basePop, avatar: d.avatar, travel: d.travel, pending: d.pending, plagueActive: d.plagueActive });
 		s.allEvents = d.allEvents ?? d.events?.slice() ?? [];
+		s.story = d.story ?? newStory();
 		s.letters = d.letters ?? [];
 		s.tradeTip = d.tradeTip ?? null;
 		s.epoch = d.epoch ?? null;

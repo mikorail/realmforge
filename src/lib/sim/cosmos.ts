@@ -1,5 +1,6 @@
 import type { Rift, Universe } from '../gen/universe';
 import { Simulation } from './engine';
+import { cosmosMoments } from './story';
 
 /** Runs every planet's simulation in lock-step and handles rifts between them. */
 export class Cosmos {
@@ -34,7 +35,10 @@ export class Cosmos {
 	tick() {
 		if (this.pending) return;
 		for (const s of this.sims) s.tick();
-		if (this.sims[0].month === 0) this.rifts();
+		if (this.sims[0].month === 0) {
+			this.rifts();
+			cosmosMoments(this);
+		}
 		// avatar may have died on its planet
 		if (this.avatarSim && this.avatarSim.avatar < 0) this.avatarPlanet = -1;
 	}

@@ -159,6 +159,8 @@ export interface Burg {
 	layer: LayerKind;
 	depth: number;
 	kind: string;
+	/** set once the name has drifted over the centuries (story/drift.ts) */
+	originalName?: string;
 }
 
 export interface StateDef {
