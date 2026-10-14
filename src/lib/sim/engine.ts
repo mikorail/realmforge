@@ -43,7 +43,7 @@ import { vassalizeAfterWar, yearlyConsolidation } from './consolidation';
 import { yearlySphereLore } from './spherelore';
 import { yearlyLayerLife } from './layerlife';
 import { yearlyEpochs, type ClimateEpoch } from './epochs';
-import { checkAmbition, companionBonus, hireCompanion, yearlyLetters, type Letter } from './ambitions';
+import { checkAmbition, companionBonus, offerAmbitions, hireCompanion, yearlyLetters, type Letter } from './ambitions';
 import type { ArmyToken, ChronEvent, CovertMission, Effects, Encounter, EventKind, HistorySnapshot, IdeologyKind, Monster, LegendaryPlace, Person, Polity, Quest, Role, Travel, UprisingRecord, War } from './types';
 
 export type Power =
@@ -2299,6 +2299,7 @@ export class Simulation {
 		this.avatar = id;
 		this.travel = null;
 		const p = this.people[id];
+		if (!p.ambition && !p.ambitionChoices?.length) offerAmbitions(this, p);
 		this.log('avatar', `You take up the life of ${p.name} ${p.house}, ${p.role}${p.state ? ` of ${this.polities[p.state].name}` : ''}.`);
 	}
 

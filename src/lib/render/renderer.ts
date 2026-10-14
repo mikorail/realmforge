@@ -132,7 +132,7 @@ export class MapRenderer {
 
 	/** cheap frame: last full render, re-transformed to the current camera */
 	drawSnapshot() {
-		if (!this.snap) return this.draw();
+		if (!this.snap || !this.snap.width || !this.snap.height) return this.draw();
 		const ctx = this.ctx;
 		const f = this.k / this.snapCam.k;
 		ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -155,6 +155,8 @@ export class MapRenderer {
 	}
 
 	private takeSnapshot() {
+		// a hidden or not-yet-sized canvas has 0×0 pixels; drawImage would throw
+		if (!this.canvas.width || !this.canvas.height) return;
 		if (!this.snap) this.snap = document.createElement('canvas');
 		if (this.snap.width !== this.canvas.width || this.snap.height !== this.canvas.height) {
 			this.snap.width = this.canvas.width;

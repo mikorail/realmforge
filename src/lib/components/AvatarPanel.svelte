@@ -131,6 +131,8 @@
 		</p>
 	</section>
 
+	<!-- `me` is the same (non-reactive) object across updates; key on v so these sections re-read it -->
+	{#key v}
 	{#if asim}
 		{@const amb = me.ambition ? AMBITION_BY_ID[me.ambition] : null}
 		{@const comps = (me.companions ?? []).map((id) => asim!.people[id]).filter((c) => c?.alive)}
@@ -185,6 +187,7 @@
 			</section>
 		{/if}
 	{/if}
+	{/key}
 
 	<section>
 		<h3>Travel</h3>
