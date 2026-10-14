@@ -94,9 +94,9 @@ Effort: S ≈ an hour, M ≈ a session, L ≈ multi-session. Do them in this ord
 - [ ] **Split `Setup.svelte`** (1.6k lines, M) into tabbed steps; mobile density pass.
 
 ### P7 · Performance & size
-- [ ] **WebGL or tiled-raster terrain** (L): pre-render terrain tiles per zoom level; vector overlays only for borders/labels. Target: 200k cells pan at 60fps.
-- [ ] **Delta + compressed saves** (M): store changed arrays only; compress `allEvents` (5–10× smaller).
-- [ ] **Lazy-load heavy panels** (S): Export, Dynasty, CompleteSim, God/Avatar on demand.
+- [x] **WebGL or tiled-raster terrain** (L) _(done: Canvas2D overview + per-zoom 512px tiles, vector overlays on top; not yet profiled at 200k in a browser)_: pre-render terrain tiles per zoom level; vector overlays only for borders/labels. Target: 200k cells pan at 60fps.
+- [x] **Delta + compressed saves** (M) _(done: fflate, static base per slot, changed arrays only; 4.36 MB → 382 KB at 10k cells / 200 years)_: store changed arrays only; compress `allEvents` (5–10× smaller).
+- [x] **Lazy-load heavy panels** (S) _(done for Export, Dynasty, CompleteSim, TimelineScrubber; God/Avatar tabs still eager)_: Export, Dynasty, CompleteSim, God/Avatar on demand.
 
 ### Later
 - [ ] More sphere content: per-sphere architecture styles for map icons, sphere-specific quests.
