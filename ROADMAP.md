@@ -83,7 +83,7 @@ Effort: S ≈ an hour, M ≈ a session, L ≈ multi-session. Do them in this ord
 ### P5 · Genre & layers completeness
 - [x] **Genre-aware tech tree** (M): re-skin the 75 inventions per genre (cyberpunk: neural lace, orbital elevator…).
 - [x] **Genre monster/wonder reskins** (S): dragon → rogue mech, Tower of Magic → corporate spire, etc.
-- [ ] **Replace `Thunderbird` archetype** (S): sacred to several Indigenous nations; swap for a non-sacred folklore creature.
+- [x] **Replace `Thunderbird` archetype** (S): replaced with the Storm Roc; Naga, Makara and Taniwha were also swapped for non-sacred figures.
 - [x] **Cross-layer politics** (M) _(done: `worldrules/crosslayer.ts`, yearly shaft tax/tax revolts, sky blockades, sea tolls + embargoes)_: surface taxes undercity trade, sky blockades, undersea port control.
 - [x] **Planet-specific rules** (S) _(done: `worldrules/planets.ts`: ocean/ice/desert/volcanic/exotic)_: ocean worlds favour sea power, ice worlds halt winter campaigns.
 
