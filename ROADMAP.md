@@ -41,7 +41,21 @@
 - IndexedDB saves, vitest test suites, headless gen/sim verification scripts.
 - Big-map panning via snapshot caching.
 
+## Done (2026-10-14, second pass)
+- First git commit; root cleaned (audits moved to `docs/audits`).
+- Balance: uprisings budgeted with per-realm cooldowns and a yearly riot digest (60% → ~16% of the chronicle); vassals, tribute, annexation, peaceful absorption and dynastic unions (alive realms at Y300: 101 → ~55); living cast bounded (1,193 → ~280 people); archive compaction; 300-year/2-planet sim 10.7s → ~7.8s.
+- Genre packs for every punk genre + mythic: own uprisings, cults, prophets, heroes, mutinies, golden ages, famines, encounter decks, and a chronicle-wide vocabulary re-skin.
+- Evolving genre: narration voice and map/UI theme follow the tech era (myth → fantasy → steam → diesel → cyber or solar); eras now unfold over centuries.
+- Culture spheres: festivals, customs and great works for all 22 spheres; 20 folklore creatures (Nian, Kappa, Naga, Simurgh, Ninki Nanka, Mokele-mbembe, Amaru, Taniwha, Zmey, Draugr…).
+- Living layers: drifting sky isles, underdark delving/blooms/cave-ins, undersea currents, Dig Caverns god power.
+- Avatar: ambitions, companions, letters inbox with one-click responses.
+- Deep time: climate epochs, migrations, dialects becoming new cultures.
+- Fixes: quest targets, riot digest names, lair and disaster place names, all-vowel names, zero-size snapshot crash, era test flakiness.
+
 ## Next
+- Review the base `Thunderbird` monster archetype (sacred to several Indigenous nations) and swap it for a non-sacred folklore creature.
+- Genre-aware tech names (the 75 inventions are still fantasy-to-solarpunk generic) and per-genre monster reskins.
+- More sphere content: per-sphere architecture styles for map icons, sphere-specific quests.
 - WebGL / WebGPU renderer for ultra-dense 100k+ cell maps.
 - Point budgets per layer (denser underground grids) and per-planet overrides in the multiverse.
 - Genre-specific encounter decks and event text (cyberpunk runs, steampunk clockwork inventions, solarpunk garden councils).
