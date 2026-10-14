@@ -98,13 +98,8 @@ Effort: S ≈ an hour, M ≈ a session, L ≈ multi-session. Do them in this ord
 - [ ] **Delta + compressed saves** (M): store changed arrays only; compress `allEvents` (5–10× smaller).
 - [ ] **Lazy-load heavy panels** (S): Export, Dynasty, CompleteSim, God/Avatar on demand.
 
-### Older backlog
-- Review the base `Thunderbird` monster archetype (sacred to several Indigenous nations) and swap it for a non-sacred folklore creature.
-- Genre-aware tech names (the 75 inventions are still fantasy-to-solarpunk generic) and per-genre monster reskins.
-- More sphere content: per-sphere architecture styles for map icons, sphere-specific quests.
-- WebGL / WebGPU renderer for ultra-dense 100k+ cell maps.
-- Point budgets per layer (denser underground grids) and per-planet overrides in the multiverse.
-- Genre-specific encounter decks and event text (cyberpunk runs, steampunk clockwork inventions, solarpunk garden councils).
-- Dig-tunnel god power, underdark ecology, and drifting sky isles.
-- PWA offline caching, full keyboard navigation refinements, Playwright end-to-end test suite.
-- Optional LLM-assisted chronicles and narrative encounters (bring-your-own Gemini / Claude key).
+### Later
+- [ ] More sphere content: per-sphere architecture styles for map icons, sphere-specific quests.
+- [ ] Point budgets per layer (denser underground grids) and per-planet overrides in the multiverse.
+- [ ] PWA offline caching, keyboard navigation refinements, Playwright end-to-end tests.
+- [ ] Optional LLM-written chronicles and encounters (bring-your-own Claude key).
