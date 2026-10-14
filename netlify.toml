@@ -1,0 +1,29 @@
+[build]
+  command = "npm run build"
+  publish = "build"
+
+[build.environment]
+  NODE_VERSION = "24"
+
+# single-page app: any unknown path serves the app shell
+[[redirects]]
+  from = "/*"
+  to = "/200.html"
+  status = 200
+
+# the service worker and manifest must always revalidate so updates reach people
+[[headers]]
+  for = "/service-worker.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+# hashed build assets never change
+[[headers]]
+  for = "/_app/immutable/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
