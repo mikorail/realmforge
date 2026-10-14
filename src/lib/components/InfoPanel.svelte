@@ -8,6 +8,8 @@
 	import { ERAS, DISCOVERIES, TECH_BRANCHES, type TechBranch } from '#lib/sim/tech';
 	import { synthesizeAnnualAnnals, compileAnnalsBookMarkdown } from '#lib/sim/chronicle';
 	import { IDEOLOGIES } from '#lib/sim/politics';
+	import { techName, techDesc } from '#lib/sim/genre/techskins';
+	import { monsterSkin, wonderSkin } from '#lib/sim/genre/creatureskins';
 
 	let { sim, v, cell, layer, terms, onfocus, onselect, ondynasty }: {
 		sim: Simulation; v: number; cell: number; layer: number; terms: GenreDef['terms'];
@@ -160,10 +162,10 @@
 	{#if cellWonder}
 		<section class="card wonder-highlight" class:ruined-card={cellWonder.destroyed}>
 			<div class="row between">
-				<h3><span class="ico">{cellWonder.destroyed ? '🏚️' : cellWonder.icon}</span> {cellWonder.name}{cellWonder.destroyed ? ' (Ruins)' : ''}</h3>
+				<h3><span class="ico">{cellWonder.destroyed ? '🏚️' : (wonderSkin(sim.voice, cellWonder.kind)?.icon ?? cellWonder.icon)}</span> {cellWonder.name}{cellWonder.destroyed ? ' (Ruins)' : ''}</h3>
 				<span class="chip" class:bad={cellWonder.destroyed} class:on={!cellWonder.destroyed}>{cellWonder.destroyed ? `Ruined (${cellWonder.destroyedYear})` : cellWonder.kind === 'titan_shrine' ? 'Titan Shrine' : 'Wonder'}</span>
 			</div>
-			<p class="small">{cellWonder.description}</p>
+			<p class="small">{wonderSkin(sim.voice, cellWonder.kind)?.lore ?? cellWonder.description}</p>
 			{#if cellWonder.destroyed}
 				<div class="stat small"><span>Status</span><span class="bad">Destroyed by {cellWonder.destroyer} ({cellWonder.ruinCause})</span></div>
 			{:else}
@@ -177,10 +179,10 @@
 	{#if cellMonster}
 		<section class="card monster-highlight">
 			<div class="row between">
-				<h3><span class="ico">{cellMonster.icon}</span> {cellMonster.name}</h3>
+				<h3><span class="ico">{monsterSkin(sim.voice, cellMonster.species)?.icon ?? cellMonster.icon}</span> {cellMonster.name}{#if monsterSkin(sim.voice, cellMonster.species)} <span class="muted small">({monsterSkin(sim.voice, cellMonster.species)?.name})</span>{/if}</h3>
 				<span class="chip bad">{cellMonster.tier} {cellMonster.category}</span>
 			</div>
-			<p class="small">{cellMonster.lore}</p>
+			<p class="small">{monsterSkin(sim.voice, cellMonster.species)?.lore ?? cellMonster.lore}</p>
 			<div class="stat small"><span>Power · Health</span><span>⚔ {cellMonster.power} · ❤️ {cellMonster.health}/{cellMonster.maxHealth}</span></div>
 			<div class="stat small"><span>Toughness</span><span>🛡 {Math.round((cellMonster.armor ?? 0) * 100)}% Armor{cellMonster.hardToKill ? ' (Hard to Kill)' : ''} · 💚 +{cellMonster.regen ?? 5} HP/yr</span></div>
 			<div class="stat small"><span>Harvest Bounty</span><span class="gold-text">🏆 {cellMonster.trophy || 'Dragonhide & Titan Bones'}</span></div>
@@ -344,7 +346,7 @@
 		{#if unlockedTechs.length > 0}
 			<div class="tech-chips">
 				{#each unlockedTechs as t (t.id)}
-					<span class="chip" title={t.description}>{t.icon} {t.name}</span>
+					<span class="chip" title={techDesc(sim.voice, t.id, t.description)}>{t.icon} {techName(sim.voice, t.id, t.name)}</span>
 				{/each}
 			</div>
 		{/if}
@@ -474,7 +476,7 @@
 				{#each wondersList as wd (wd.id)}
 					<article class="card item-card" class:ruined-card={wd.destroyed}>
 						<div class="row between">
-							<h4><span class="ico">{wd.destroyed ? '🏚️' : wd.icon}</span> {wd.name}{wd.destroyed ? ' (Ruins)' : ''}</h4>
+							<h4><span class="ico">{wd.destroyed ? '🏚️' : (wonderSkin(sim.voice, wd.kind)?.icon ?? wd.icon)}</span> {wd.name}{wd.destroyed ? ' (Ruins)' : ''}{#if wonderSkin(sim.voice, wd.kind)} <span class="muted small">({wonderSkin(sim.voice, wd.kind)?.name})</span>{/if}</h4>
 							<div class="row" style="gap: 4px; align-items: center;">
 								{#if wd.destroyed}
 									<span class="chip bad">Ruined ({wd.destroyedYear})</span>
@@ -484,7 +486,7 @@
 								<button class="btn tiny" onclick={() => { onfocus(wd.cell); onselect(wd.cell); }}>Focus Map</button>
 							</div>
 						</div>
-						<p class="small">{wd.description}</p>
+						<p class="small">{wonderSkin(sim.voice, wd.kind)?.lore ?? wd.description}</p>
 						<div class="lore-box small muted">{wd.lore}</div>
 						{#if wd.destroyed}
 							<div class="stat small"><span>Ruin & Destroyer</span><span class="bad">{wd.destroyer} ({wd.ruinCause})</span></div>
@@ -513,14 +515,14 @@
 				{#each monstersList as mn (mn.id)}
 					<article class="card item-card monster-card" style={!mn.alive ? 'opacity: 0.8;' : ''}>
 						<div class="row between">
-							<h4><span class="ico">{mn.icon}</span> {mn.name}</h4>
+							<h4><span class="ico">{monsterSkin(sim.voice, mn.species)?.icon ?? mn.icon}</span> {mn.name}{#if monsterSkin(sim.voice, mn.species)} <span class="muted small">({monsterSkin(sim.voice, mn.species)?.name})</span>{/if}</h4>
 							{#if mn.alive}
 								<span class="chip" class:bad={mn.tier === 'cataclysm'} class:on={mn.tier === 'legendary'}>{mn.tier} · {mn.category}</span>
 							{:else}
 								<span class="chip">Slain Anno {mn.slainYear}</span>
 							{/if}
 						</div>
-						<p class="small">{mn.lore}</p>
+						<p class="small">{monsterSkin(sim.voice, mn.species)?.lore ?? mn.lore}</p>
 						<div class="stat small"><span>Lair</span><span>{mn.lairName}</span></div>
 						{#if mn.alive}
 							<div class="stat small"><span>Power · Health</span><span>⚔ {mn.power} · ❤️ {mn.health}/{mn.maxHealth}</span></div>
@@ -619,10 +621,10 @@
 							{@const canUnlock = tech.era <= sim.era && (!tech.reqs || tech.reqs.every((r) => sim.techs.has(r)))}
 							<div class="tech-node" class:unlocked={isUnlocked} class:available={!isUnlocked && canUnlock}>
 								<div class="row between">
-									<strong class="tech-title">{tech.icon} {tech.name}</strong>
+									<strong class="tech-title">{tech.icon} {techName(sim.voice, tech.id, tech.name)}</strong>
 									<span class="era-tag">Era {tech.era}</span>
 								</div>
-								<p class="small">{tech.description}</p>
+								<p class="small">{techDesc(sim.voice, tech.id, tech.description)}</p>
 								{#if tech.inventions?.length}
 									<div class="inventions-list small muted">
 										<strong>Historic Inventions:</strong> {tech.inventions.join(' · ')}
