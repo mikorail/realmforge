@@ -4,9 +4,10 @@
 	import type { Role } from '#lib/sim/types';
 	import { AMBITION_BY_ID, pickAmbition } from '#lib/sim/ambitions';
 
-	let { cosmos, pi, v, cell, layer, terms, onsay, onchanged, onfocus, onplanet }: {
+	let { cosmos, pi, v, cell, layer, terms, onsay, onchanged, onfocus, onplanet, ondelve }: {
 		cosmos: Cosmos; pi: number; v: number; cell: number; layer: number; terms: GenreDef['terms'];
 		onsay: (t: string) => void; onchanged: () => void; onfocus: (c: number | undefined, planet?: number) => void; onplanet: (p: number) => void;
+		ondelve?: (cell: number) => void;
 	} = $props();
 
 	let roleFilter = $state<Role | 'all'>('all');
@@ -214,6 +215,9 @@
 	<section>
 		<h3>Deeds</h3>
 		<div class="acts">
+			{#if ondelve && ctx?.here}
+				<button class="btn primary" onclick={() => ondelve?.(ctx.here.cell)}>🗺️ Delve Local Ruins / Vault</button>
+			{/if}
 			<button class="btn" onclick={() => act('work')}>Work (1 mo)</button>
 			<button class="btn" onclick={() => act('adventure')}>Seek adventure</button>
 			<button class="btn" onclick={() => act('train')}>Train (25g)</button>

@@ -14,6 +14,7 @@ import { processPantheonInterventions } from '../pantheon';
 import { processYearlyUprisings } from '../uprisings';
 import { cultureMod } from '../culture';
 import { processYearlyBurgs } from '../burgs';
+import { processYearlyLeagues } from '../leagues';
 
 export function yearlyUprisings(sim: Simulation) {
 	const upEvents = processYearlyUprisings(sim);
@@ -186,5 +187,9 @@ export function yearlyRoadConstruction(sim: Simulation) {
 
 export function yearlyBurgs(sim: Simulation) {
 	processYearlyBurgs(sim);
+}
+
+export function yearlyLeagues(sim: Simulation) {
+	processYearlyLeagues(sim);
 }
 

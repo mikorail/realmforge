@@ -17,11 +17,13 @@
 	import { getRealmCoatOfArms, getBurgCoatOfArms } from '#lib/render/heraldry';
 	import { getBurgDistricts } from '#lib/sim/burgs';
 
-	let { sim, v, cell, layer, terms, onfocus, onselect, ondynasty, onburg }: {
+	let { sim, v, cell, layer, terms, onfocus, onselect, ondynasty, onburg, onleagues, ondelve }: {
 		sim: Simulation; v: number; cell: number; layer: number; terms: GenreDef['terms'];
 		onfocus: (c: number | undefined) => void; onselect: (c: number) => void;
 		ondynasty?: (rulerId: number) => void;
 		onburg?: (burgId: number) => void;
+		onleagues?: () => void;
+		ondelve?: (cell: number) => void;
 	} = $props();
 
 	type MainTab = 'overview' | 'quests' | 'wonders' | 'monsters' | 'luminaries' | 'tech';
@@ -227,6 +229,12 @@
 				{#if info.burg.charter}
 					<div class="stat"><span>Charter</span><span class="chip on" style="font-size: 0.72rem; padding: 1px 6px;">📜 Royal Municipal Charter</span></div>
 				{/if}
+				{#if info.burg.banditCove}
+					<div class="stat"><span class="bad">Outlaw Threat</span><span class="chip bad">⚔️ Bandit Encampment</span></div>
+				{/if}
+				{#if info.burg.pirateCove}
+					<div class="stat"><span class="bad">Maritime Threat</span><span class="chip bad">🏴‍☠️ Pirate Haven</span></div>
+				{/if}
 				<div class="row" style="gap: 4px; margin: 4px 0 6px; flex-wrap: wrap;">
 					{#if dists.walls > 0}<span class="chip" title="Walls level {dists.walls}">🛡️ W{dists.walls}</span>{/if}
 					{#if dists.market > 0}<span class="chip" title="Market level {dists.market}">💰 M{dists.market}</span>{/if}
@@ -264,6 +272,9 @@
 						{/if}
 					</div>
 				{/if}
+			{/if}
+			{#if ondelve && cell >= 0}
+				<button class="btn small" onclick={() => ondelve?.(cell)} style="margin-top: 6px; width: 100%;" title="Delve ancient ruins, sunken vaults, and underdark chasms">🗺️ Delve Ancient Ruins & Vaults</button>
 			{/if}
 		</section>
 	{/if}
@@ -476,7 +487,12 @@
 	</section>
 
 	<section>
-		<h3>Great Realms</h3>
+		<div class="row between" style="align-items: center; margin-bottom: 0.35rem;">
+			<h3 style="margin: 0;">Great Realms</h3>
+			{#if onleagues}
+				<button class="chip on" onclick={onleagues} title="Open Trade Leagues, Coalitions, and Outlaw Havens">⚖️ Leagues</button>
+			{/if}
+		</div>
 		<ul class="list">
 			{#each realms as p (p.id)}
 				{@const sp = SPECIES_BY_ID[p.species ?? 'human'] ?? SPECIES_BY_ID['human']}

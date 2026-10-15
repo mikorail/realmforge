@@ -17,6 +17,8 @@
 	import InfoPanel from './InfoPanel.svelte';
 	import MapLegend from './MapLegend.svelte';
 	import MapView from './MapView.svelte';
+	import Minimap from './Minimap.svelte';
+	import { generateDungeon, type DelveDungeon } from '#lib/sim/delves';
 	// heavy panels load on first open (separate chunks)
 	const lazy = {
 		export: () => import('./ExportModal.svelte'),
@@ -25,7 +27,9 @@
 		completeSim: () => import('./CompleteSimModal.svelte'),
 		history: () => import('./HistoryModal.svelte'),
 		globe: () => import('./GlobeModal.svelte'),
-		burg: () => import('./BurgModal.svelte')
+		burg: () => import('./BurgModal.svelte'),
+		leagues: () => import('./LeaguesModal.svelte'),
+		delve: () => import('./DelveModal.svelte')
 	};
 
 	let { cosmos, onquit }: { cosmos: Cosmos; onquit: () => void } = $props();
@@ -57,6 +61,13 @@
 	let historyOpen = $state(false);
 	let globeOpen = $state(false);
 	let burgModalId = $state<number | null>(null);
+	let leaguesOpen = $state(false);
+	let activeDungeon = $state<DelveDungeon | null>(null);
+	function startDelve(c: number) {
+		const s = cosmos.sims[pi];
+		const seed = `${s.w.opts.seed}:delve:${c}:${s.year}:${s.month}`;
+		activeDungeon = generateDungeon(seed, c, layer);
+	}
 	let peeking = $state(true);
 	function togglePeeking() {
 		peeking = !peeking;
@@ -352,6 +363,7 @@
 			<button class="btn" onclick={() => (completeSimOpen = true)} title="Fast-forward complete history preserving all annals & timeline snapshots">Complete Sim</button>
 			<button class="btn" class:on={scrubberOpen} onclick={() => (scrubberOpen = !scrubberOpen)} aria-pressed={scrubberOpen} title="Scrub past realm borders and eras">Timeline</button>
 			<button class="btn" onclick={() => (historyOpen = true)} title="Realm size over time and the family tree of splits and mergers">History</button>
+			<button class="btn" onclick={() => (leaguesOpen = true)} title="Trade Leagues, Coalitions, and Outlaw Havens">Leagues</button>
 			<button class="btn" onclick={() => (globeOpen = true)} title="See the world as a rotatable globe">Globe</button>
 			<button class="btn" onclick={() => (exportOpen = true)} title="Export poster, vector map, or dossier">Export</button>
 			<button class="btn" onclick={() => { climate = structuredClone(cosmos.sims[pi].w.opts.climate); worldOpen = !worldOpen; }} aria-expanded={worldOpen}>Configure world</button>
@@ -396,6 +408,8 @@
 
 		<MapLegend {sim} {world} {layer} {mode} {v} year={date.year} />
 
+		<Minimap {sim} {world} {layer} renderer={r} {v} onpan={(x, y) => { if (r) { r.tx = r.w * 0.5 - x * r.k; r.ty = r.h * 0.5 - y * r.k; r.draw(); } }} />
+
 		{#if hover && hover.cell >= 0}
 			<HoverCard {sim} {world} {layer} cell={hover.cell} x={hover.x} y={hover.y} {v} />
 		{/if}
@@ -412,11 +426,11 @@
 			</div>
 			<div class="body scroll">
 				{#if tab === 'observe'}
-					<InfoPanel {sim} {v} {cell} {layer} terms={G.terms} onfocus={focus} onselect={(c) => (cell = c)} ondynasty={(id) => (dynastyRuler = id)} onburg={(bId) => (burgModalId = bId)} />
+					<InfoPanel {sim} {v} {cell} {layer} terms={G.terms} onfocus={focus} onselect={(c) => (cell = c)} ondynasty={(id) => (dynastyRuler = id)} onburg={(bId) => (burgModalId = bId)} onleagues={() => (leaguesOpen = true)} ondelve={startDelve} />
 				{:else if tab === 'god'}
 					<GodPanel {sim} {v} {power} terms={G.terms} onpower={(p) => (power = p)} ontoggle={() => { sim.sandbox = !sim.sandbox; for (const s of cosmos.sims) s.sandbox = sim.sandbox; v++; }} oncastrandom={castRandom} />
 				{:else}
-					<AvatarPanel {cosmos} {pi} {v} {cell} {layer} terms={G.terms} onsay={say} onchanged={() => { v++; needDraw = true; r?.invalidatePolitical(); }} onfocus={focus} onplanet={(p) => { pi = p; layer = 0; }} />
+					<AvatarPanel {cosmos} {pi} {v} {cell} {layer} terms={G.terms} onsay={say} onchanged={() => { v++; needDraw = true; r?.invalidatePolitical(); }} onfocus={focus} onplanet={(p) => { pi = p; layer = 0; }} ondelve={startDelve} />
 				{/if}
 			</div>
 		</aside>
@@ -506,6 +520,39 @@
 					const c = pers.burg ? sim.w.burgs[pers.burg]?.cell : sim.polities[pers.state]?.capital;
 					if (c !== undefined && c >= 0) focus(c);
 				}}
+			/>
+		{/await}
+	{/if}
+
+	{#if leaguesOpen}
+		{#await lazy.leagues() then { default: LeaguesModal }}
+			<LeaguesModal
+				sim={cosmos.sims[pi]}
+				{v}
+				onclose={() => (leaguesOpen = false)}
+				onselectburg={(bId) => {
+					const bg = sim.w.burgs[bId];
+					if (bg) focus(bg.cell);
+				}}
+				onselectpolity={(pId) => {
+					const pol = sim.polities[pId];
+					if (pol && pol.capital) {
+						const c = sim.w.burgs[pol.capital]?.cell;
+						if (c !== undefined) focus(c);
+					}
+				}}
+			/>
+		{/await}
+	{/if}
+
+	{#if activeDungeon !== null}
+		{#await lazy.delve() then { default: DelveModal }}
+			<DelveModal
+				sim={cosmos.sims[pi]}
+				{v}
+				dungeon={activeDungeon}
+				onclose={() => (activeDungeon = null)}
+				onchanged={() => { v++; }}
 			/>
 		{/await}
 	{/if}

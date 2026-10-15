@@ -180,6 +180,12 @@ export interface Burg {
 	charter?: boolean;
 	/** heraldic coat of arms / regional symbol */
 	coa?: any;
+	/** bandit or outlaw encampment harassing trade routes */
+	banditCove?: boolean;
+	/** pirate haven raiding maritime sea lanes */
+	pirateCove?: boolean;
+	/** id of the trade league this city belongs to */
+	tradeLeague?: number;
 }
 
 export interface BurgDistricts {

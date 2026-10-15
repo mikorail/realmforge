@@ -73,6 +73,8 @@ export interface Person {
 	regnal?: number;
 	epithet?: string;
 	plain?: string;
+	/** role in avatar adventuring warband / company */
+	partyRole?: 'champion' | 'spymaster' | 'quartermaster' | 'lorekeeper';
 }
 
 export interface Polity {
@@ -130,6 +132,12 @@ export interface Polity {
 	reigns?: { id: number; given: string; from: number }[];
 	/** heraldic coat of arms / state emblem */
 	coa?: any;
+	/** id of defensive coalition against aggressive expansion */
+	coalition?: number;
+	/** dynastic marriages joining ruling dynasties with other realm ids */
+	royalMarriages?: number[];
+	/** id of trade league this realm or its capital belongs to */
+	tradeLeague?: number;
 }
 
 export interface War {

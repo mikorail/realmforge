@@ -5,6 +5,8 @@ import type { Simulation } from '../sim/engine';
 import { alpha, mix, shade, THEMES, type MapTheme } from './theme';
 import { archStyleOf } from '../gen/spheres';
 import { drawArchGlyph } from './glyphs';
+import { drawCanvasBanners } from './canvas_heraldry';
+import { renderSeasonalOverlay } from './seasons';
 
 export type MapMode = 'political' | 'biome' | 'height' | 'culture' | 'religion' | 'population';
 
@@ -1001,6 +1003,9 @@ export class MapRenderer {
 		ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
 		const S = (x: number, y: number): [number, number] => [x * k + this.tx, y * k + this.ty];
 
+		// seasonal atmospheric overlay (frost/snow dusting, autumn glow)
+		renderSeasonalOverlay(ctx, s, w, this.layer, k, S, this.w, this.h);
+
 		// selected burg highlight
 		const sel = this.overlay.selectedBurg;
 		if (sel && w.burgs[sel]?.alive) {
@@ -1109,6 +1114,9 @@ export class MapRenderer {
 				ctx.fill();
 			}
 		}
+
+		// heraldic banners on capitals, citadels, and regiment tokens
+		drawCanvasBanners(ctx, s, w, this.layer, k, S);
 
 		// legendary places / wonders
 		if (s.wonders && s.wonders.length > 0) {

@@ -33,5 +33,20 @@ export function compactArchive(sim: Simulation) {
 	if (sim.allEvents.length < 25000) return;
 	const MINOR = new Set(['uprising', 'intrigue', 'misc', 'luminary', 'quest', 'avatar', 'capture', 'birth', 'tech']);
 	const cutoff = sim.year - 60;
-	sim.allEvents = sim.allEvents.filter((e) => e.y >= cutoff || !MINOR.has(e.kind));
+	const referencedCauses = new Set<number>();
+	for (const e of sim.allEvents) {
+		if (e.cause !== undefined) referencedCauses.add(e.cause);
+	}
+	let added = true;
+	while (added) {
+		added = false;
+		for (const e of sim.allEvents) {
+			if (e.id !== undefined && referencedCauses.has(e.id) && e.cause !== undefined && !referencedCauses.has(e.cause)) {
+				referencedCauses.add(e.cause);
+				added = true;
+			}
+		}
+	}
+	sim.allEvents = sim.allEvents.filter((e) => e.y >= cutoff || !MINOR.has(e.kind) || (e.id !== undefined && referencedCauses.has(e.id)));
 }
+
