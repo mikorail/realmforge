@@ -15,6 +15,7 @@ import { processYearlyUprisings } from '../uprisings';
 import { cultureMod } from '../culture';
 import { processYearlyBurgs } from '../burgs';
 import { processYearlyLeagues } from '../leagues';
+import { processYearlyMegastructures } from '../megastructures';
 
 export function yearlyUprisings(sim: Simulation) {
 	const upEvents = processYearlyUprisings(sim);
@@ -192,4 +193,9 @@ export function yearlyBurgs(sim: Simulation) {
 export function yearlyLeagues(sim: Simulation) {
 	processYearlyLeagues(sim);
 }
+
+export function yearlyMegastructures(sim: Simulation) {
+	processYearlyMegastructures(sim);
+}
+
 

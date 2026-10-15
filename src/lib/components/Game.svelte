@@ -19,6 +19,7 @@
 	import MapView from './MapView.svelte';
 	import Minimap from './Minimap.svelte';
 	import { generateDungeon, type DelveDungeon } from '#lib/sim/delves';
+	import { getMegastructureState } from '#lib/sim/megastructures';
 	// heavy panels load on first open (separate chunks)
 	const lazy = {
 		export: () => import('./ExportModal.svelte'),
@@ -29,7 +30,8 @@
 		globe: () => import('./GlobeModal.svelte'),
 		burg: () => import('./BurgModal.svelte'),
 		leagues: () => import('./LeaguesModal.svelte'),
-		delve: () => import('./DelveModal.svelte')
+		delve: () => import('./DelveModal.svelte'),
+		megastructure: () => import('./MegastructureModal.svelte')
 	};
 
 	let { cosmos, onquit }: { cosmos: Cosmos; onquit: () => void } = $props();
@@ -62,11 +64,17 @@
 	let globeOpen = $state(false);
 	let burgModalId = $state<number | null>(null);
 	let leaguesOpen = $state(false);
+	let activeMegastructure = $state<any | null>(null);
 	let activeDungeon = $state<DelveDungeon | null>(null);
 	function startDelve(c: number) {
 		const s = cosmos.sims[pi];
 		const seed = `${s.w.opts.seed}:delve:${c}:${s.year}:${s.month}`;
 		activeDungeon = generateDungeon(seed, c, layer);
+	}
+	function openMegastructure(site?: any) {
+		const s = cosmos.sims[pi];
+		const ms = getMegastructureState(s);
+		activeMegastructure = site ?? ms.tower;
 	}
 	let peeking = $state(true);
 	function togglePeeking() {
@@ -364,6 +372,7 @@
 			<button class="btn" class:on={scrubberOpen} onclick={() => (scrubberOpen = !scrubberOpen)} aria-pressed={scrubberOpen} title="Scrub past realm borders and eras">Timeline</button>
 			<button class="btn" onclick={() => (historyOpen = true)} title="Realm size over time and the family tree of splits and mergers">History</button>
 			<button class="btn" onclick={() => (leaguesOpen = true)} title="Trade Leagues, Coalitions, and Outlaw Havens">Leagues</button>
+			<button class="btn" onclick={() => openMegastructure()} title="The Spire of Trials and The Bottomless Abyss">Megastructures</button>
 			<button class="btn" onclick={() => (globeOpen = true)} title="See the world as a rotatable globe">Globe</button>
 			<button class="btn" onclick={() => (exportOpen = true)} title="Export poster, vector map, or dossier">Export</button>
 			<button class="btn" onclick={() => { climate = structuredClone(cosmos.sims[pi].w.opts.climate); worldOpen = !worldOpen; }} aria-expanded={worldOpen}>Configure world</button>
@@ -426,11 +435,11 @@
 			</div>
 			<div class="body scroll">
 				{#if tab === 'observe'}
-					<InfoPanel {sim} {v} {cell} {layer} terms={G.terms} onfocus={focus} onselect={(c) => (cell = c)} ondynasty={(id) => (dynastyRuler = id)} onburg={(bId) => (burgModalId = bId)} onleagues={() => (leaguesOpen = true)} ondelve={startDelve} />
+					<InfoPanel {sim} {v} {cell} {layer} terms={G.terms} onfocus={focus} onselect={(c) => (cell = c)} ondynasty={(id) => (dynastyRuler = id)} onburg={(bId) => (burgModalId = bId)} onleagues={() => (leaguesOpen = true)} ondelve={startDelve} onmegastructure={openMegastructure} />
 				{:else if tab === 'god'}
 					<GodPanel {sim} {v} {power} terms={G.terms} onpower={(p) => (power = p)} ontoggle={() => { sim.sandbox = !sim.sandbox; for (const s of cosmos.sims) s.sandbox = sim.sandbox; v++; }} oncastrandom={castRandom} />
 				{:else}
-					<AvatarPanel {cosmos} {pi} {v} {cell} {layer} terms={G.terms} onsay={say} onchanged={() => { v++; needDraw = true; r?.invalidatePolitical(); }} onfocus={focus} onplanet={(p) => { pi = p; layer = 0; }} ondelve={startDelve} />
+					<AvatarPanel {cosmos} {pi} {v} {cell} {layer} terms={G.terms} onsay={say} onchanged={() => { v++; needDraw = true; r?.invalidatePolitical(); }} onfocus={focus} onplanet={(p) => { pi = p; layer = 0; }} ondelve={startDelve} onmegastructure={openMegastructure} />
 				{/if}
 			</div>
 		</aside>
@@ -553,6 +562,19 @@
 				dungeon={activeDungeon}
 				onclose={() => (activeDungeon = null)}
 				onchanged={() => { v++; }}
+			/>
+		{/await}
+	{/if}
+
+	{#if activeMegastructure !== null}
+		{#await lazy.megastructure() then { default: MegastructureModal }}
+			<MegastructureModal
+				sim={cosmos.sims[pi]}
+				world={cosmos.u.planets[pi]}
+				site={activeMegastructure}
+				personId={cosmos.sims[pi].avatar || (cosmos.sims[pi].people.find((p) => p.alive && p.id)?.id ?? 1)}
+				onclose={() => (activeMegastructure = null)}
+				onrefresh={() => { v++; needDraw = true; }}
 			/>
 		{/await}
 	{/if}

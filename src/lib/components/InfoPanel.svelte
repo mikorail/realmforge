@@ -16,14 +16,16 @@
 	import HeraldryBadge from './HeraldryBadge.svelte';
 	import { getRealmCoatOfArms, getBurgCoatOfArms } from '#lib/render/heraldry';
 	import { getBurgDistricts } from '#lib/sim/burgs';
+	import { getMegastructureState } from '#lib/sim/megastructures';
 
-	let { sim, v, cell, layer, terms, onfocus, onselect, ondynasty, onburg, onleagues, ondelve }: {
+	let { sim, v, cell, layer, terms, onfocus, onselect, ondynasty, onburg, onleagues, ondelve, onmegastructure }: {
 		sim: Simulation; v: number; cell: number; layer: number; terms: GenreDef['terms'];
 		onfocus: (c: number | undefined) => void; onselect: (c: number) => void;
 		ondynasty?: (rulerId: number) => void;
 		onburg?: (burgId: number) => void;
 		onleagues?: () => void;
 		ondelve?: (cell: number) => void;
+		onmegastructure?: (site: any) => void;
 	} = $props();
 
 	type MainTab = 'overview' | 'quests' | 'wonders' | 'monsters' | 'luminaries' | 'tech';
@@ -489,9 +491,16 @@
 	<section>
 		<div class="row between" style="align-items: center; margin-bottom: 0.35rem;">
 			<h3 style="margin: 0;">Great Realms</h3>
-			{#if onleagues}
-				<button class="chip on" onclick={onleagues} title="Open Trade Leagues, Coalitions, and Outlaw Havens">⚖️ Leagues</button>
-			{/if}
+			<div class="row" style="gap: 4px; align-items: center;">
+				{#if onmegastructure}
+					{@const ms = getMegastructureState(sim)}
+					<button class="chip on" onclick={() => onmegastructure(ms.tower)} title="The Spire of Trials">🗼 Spire</button>
+					<button class="chip on" onclick={() => onmegastructure(ms.abyss)} title="The Bottomless Abyss">🕳️ Abyss</button>
+				{/if}
+				{#if onleagues}
+					<button class="chip on" onclick={onleagues} title="Open Trade Leagues, Coalitions, and Outlaw Havens">⚖️ Leagues</button>
+				{/if}
+			</div>
 		</div>
 		<ul class="list">
 			{#each realms as p (p.id)}

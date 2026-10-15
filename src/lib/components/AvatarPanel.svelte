@@ -3,11 +3,13 @@
 	import type { Cosmos } from '#lib/sim/cosmos';
 	import type { Role } from '#lib/sim/types';
 	import { AMBITION_BY_ID, pickAmbition } from '#lib/sim/ambitions';
+	import { getMegastructureState } from '#lib/sim/megastructures';
 
-	let { cosmos, pi, v, cell, layer, terms, onsay, onchanged, onfocus, onplanet, ondelve }: {
+	let { cosmos, pi, v, cell, layer, terms, onsay, onchanged, onfocus, onplanet, ondelve, onmegastructure }: {
 		cosmos: Cosmos; pi: number; v: number; cell: number; layer: number; terms: GenreDef['terms'];
 		onsay: (t: string) => void; onchanged: () => void; onfocus: (c: number | undefined, planet?: number) => void; onplanet: (p: number) => void;
 		ondelve?: (cell: number) => void;
+		onmegastructure?: (site: any) => void;
 	} = $props();
 
 	let roleFilter = $state<Role | 'all'>('all');
@@ -245,6 +247,11 @@
 			<button class="btn warn" onclick={() => act('found_cult')}>🕯️ Found Cult</button>
 			<button class="btn" onclick={() => act('proclaim_prophecy')}>🕊️ Proclaim Prophecy</button>
 			<button class="btn" onclick={() => act('rally_hero')}>🛡️ Stand as Folk Hero</button>
+			{#if onmegastructure && asim}
+				{@const ms = getMegastructureState(asim)}
+				<button class="btn" onclick={() => onmegastructure(ms.tower)}>🗼 Spire of Trials (F.{ms.tower.highestClearedFloor})</button>
+				<button class="btn" onclick={() => onmegastructure(ms.abyss)}>🕳️ Delve Bottomless Abyss</button>
+			{/if}
 			<button class="btn" onclick={() => act('build_tower')} disabled={ctx.ruler ? ctx.ruler.treasury < 60 : me.gold < 60}>Build Tower ({ctx.ruler ? '60 tr.' : '60g'})</button>
 			<button class="btn" onclick={() => act('build_wonder')} disabled={ctx.ruler ? ctx.ruler.treasury < 100 : me.gold < 100}>Build Wonder ({ctx.ruler ? '100 tr.' : '100g'})</button>
 		</div>

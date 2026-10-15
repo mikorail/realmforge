@@ -7,6 +7,7 @@ import { archStyleOf } from '../gen/spheres';
 import { drawArchGlyph } from './glyphs';
 import { drawCanvasBanners } from './canvas_heraldry';
 import { renderSeasonalOverlay } from './seasons';
+import { drawMegastructureMarkers } from './megastructures';
 
 export type MapMode = 'political' | 'biome' | 'height' | 'culture' | 'religion' | 'population';
 
@@ -1117,6 +1118,9 @@ export class MapRenderer {
 
 		// heraldic banners on capitals, citadels, and regiment tokens
 		drawCanvasBanners(ctx, s, w, this.layer, k, S);
+
+		// megastructures: The Spire of Trials & The Bottomless Abyss
+		drawMegastructureMarkers(ctx, s, w, this.layer, k, S);
 
 		// legendary places / wonders
 		if (s.wonders && s.wonders.length > 0) {
