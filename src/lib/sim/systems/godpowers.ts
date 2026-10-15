@@ -11,7 +11,7 @@ import { techName } from '../genre/techskins';
 import { buildWonder, destroyWonder } from '../wonders';
 import { MONSTER_ARCHETYPES } from '../monsters';
 import { transitionRegime } from '../politics';
-import type { Monster, LegendaryPlace, IdeologyKind } from '../types';
+import type { Monster, LegendaryPlace, IdeologyKind, Polity, War } from '../types';
 
 export type Power =
 	| 'bless'
@@ -43,7 +43,11 @@ export type Power =
 	| 'patron'
 	| 'reform'
 	| 'revolution'
-	| 'coup';
+	| 'coup'
+	| 'worldwar'
+	| 'ragnarok'
+	| 'conspiracy'
+	| 'resurgence';
 
 export const POWERS: Record<Power, { name: string; cost: number; icon: string; desc: string }> = {
 	dig: { name: 'Dig Caverns', cost: 6, icon: '⛏', desc: 'Carve new caverns and tunnels in the underdark below' },
@@ -75,7 +79,11 @@ export const POWERS: Record<Power, { name: string; cost: number; icon: string; d
 	patron: { name: 'Crown Chosen Realm', cost: 25, icon: '👑', desc: 'Anoint this nation as your Chosen Realm, granting supreme celestial protection and favor' },
 	reform: { name: 'Divine Reform', cost: 20, icon: '📜', desc: 'Inspire the sovereign and estates to peacefully adopt sweeping constitutional reforms' },
 	revolution: { name: 'Divine Revolution', cost: 25, icon: '✊', desc: 'Ignite a righteous popular revolution to topple autocracy and establish a new republic or union' },
-	coup: { name: 'Divine Coup', cost: 25, icon: '⚔️', desc: 'Overthrow the ruler via a military putsch or palace conspiracy to transform the realm system' }
+	coup: { name: 'Divine Coup', cost: 25, icon: '⚔️', desc: 'Overthrow the ruler via a military putsch or palace conspiracy to transform the realm system' },
+	worldwar: { name: 'Incite World War', cost: 50, icon: '🌐', desc: 'Polarize all nations into two ideological coalitions locked in total global war' },
+	ragnarok: { name: 'True Ragnarok', cost: 60, icon: '🐺', desc: 'Summon the World-Eaters and Harbingers of the End, forcing a mortal stalemate' },
+	conspiracy: { name: 'Grand Conspiracy', cost: 30, icon: '🗡️', desc: 'Shatter an empire from within through assassination, bankruptcy, and mutiny' },
+	resurgence: { name: 'Phoenix Resurgence', cost: 35, icon: '🦅', desc: 'Resurrect a fallen or dying realm into a burgeoning golden empire' }
 };
 
 export function canCast(sim: Simulation, p: Power) {
@@ -85,16 +93,16 @@ export function canCast(sim: Simulation, p: Power) {
 export function cast(sim: Simulation, power: Power, cell: number, layer = 0): string | null {
 	if (!sim.canCast(power)) return 'Not enough divine power.';
 	const c = sim.c;
-	if (layer > 0 && ['meteor', 'raise', 'sink', 'cataclysm', 'apocalypse'].includes(power)) layer = 0;
+	if (layer > 0 && ['meteor', 'raise', 'sink', 'cataclysm', 'apocalypse', 'ragnarok'].includes(power)) layer = 0;
 	const pol = sim.stateAt(cell, layer);
 	const hasRealm = pol && pol.alive && pol.id > 0;
-	const needRealm = ['inspire', 'host', 'peace', 'discord', 'chaos', 'rebel', 'smite', 'relic', 'patron', 'reform', 'revolution', 'coup'].includes(power);
+	const needRealm = ['inspire', 'host', 'peace', 'discord', 'chaos', 'rebel', 'smite', 'relic', 'patron', 'reform', 'revolution', 'coup', 'conspiracy'].includes(power);
 	if (needRealm && !hasRealm) return 'Choose a realm.';
 	const spend = () => { if (!sim.sandbox) sim.mana -= POWERS[power].cost; };
-	const area = (radius: number) => {
-		const out = [cell];
+	const area = (radius: number, center = cell) => {
+		const out = [center];
 		const seen = new Set(out);
-		let ring = [cell];
+		let ring = [center];
 		for (let d = 0; d < radius; d++) {
 			const next: number[] = [];
 			for (const i of ring) for (const j of neighbors(c, i)) if (!seen.has(j)) { seen.add(j); next.push(j); out.push(j); }
@@ -676,6 +684,426 @@ export function cast(sim: Simulation, power: Power, cell: number, layer = 0): st
 			sim.log('god', `DIVINE MANDATE: By the Creator's will, a sudden palace putsch overthrows the old regime in ${pol.name}! ${oldFullName} is reconstituted as the ${res.newFullName}.`, cell, pol.id);
 			break;
 		}
+		case 'worldwar': {
+			const living = sim.polities.filter((p) => p.id && p.alive);
+			if (living.length < 2) return 'Need at least two living realms for a world war.';
+
+			// Divide into two grand ideological coalitions
+			// Bloc A: Progressive / Popular / Sacred Concord (republic, communal, theocracy)
+			// Bloc B: Imperial / Dynastic / Stratocratic Axis (autocracy, monarchy, oligarchy, technocracy)
+			let blocA = living.filter((p) => p.ideology && ['republic', 'communal', 'theocracy'].includes(p.ideology));
+			let blocB = living.filter((p) => p.ideology && ['autocracy', 'monarchy', 'oligarchy', 'technocracy'].includes(p.ideology));
+
+			// If one bloc is empty or severely lopsided, rebalance deterministically
+			if (!blocA.length || !blocB.length) {
+				const sorted = [...living].sort((a, b) => b.cells - a.cells);
+				blocA = [];
+				blocB = [];
+				for (let i = 0; i < sorted.length; i++) {
+					if (i % 2 === 0) blocA.push(sorted[i]);
+					else blocB.push(sorted[i]);
+				}
+			}
+
+			const blocAIds = blocA.map((p) => p.id);
+			const blocBIds = blocB.map((p) => p.id);
+
+			// Intra-bloc: cement grand alliances, +85 relations, mobilize armies
+			for (const p of blocA) {
+				p.allies = blocAIds.filter((id) => id !== p.id);
+				p.army = +(p.army * 1.35 + 20).toFixed(1);
+				p.expansionism = Math.max(p.expansionism, 2.5);
+				p.stability = Math.max(p.stability, 65);
+				for (const friendId of blocAIds) {
+					if (friendId !== p.id) sim.addRel(p.id, friendId, 85);
+				}
+			}
+			for (const p of blocB) {
+				p.allies = blocBIds.filter((id) => id !== p.id);
+				p.army = +(p.army * 1.35 + 20).toFixed(1);
+				p.expansionism = Math.max(p.expansionism, 2.5);
+				p.stability = Math.max(p.stability, 65);
+				for (const friendId of blocBIds) {
+					if (friendId !== p.id) sim.addRel(p.id, friendId, 85);
+				}
+			}
+
+			// Inter-bloc: break all alliances, mutual hostility -180
+			for (const a of blocA) {
+				for (const b of blocB) {
+					sim.addRel(a.id, b.id, -180);
+				}
+			}
+
+			// End any petty internal wars within either bloc
+			for (const w of sim.wars) {
+				if (w.end) continue;
+				const inA = w.attackers.some((id) => blocAIds.includes(id)) && w.defenders.some((id) => blocAIds.includes(id));
+				const inB = w.attackers.some((id) => blocBIds.includes(id)) && w.defenders.some((id) => blocBIds.includes(id));
+				if (inA || inB) sim.finishWar(w, 'white');
+			}
+
+			// Declare The Great World War
+			const leaderA = blocA[0];
+			const leaderB = blocB[0];
+			const warName = 'The Great World War of Ideologies';
+			const ww: War = {
+				id: sim.nextWar++,
+				name: warName,
+				attackers: blocAIds,
+				defenders: blocBIds,
+				start: sim.year,
+				score: 0,
+				months: 0,
+				startArmy: [sim.strength(blocAIds), sim.strength(blocBIds)]
+			};
+			sim.wars.push(ww);
+
+			sim.computeBorders();
+			sim.idx.touch();
+
+			const namesA = blocA.map((p) => p.name).join(', ');
+			const namesB = blocB.map((p) => p.name).join(', ');
+			sim.log('war', `DIVINE MANDATE: The Great World War ignites! The mortal realms of ${sim.w.name} polarize into two titanic coalitions: the Concord of ${leaderA.name} (${namesA}) versus the Axis of ${leaderB.name} (${namesB}). Total global warfare begins!`, cell, leaderA.id);
+			break;
+		}
+		case 'ragnarok': {
+			// Spawn 4 primordial Cataclysmic Harbingers of the End
+			const harbingers = [
+				{
+					name: 'Fenrir the World-Devourer',
+					species: 'Cataclysmic Direwolf',
+					icon: '🐺',
+					power: 220,
+					maxHealth: 700,
+					armor: 0.85,
+					regen: 35,
+					lore: 'A cosmic dread wolf born from the astral abyss, whose jaws span from earth to firmament.'
+				},
+				{
+					name: 'Surtr the World-Burner',
+					species: 'Primal Flame Titan',
+					icon: '🔥',
+					power: 210,
+					maxHealth: 650,
+					armor: 0.80,
+					regen: 30,
+					lore: 'An ancient titan wielding a twilight blade of primordial fire that incinerates mountain ranges.'
+				},
+				{
+					name: 'Nidhogg the Void-Dragon',
+					species: 'Void Wyrm',
+					icon: '🐉',
+					power: 230,
+					maxHealth: 750,
+					armor: 0.85,
+					regen: 35,
+					lore: 'The cosmic wyrm gnawing at the roots of existence, breathing darkness and celestial ruin.'
+				},
+				{
+					name: 'Jormungandr the Midgard-Serpent',
+					species: 'World-Serpent',
+					icon: '🐍',
+					power: 200,
+					maxHealth: 620,
+					armor: 0.75,
+					regen: 25,
+					lore: 'A serpent so vast it encircles the sea trenches of the world, releasing toxic miasma.'
+				}
+			];
+
+			const landCells: number[] = [];
+			for (let i = 0; i < c.n; i++) {
+				if (sim.isLand(i)) landCells.push(i);
+			}
+			const pool = landCells.length ? landCells : [cell];
+
+			for (let idx = 0; idx < harbingers.length; idx++) {
+				const h = harbingers[idx];
+				const spawnCell = sim.rng.pick(pool);
+				const bId = c.burg[spawnCell];
+				const lairName = bId ? `Lair near ${sim.w.burgs[bId].name}` : `Wasteland of Cell ${spawnCell}`;
+
+				const m: Monster = {
+					id: sim.monsters.length + 1,
+					name: h.name,
+					species: h.species,
+					tier: 'cataclysm',
+					category: 'biblical',
+					icon: h.icon,
+					cell: spawnCell,
+					layer: 0,
+					x: c.x[spawnCell],
+					y: c.y[spawnCell],
+					power: h.power,
+					health: h.maxHealth,
+					maxHealth: h.maxHealth,
+					alive: true,
+					lairCell: spawnCell,
+					lairName,
+					behavior: 'hunting',
+					lore: h.lore,
+					armor: h.armor,
+					regen: h.regen,
+					trophy: `Primordial Core of ${h.name.split(' ')[0]}`,
+					hardToKill: true,
+					immortal: true,
+					birthYear: -sim.rng.int(1000, 5000),
+					destructionCount: 0
+				};
+				sim.monsters.push(m);
+			}
+
+			// The Final Concordat: all active mortal wars immediately cease in a desperate stalemate
+			for (const w of sim.wars) {
+				if (!w.end) sim.finishWar(w, 'white');
+			}
+
+			// Mortal polities unite in fear of extinction: elevate relations to at least +40
+			const livingRealms = sim.polities.filter((p) => p.id && p.alive);
+			for (let i = 0; i < livingRealms.length; i++) {
+				const pi = livingRealms[i];
+				pi.stability = clamp(pi.stability + 20, 10, 100);
+				pi.army = +(pi.army * 1.25 + 15).toFixed(1);
+				pi.treasury += 30;
+				for (let j = i + 1; j < livingRealms.length; j++) {
+					const pj = livingRealms[j];
+					if (sim.rel(pi.id, pj.id) < 40) {
+						sim.addRel(pi.id, pj.id, 50);
+					}
+				}
+			}
+
+			sim.dirty.terrain = true;
+			sim.dirty.political = true;
+			sim.idx.touch();
+
+			sim.log('monster', `DIVINE MANDATE: TRUE RAGNAROK HAS BEGUN! The firmament cracks as the primordial World-Eaters descend upon ${sim.w.name}: Fenrir, Surtr, Nidhogg, and Jormungandr arise! Facing annihilation, mortal kingdoms sign the Final Concordat in a desperate stalemate for survival.`, cell);
+			break;
+		}
+		case 'conspiracy': {
+			if (!hasRealm) return 'Choose a realm to strike with conspiracy.';
+
+			// 1. Assassinate ruler and royal heir
+			const ruler = sim.ruler(pol);
+			const oldRulerName = ruler?.name ?? 'The sovereign';
+			if (ruler?.alive) {
+				sim.kill(ruler, 'a poisoned dagger in the council chamber');
+			}
+			const heir = sim.people[pol.heir];
+			if (heir?.alive) {
+				sim.kill(heir, 'conspiratorial poison');
+			}
+
+			// 2. Plunder treasury, obliterate stability, and cause army mutiny
+			pol.treasury = 0;
+			pol.stability = 0;
+			pol.army = Math.max(1, +(pol.army * 0.2).toFixed(1));
+
+			// 3. Emancipate all vassals
+			for (const v of sim.polities) {
+				if (v.alive && v.overlord === pol.id) {
+					v.overlord = undefined;
+					sim.log('rebel', `Seizing upon the royal collapse in ${pol.name}, ${v.name} declares full independence!`, sim.w.burgs[v.capital]?.cell ?? cell, v.id);
+				}
+			}
+
+			// 4. Fracture the empire into 1-2 splinter successor states
+			const towns = sim.idx.burgsIn(sim.w.burgs, pol.id).filter((b) => b.id && b.alive && b.id !== pol.capital);
+			const splinterCount = Math.min(2, towns.length);
+			const shuffledTowns = sim.rng.shuffle(towns).slice(0, splinterCount);
+			for (const t of shuffledTowns) {
+				const splinter = sim.revolt(pol, t.cell);
+				if (splinter) {
+					splinter.name = `${t.name} Secession`;
+					splinter.fullName = `Secessionist State of ${t.name}`;
+					splinter.army = 25;
+					sim.declareWar(pol.id, splinter.id, 'succession schism');
+				}
+			}
+
+			// Plunder treasury and obliterate civil stability completely
+			pol.treasury = 0;
+			pol.stability = 0;
+
+			// 5. Total diplomatic isolation
+			pol.allies = [];
+			for (const p of sim.polities) p.allies = p.allies.filter((a) => a !== pol.id);
+			for (const n of sim.neighborsOf(pol.id)) sim.addRel(pol.id, n, -60);
+
+			sim.recount();
+			sim.computeBorders();
+			sim.dirty.political = true;
+			sim.idx.touch();
+
+			sim.log('god', `DIVINE CONSPIRACY: A treacherous shadow falls across ${pol.fullName}! Conspirators assassinate ${oldRulerName}, royal coffers are plundered, vassals break free, and mutinous generals shatter the realm into warring successor fragments!`, cell, pol.id);
+			break;
+		}
+		case 'resurgence': {
+			let targetPol: Polity | null = null;
+
+			if (sim.divineTargetPolityId) {
+				targetPol = sim.polities[sim.divineTargetPolityId] ?? null;
+			}
+
+			if (!targetPol) {
+				const bId = c.burg[cell];
+				const b = bId ? sim.w.burgs[bId] : null;
+				const localPol = pol && pol.id ? pol : null;
+				if (localPol && (!localPol.alive || localPol.cells <= 4)) {
+					targetPol = localPol;
+				} else if (b && b.state && !sim.polities[b.state]?.alive) {
+					targetPol = sim.polities[b.state];
+				}
+			}
+
+			if (!targetPol) {
+				const fallen = sim.polities.filter((p) => !p.alive && p.id > 0 && p.fell !== undefined);
+				if (fallen.length) {
+					fallen.sort((a, b) => a.founded - b.founded);
+					targetPol = fallen[0];
+				} else if (hasRealm) {
+					targetPol = pol;
+				}
+			}
+
+			if (!targetPol) return 'No realm or ancient kingdom found to resurrect.';
+
+			const wasDead = !targetPol.alive;
+			const ancientFounded = targetPol.founded;
+			const ancientFell = targetPol.fell ?? 'antiquity';
+
+			targetPol.alive = true;
+			targetPol.fell = undefined;
+			targetPol.origin = 'resurgence';
+
+			// Reconstruct ancestral house and dynasty
+			const houseHist = sim.people.filter((p) => p.state === targetPol.id || targetPol.reigns?.some((r: { id: number }) => r.id === p.id));
+			let royalHouse = targetPol.name;
+			if (houseHist.length) {
+				const withHouse = houseHist.filter((p) => p.house);
+				if (withHouse.length) royalHouse = withHouse[0].house;
+			}
+
+			// Establish or reclaim capital
+			let centerCell = cell;
+			let capBurg = targetPol.capital ? sim.w.burgs[targetPol.capital] : null;
+			if (capBurg && capBurg.id) {
+				centerCell = capBurg.cell;
+			} else {
+				const bId = c.burg[cell];
+				if (bId) {
+					capBurg = sim.w.burgs[bId];
+					targetPol.capital = capBurg.id;
+				} else {
+					const nearbyBurgs = sim.w.burgs.filter((b) => b.id && (b.x - c.x[cell]) ** 2 + (b.y - c.y[cell]) ** 2 < 2500);
+					if (nearbyBurgs.length) {
+						capBurg = nearbyBurgs[0];
+						targetPol.capital = capBurg.id;
+						centerCell = capBurg.cell;
+					}
+				}
+			}
+
+			if (capBurg) {
+				capBurg.alive = true;
+				capBurg.state = targetPol.id;
+				capBurg.capital = true;
+				capBurg.pop = Math.max(12, +(capBurg.pop * 1.5).toFixed(1));
+			}
+
+			// Reclaim ancestral territory: 10 to 18 contiguous land cells around the center
+			const reclaimedCells = area(3, centerCell);
+			const S = sim.st(layer);
+			for (const idx of reclaimedCells) {
+				if (sim.isLand(idx)) {
+					S[idx] = targetPol.id;
+					const subBurgId = c.burg[idx];
+					if (subBurgId) {
+						const subBurg = sim.w.burgs[subBurgId];
+						subBurg.state = targetPol.id;
+						subBurg.alive = true;
+					}
+				}
+			}
+
+			// Crown the immortal Phoenix Sovereign
+			const sovereign = sim.makePerson(targetPol.culture, targetPol.id, targetPol.capital || 0, 'ruler', 28);
+			sovereign.name = `${sovereign.name} the Phoenix Reborn`;
+			sovereign.house = royalHouse;
+			sovereign.martial = 95;
+			sovereign.diplomacy = 95;
+			sovereign.stewardship = 95;
+			sovereign.intrigue = 90;
+			sovereign.renown = 100;
+			sovereign.gold = 500;
+			sovereign.health = 100;
+			sovereign.traits = ['Legendary', 'Immortal', 'Visionary', 'Ambitious', 'Brave', 'Inspiring'];
+			sim.crown(targetPol, sovereign);
+
+			// Elevate realm into Phoenix Empire
+			targetPol.form = 'Phoenix Empire';
+			targetPol.fullName = `Phoenix Empire of ${targetPol.name}`;
+			targetPol.treasury += 500;
+			targetPol.army = Math.max(targetPol.army + 150, 150);
+			targetPol.stability = 100;
+			targetPol.expansionism = 3.2;
+			targetPol.tax = 0.08;
+
+			// Inaugurate a 50-year Golden Age
+			targetPol.era = 'The Phoenix Resurgence';
+			if (!targetPol.eras) targetPol.eras = [];
+			targetPol.eras.push({ from: sim.year, to: sim.year + 50, name: 'The Phoenix Resurgence' });
+
+			// Bestow an imperial relic
+			const crown = forgeArtifact(
+				sim.nextArtifactId++,
+				sim.rng,
+				sim.year,
+				sim.lang(targetPol.culture),
+				'polity',
+				targetPol.id,
+				targetPol.name,
+				`The sacred crown of House ${royalHouse}, rekindled with celestial fire for the rebirth of ${targetPol.name}.`
+			);
+			crown.kind = 'crown';
+			crown.icon = '👑';
+			crown.name = 'Imperial Crown of the Reborn Phoenix';
+			crown.fame = 65;
+			crown.bonusVal = 10;
+			sim.artifacts.push(crown);
+
+			// End lingering wars
+			for (const w of sim.wars) {
+				if (!w.end && (w.attackers.includes(targetPol.id) || w.defenders.includes(targetPol.id))) {
+					sim.finishWar(w, 'white');
+				}
+			}
+
+			sim.divineTargetPolityId = undefined;
+
+			sim.recount();
+			sim.computeBorders();
+			sim.dirty.political = true;
+			sim.idx.touch();
+
+			if (wasDead) {
+				sim.log(
+					'god',
+					`DIVINE RESURGENCE: House ${royalHouse} rises from centuries of slumber! Founded in year ${ancientFounded} and fallen in year ${ancientFell}, ${targetPol.name} is resurrected by divine mandate in year ${sim.year}! ${sovereign.name} claims the imperial throne of the ${targetPol.fullName}, commanding 150,000 reborn legions and inaugurating a 50-year Golden Age!`,
+					centerCell,
+					targetPol.id
+				);
+			} else {
+				sim.log(
+					'god',
+					`DIVINE RESURGENCE: Like a phoenix from the ashes, ${targetPol.name} rises into supreme imperial glory! Crowned by divine mandate, ${sovereign.name} marshals 150,000 reborn legions under the ${targetPol.fullName}, reclaiming ancestral destiny in a 50-year Golden Age!`,
+					centerCell,
+					targetPol.id
+				);
+			}
+			break;
+		}
 	}
 	spend();
 	sim.dirty.political = true;
@@ -690,9 +1118,21 @@ export function castRandom(sim: Simulation, power: Power, layer = 0): { text: st
 	const aliveRealms = sim.polities.filter((p) => p.id && p.alive);
 
 	let targetCell = 0;
-	if (aliveRealms.length && ['inspire', 'host', 'peace', 'relic', 'discord', 'chaos', 'smite', 'wonder', 'patron', 'reform', 'revolution', 'coup'].includes(power)) {
+	if (aliveRealms.length && ['inspire', 'host', 'peace', 'relic', 'discord', 'chaos', 'smite', 'wonder', 'patron', 'reform', 'revolution', 'coup', 'conspiracy'].includes(power)) {
 		const picked = r.pick(aliveRealms);
 		targetCell = sim.w.burgs[picked.capital]?.cell ?? r.int(0, c.n - 1);
+	} else if (power === 'resurgence') {
+		const dead = sim.polities.filter((p) => !p.alive && p.id > 0 && p.fell !== undefined);
+		if (dead.length) {
+			const picked = r.pick(dead);
+			sim.divineTargetPolityId = picked.id;
+			targetCell = (picked.capital && sim.w.burgs[picked.capital]?.cell) || r.int(0, c.n - 1);
+		} else if (aliveRealms.length) {
+			const smallest = [...aliveRealms].sort((a, b) => a.cells - b.cells)[0];
+			targetCell = (smallest.capital && sim.w.burgs[smallest.capital]?.cell) || r.int(0, c.n - 1);
+		} else {
+			targetCell = r.int(0, c.n - 1);
+		}
 	} else if (aliveBurgs.length && ['hero', 'prophet', 'villain', 'rebel', 'species', 'alien', 'plague'].includes(power)) {
 		targetCell = r.pick(aliveBurgs).cell;
 	} else {

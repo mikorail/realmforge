@@ -54,6 +54,7 @@ export class Simulation {
 	manaMax = 100;
 	sandbox = false;
 	divineTargetIdeology?: IdeologyKind;
+	divineTargetPolityId?: number;
 	people: Person[] = [];
 	polities: Polity[] = [];
 	wars: War[] = [];

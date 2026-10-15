@@ -145,6 +145,10 @@
 		void v;
 		return sim.polities.filter((p) => p.alive && p.id).sort((a, b) => b.cells - a.cells).slice(0, 14);
 	});
+	const fallenRealms = $derived.by(() => {
+		void v;
+		return sim.polities.filter((p) => !p.alive && p.id > 0 && p.fell !== undefined).sort((a, b) => a.founded - b.founded);
+	});
 	const wars = $derived.by(() => {
 		void v;
 		return sim.wars.filter((w) => !w.end).slice(-6);
@@ -430,6 +434,33 @@
 					>
 						⚔️ Coup
 					</button>
+					<button
+						class="btn small"
+						style="flex: 1; min-width: 80px;"
+						disabled={!sim.sandbox && sim.mana < 30}
+						onclick={() => {
+							const targetCell = p.capital ? sim.w.burgs[p.capital]?.cell ?? cell : cell;
+							sim.cast('conspiracy', targetCell, layer);
+							onselect(cell);
+						}}
+						title="Shatter the empire from within via assassination, treasury plundering, and mutinous fragmentation (Cost: 30)"
+					>
+						🗡️ Conspire
+					</button>
+					<button
+						class="btn small"
+						style="flex: 1; min-width: 80px;"
+						disabled={!sim.sandbox && sim.mana < 35}
+						onclick={() => {
+							sim.divineTargetPolityId = p.id;
+							const targetCell = p.capital ? sim.w.burgs[p.capital]?.cell ?? cell : cell;
+							sim.cast('resurgence', targetCell, layer);
+							onselect(cell);
+						}}
+						title="Resurrect ancestral dynasty and elevate into a Phoenix Empire with 150k legions and Golden Age (Cost: 35)"
+					>
+						🦅 Resurgence
+					</button>
 				</div>
 			</div>
 			{#if realm.enemies.length}<p class="small"><strong class="bad">At war with</strong> {realm.enemies.map((e) => e.name).join(', ')}</p>{/if}
@@ -515,6 +546,39 @@
 				</li>
 			{/each}
 		</ul>
+		{#if fallenRealms.length > 0}
+			<details class="small" style="margin-top: 0.5rem;">
+				<summary style="cursor: pointer; font-weight: 600; color: var(--muted);">
+					Fallen Kingdoms & Ancient Dynasties ({fallenRealms.length})
+				</summary>
+				<ul class="list" style="margin-top: 0.35rem;">
+					{#each fallenRealms.slice(0, 10) as fp (fp.id)}
+						{@const fSp = SPECIES_BY_ID[fp.species ?? 'human'] ?? SPECIES_BY_ID['human']}
+						<li style="display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-bottom: 1px solid var(--line);">
+							<div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+								<span class="swatch" style="background:{fp.color}; opacity: 0.6;"></span>
+								<strong style="white-space: nowrap;">{fp.name}</strong>
+								<span class="muted small" style="white-space: nowrap;">(Y{fp.founded} to Y{fp.fell ?? '?'}) · {fSp.icon} {fp.form}</span>
+							</div>
+							<button
+								class="btn small"
+								style="padding: 2px 6px; font-size: 0.72rem; white-space: nowrap;"
+								disabled={!sim.sandbox && sim.mana < 35}
+								onclick={() => {
+									sim.divineTargetPolityId = fp.id;
+									const capCell = fp.capital ? sim.w.burgs[fp.capital]?.cell ?? cell : cell;
+									sim.cast('resurgence', capCell, layer);
+									onselect(capCell);
+								}}
+								title="Resurrect ancient House and restore the {fp.name} Phoenix Empire (Cost: 35)"
+							>
+								🦅 Resurge
+							</button>
+						</li>
+					{/each}
+				</ul>
+			</details>
+		{/if}
 	</section>
 
 	<CultureLists {sim} {v} {onfocus} />

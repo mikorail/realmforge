@@ -22,10 +22,10 @@
 	});
 	const groups: [string, Power[]][] = [
 		['Grace & Destiny', ['bless', 'inspire', 'host', 'peace', 'hero', 'prophet', 'relic', 'enlighten', 'patron']],
-		['Statecraft & Regime', ['reform', 'revolution', 'coup']],
+		['Statecraft & Regime', ['reform', 'revolution', 'coup', 'conspiracy', 'resurgence', 'worldwar']],
 		['Earth & Genesis', ['raise', 'sink', 'dig', 'cataclysm', 'species', 'monster', 'wonder']],
 		['Chaos & Calamity', ['discord', 'chaos', 'rebel', 'smite', 'villain', 'plague', 'pandemic']],
-		['Cosmos & Apocalypse', ['tear', 'meteor', 'alien', 'apocalypse']]
+		['Cosmos & Apocalypse', ['tear', 'meteor', 'alien', 'apocalypse', 'ragnarok']]
 	];
 </script>
 
@@ -70,6 +70,31 @@
 			<option value="technocracy">⚙️ Artificer Technocracy</option>
 		</select>
 	</div>
+{/if}
+
+{#if power === 'resurgence'}
+	{@const fallenKingdoms = sim.polities.filter((p) => !p.alive && p.id > 0 && p.fell !== undefined).sort((a, b) => a.founded - b.founded)}
+	{#if fallenKingdoms.length > 0}
+		<div class="target-ideology-box">
+			<div class="row between small" style="margin-bottom: 0.25rem;">
+				<strong>Ancient Fallen Realm:</strong>
+				<span class="muted">{sim.divineTargetPolityId ? (sim.polities[sim.divineTargetPolityId]?.name ?? 'Auto') : 'Auto (Nearest / Oldest)'}</span>
+			</div>
+			<select
+				class="ideology-select"
+				value={sim.divineTargetPolityId ?? ''}
+				onchange={(e) => {
+					const val = (e.target as HTMLSelectElement).value;
+					sim.divineTargetPolityId = val ? Number(val) : undefined;
+				}}
+			>
+				<option value="">Auto (Target Cell / Most Ancient Fallen)</option>
+				{#each fallenKingdoms as f (f.id)}
+					<option value={f.id}>{f.name} (Y{f.founded} to Y{f.fell})</option>
+				{/each}
+			</select>
+		</div>
+	{/if}
 {/if}
 
 <p class="muted small">{power ? `Click the map or tap 'Cast on Random Target' to invoke ${POWERS[power].name}. Esc to cancel.` : 'Pick a power, then click the map or cast on a random target. Realm powers target whoever owns the clicked land on the current layer.'}</p>
