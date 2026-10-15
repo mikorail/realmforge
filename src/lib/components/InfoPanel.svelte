@@ -13,11 +13,15 @@
 	import { monsterSkin, wonderSkin } from '#lib/sim/genre/creatureskins';
 	import CultureCard from './CultureCard.svelte';
 	import CultureLists from './CultureLists.svelte';
+	import HeraldryBadge from './HeraldryBadge.svelte';
+	import { getRealmCoatOfArms, getBurgCoatOfArms } from '#lib/render/heraldry';
+	import { getBurgDistricts } from '#lib/sim/burgs';
 
-	let { sim, v, cell, layer, terms, onfocus, onselect, ondynasty }: {
+	let { sim, v, cell, layer, terms, onfocus, onselect, ondynasty, onburg }: {
 		sim: Simulation; v: number; cell: number; layer: number; terms: GenreDef['terms'];
 		onfocus: (c: number | undefined) => void; onselect: (c: number) => void;
 		ondynasty?: (rulerId: number) => void;
+		onburg?: (burgId: number) => void;
 	} = $props();
 
 	type MainTab = 'overview' | 'quests' | 'wonders' | 'monsters' | 'luminaries' | 'tech';
@@ -202,8 +206,34 @@
 	{#if info}
 		<section class="card">
 			{#if info.burg}
-				<h3>{info.burg.name} <span class="chip">{info.burg.kind}{info.burg.capital ? ' · capital' : ''}</span></h3>
+				{@const bCoa = getBurgCoatOfArms(sim.w.opts.seed, info.burg, info.pol ?? undefined)}
+				{@const dists = getBurgDistricts(info.burg)}
+				<div class="row between" style="align-items: center; margin-bottom: 0.35rem;">
+					<div class="row" style="gap: 8px; align-items: center;">
+						<HeraldryBadge coa={bCoa} size={28} />
+						<h3 style="margin: 0;">{info.burg.name} <span class="chip">{info.burg.kind}{info.burg.capital ? ' · capital' : ''}</span></h3>
+					</div>
+					{#if onburg}
+						<button class="btn small" style="padding: 2px 8px;" onclick={() => onburg?.(info.burg!.id)} title="Manage Settlement Districts, Governor, and Garrison">🏛️ Manage</button>
+					{/if}
+				</div>
 				<div class="stat"><span>Population</span><span>{(info.burg.pop * 1000).toFixed(0)}</span></div>
+				{#if info.burg.governor && sim.people[info.burg.governor]?.alive}
+					<div class="stat"><span>Governor</span><span>{sim.people[info.burg.governor].name}</span></div>
+				{/if}
+				{#if (info.burg.garrison ?? 0) > 0}
+					<div class="stat"><span>Garrison</span><span>🛡️ {info.burg.garrison} points</span></div>
+				{/if}
+				{#if info.burg.charter}
+					<div class="stat"><span>Charter</span><span class="chip on" style="font-size: 0.72rem; padding: 1px 6px;">📜 Royal Municipal Charter</span></div>
+				{/if}
+				<div class="row" style="gap: 4px; margin: 4px 0 6px; flex-wrap: wrap;">
+					{#if dists.walls > 0}<span class="chip" title="Walls level {dists.walls}">🛡️ W{dists.walls}</span>{/if}
+					{#if dists.market > 0}<span class="chip" title="Market level {dists.market}">💰 M{dists.market}</span>{/if}
+					{#if dists.granary > 0}<span class="chip" title="Granary level {dists.granary}">🌾 G{dists.granary}</span>{/if}
+					{#if dists.temple > 0}<span class="chip" title="Temple level {dists.temple}">✨ T{dists.temple}</span>{/if}
+					{#if dists.academy > 0}<span class="chip" title="Academy level {dists.academy}">📚 A{dists.academy}</span>{/if}
+				</div>
 			{/if}
 			{#if layer === 0}
 				<div class="stat"><span>Land</span><span>{info.c.h[cell] < 20 ? 'Water' : BIOMES[info.c.biome[cell]].name}</span></div>
@@ -241,8 +271,11 @@
 	{#if realm}
 		{@const p = realm.p}
 		<section class="card realm" style="--rc:{p.color}">
-			<div class="row between">
-				<h3><span class="swatch" style="background:{p.color}"></span>{p.fullName}</h3>
+			<div class="row between" style="align-items: center;">
+				<div class="row" style="gap: 8px; align-items: center;">
+					<HeraldryBadge coa={getRealmCoatOfArms(sim.w.opts.seed, p)} size={32} />
+					<h3 style="margin: 0;"><span class="swatch" style="background:{p.color}"></span>{p.fullName}</h3>
+				</div>
 				<div class="row" style="gap: 4px; align-items: center;">
 					{#if p.secularized}
 						<span class="chip bad" style="font-size: 0.72rem; padding: 1px 6px;" title="State Atheism enacted year {p.secularYear}">🚫 State Atheism</span>
@@ -448,9 +481,10 @@
 			{#each realms as p (p.id)}
 				{@const sp = SPECIES_BY_ID[p.species ?? 'human'] ?? SPECIES_BY_ID['human']}
 				<li>
-					<button class="link" onclick={() => onfocus(sim.w.burgs[p.capital]?.cell)}>
+					<button class="link" onclick={() => onfocus(sim.w.burgs[p.capital]?.cell)} style="display: flex; align-items: center; gap: 6px;">
+						<HeraldryBadge coa={getRealmCoatOfArms(sim.w.opts.seed, p)} size={18} showBlazonTooltip={false} />
 						<span class="swatch" style="background:{p.color}"></span>
-						{p.name}
+						<span>{p.name}</span>
 						<span class="muted small">{sp.icon} {p.form} · {p.cells}{p.layer ? ` · ${sim.w.layers[p.layer].name}` : ''}</span>
 					</button>
 				</li>

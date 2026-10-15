@@ -170,6 +170,24 @@ export interface Burg {
 	kind: string;
 	/** set once the name has drifted over the centuries (story/drift.ts) */
 	originalName?: string;
+	/** built settlement infrastructure districts (walls, market, granary, temple, academy) */
+	districts?: BurgDistricts;
+	/** appointed governor or mayor person id */
+	governor?: number;
+	/** stationed town defense garrison points */
+	garrison?: number;
+	/** whether the burg holds a municipal royal charter / free city privileges */
+	charter?: boolean;
+	/** heraldic coat of arms / regional symbol */
+	coa?: any;
+}
+
+export interface BurgDistricts {
+	walls?: number;
+	market?: number;
+	granary?: number;
+	temple?: number;
+	academy?: number;
 }
 
 export interface StateDef {

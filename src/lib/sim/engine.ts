@@ -396,6 +396,7 @@ export class Simulation {
 		yearly.yearlyRoadConstruction(this);
 		yearly.yearlyPantheon(this);
 		yearly.yearlyUprisings(this);
+		yearly.yearlyBurgs(this);
 		yearlySphereLore(this);
 		yearlyCulture(this);
 		yearlyLayerLife(this);

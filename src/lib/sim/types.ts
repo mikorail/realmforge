@@ -128,6 +128,8 @@ export interface Polity {
 	/** land held when the last era was named (growth/decline between eras) */
 	eraCells?: number;
 	reigns?: { id: number; given: string; from: number }[];
+	/** heraldic coat of arms / state emblem */
+	coa?: any;
 }
 
 export interface War {

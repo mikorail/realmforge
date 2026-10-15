@@ -3,6 +3,8 @@
 	import type { World } from '#lib/gen/types';
 	import type { Simulation } from '#lib/sim/engine';
 	import { IDEOLOGIES } from '#lib/sim/politics';
+	import HeraldryBadge from './HeraldryBadge.svelte';
+	import { getRealmCoatOfArms, getBurgCoatOfArms } from '#lib/render/heraldry';
 
 	let { sim, world, layer, cell, x, y, v }: { sim: Simulation; world: World; layer: number; cell: number; x: number; y: number; v: number } = $props();
 
@@ -41,7 +43,11 @@
 <div class="tip" style="left:{left}px; top:{top}px" role="tooltip">
 	{#key v}
 		{#if info.realm}
-			<div class="title"><span class="swatch" style="background:{info.realm.color}"></span><strong>{info.realm.name}</strong></div>
+			<div class="title" style="display: flex; align-items: center; gap: 6px;">
+				<HeraldryBadge coa={getRealmCoatOfArms(sim.w.opts.seed, info.realm)} size={20} showBlazonTooltip={false} />
+				<span class="swatch" style="background:{info.realm.color}"></span>
+				<strong>{info.realm.name}</strong>
+			</div>
 			<div class="sub">{info.realm.form}{info.ideology ? ` · ${info.ideology}` : ''}</div>
 			<dl>
 				{#if info.ruler}<dt>Ruler</dt><dd>{info.ruler.name}{info.ruler.house ? ` of ${info.ruler.house}` : ''}</dd>{/if}
@@ -54,7 +60,7 @@
 		<dl>
 			{#if info.culture}<dt>Culture</dt><dd>{info.culture.name}</dd>{/if}
 			{#if info.faith}<dt>Faith</dt><dd>{info.faith.name}</dd>{/if}
-			{#if info.burg}<dt>Place</dt><dd>{info.burg.name}, {info.burg.capital ? 'capital ' : ''}{info.burg.kind}</dd>{/if}
+			{#if info.burg}<dt>Place</dt><dd style="display: flex; align-items: center; gap: 4px;"><HeraldryBadge coa={getBurgCoatOfArms(sim.w.opts.seed, info.burg, info.realm ?? undefined)} size={16} showBlazonTooltip={false} /> {info.burg.name}, {info.burg.capital ? 'capital ' : ''}{info.burg.kind}</dd>{/if}
 			{#if info.terrain}<dt>Terrain</dt><dd>{info.terrain}</dd>{/if}
 		</dl>
 	{/key}

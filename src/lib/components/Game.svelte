@@ -24,7 +24,8 @@
 		scrubber: () => import('./TimelineScrubber.svelte'),
 		completeSim: () => import('./CompleteSimModal.svelte'),
 		history: () => import('./HistoryModal.svelte'),
-		globe: () => import('./GlobeModal.svelte')
+		globe: () => import('./GlobeModal.svelte'),
+		burg: () => import('./BurgModal.svelte')
 	};
 
 	let { cosmos, onquit }: { cosmos: Cosmos; onquit: () => void } = $props();
@@ -55,6 +56,7 @@
 	let completeSimOpen = $state(false);
 	let historyOpen = $state(false);
 	let globeOpen = $state(false);
+	let burgModalId = $state<number | null>(null);
 	let peeking = $state(true);
 	function togglePeeking() {
 		peeking = !peeking;
@@ -410,7 +412,7 @@
 			</div>
 			<div class="body scroll">
 				{#if tab === 'observe'}
-					<InfoPanel {sim} {v} {cell} {layer} terms={G.terms} onfocus={focus} onselect={(c) => (cell = c)} ondynasty={(id) => (dynastyRuler = id)} />
+					<InfoPanel {sim} {v} {cell} {layer} terms={G.terms} onfocus={focus} onselect={(c) => (cell = c)} ondynasty={(id) => (dynastyRuler = id)} onburg={(bId) => (burgModalId = bId)} />
 				{:else if tab === 'god'}
 					<GodPanel {sim} {v} {power} terms={G.terms} onpower={(p) => (power = p)} ontoggle={() => { sim.sandbox = !sim.sandbox; for (const s of cosmos.sims) s.sandbox = sim.sandbox; v++; }} oncastrandom={castRandom} />
 				{:else}
@@ -488,6 +490,22 @@
 				onsave={save}
 				onopenscrubber={() => (scrubberOpen = true)}
 				onrefresh={() => { v++; needDraw = true; }}
+			/>
+		{/await}
+	{/if}
+
+	{#if burgModalId !== null}
+		{#await lazy.burg() then { default: BurgModal }}
+			<BurgModal
+				sim={cosmos.sims[pi]}
+				burgId={burgModalId}
+				onclose={() => (burgModalId = null)}
+				onselectperson={(id) => {
+					const pers = sim.people[id];
+					if (!pers) return;
+					const c = pers.burg ? sim.w.burgs[pers.burg]?.cell : sim.polities[pers.state]?.capital;
+					if (c !== undefined && c >= 0) focus(c);
+				}}
 			/>
 		{/await}
 	{/if}

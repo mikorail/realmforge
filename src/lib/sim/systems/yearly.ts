@@ -13,6 +13,7 @@ import { applySphereQuest } from '../culture/spherequests';
 import { processPantheonInterventions } from '../pantheon';
 import { processYearlyUprisings } from '../uprisings';
 import { cultureMod } from '../culture';
+import { processYearlyBurgs } from '../burgs';
 
 export function yearlyUprisings(sim: Simulation) {
 	const upEvents = processYearlyUprisings(sim);
@@ -181,5 +182,9 @@ export function yearlyBeastWrath(sim: Simulation) {
 
 export function yearlyRoadConstruction(sim: Simulation) {
 	buildRealmRoads(sim);
+}
+
+export function yearlyBurgs(sim: Simulation) {
+	processYearlyBurgs(sim);
 }
 
