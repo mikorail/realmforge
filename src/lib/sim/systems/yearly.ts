@@ -16,6 +16,9 @@ import { cultureMod } from '../culture';
 import { processYearlyBurgs } from '../burgs';
 import { processYearlyLeagues } from '../leagues';
 import { processYearlyMegastructures } from '../megastructures';
+import { processYearlyApotheosis } from '../apotheosis';
+import { processYearlyCrisis } from '../crises';
+import { conveneWorldCongress, enactCongressSummit } from '../congress';
 
 export function yearlyUprisings(sim: Simulation) {
 	const upEvents = processYearlyUprisings(sim);
@@ -196,6 +199,30 @@ export function yearlyLeagues(sim: Simulation) {
 
 export function yearlyMegastructures(sim: Simulation) {
 	processYearlyMegastructures(sim);
+}
+
+export function yearlyApotheosis(sim: Simulation) {
+	const res = processYearlyApotheosis(sim);
+	for (const ev of res.events) {
+		sim.log('faith', ev.text, ev.cell, ev.state);
+	}
+}
+
+export function yearlyCrises(sim: Simulation) {
+	const res = processYearlyCrisis(sim);
+	for (const ev of res.events) {
+		sim.log('disaster', ev.text, ev.cell, ev.state);
+	}
+}
+
+export function yearlyCongress(sim: Simulation) {
+	if (sim.year > 1 && sim.year % 25 === 0) {
+		const summit = conveneWorldCongress(sim);
+		const outcome = enactCongressSummit(sim, summit);
+		for (const ev of outcome.events) {
+			sim.log('misc', ev.text, undefined, ev.state);
+		}
+	}
 }
 
 

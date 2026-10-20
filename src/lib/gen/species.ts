@@ -190,6 +190,104 @@ export const SPECIES: SpeciesDef[] = [
 		layers: ['sky', 'surface'],
 		traits: ['Pious', 'Scholar', 'Charming'],
 		forms: ['Astral Hegemony', 'Solar Conclave', 'Luminous Throne', 'Star-Dominion']
+	},
+	{
+		id: 'ratfolk',
+		name: 'Ratfolk',
+		plural: 'Ratfolk',
+		adjective: 'Verminous',
+		icon: '🐀',
+		desc: 'Cunning subterranean rodentkin and warpstone tinkerers who breed rapidly in foul under-empires.',
+		mods: { martial: 2, diplomacy: -3, stewardship: 1, intrigue: 6, health: -5 },
+		lifespanMult: 0.65,
+		biomes: [4, 7, 12, 15],
+		layers: ['deep', 'surface'],
+		traits: ['Paranoid', 'Ambitious', 'Greedy'],
+		forms: ['Under-Empire', 'Clan-Warren', 'Pestilent Nest', 'Council of Thirteen']
+	},
+	{
+		id: 'lizardfolk',
+		name: 'Lizardfolk',
+		plural: 'Lizardfolk',
+		adjective: 'Saurian',
+		icon: '🐊',
+		desc: 'Cold-blooded ancient guardians of the geomantic web who defend temple-cities under primal mandates.',
+		mods: { martial: 4, diplomacy: 0, stewardship: 4, intrigue: -1, health: 25 },
+		lifespanMult: 2.5,
+		biomes: [5, 7, 8, 12],
+		layers: ['surface', 'deep'],
+		traits: ['Pious', 'Strong', 'Brave'],
+		forms: ['Temple-City', 'Geomantic Enclave', 'Spawning Dominion', 'Sacred Cohort']
+	},
+	{
+		id: 'tomb_undead',
+		name: 'Tomb Revenant',
+		plural: 'Tomb Revenants',
+		adjective: 'Undying',
+		icon: '💀',
+		desc: 'Ancient slumbering skeletal pharaohs and living-metal monarchs commanding eternal legions.',
+		mods: { martial: 4, diplomacy: -2, stewardship: 3, intrigue: 2, health: 35 },
+		lifespanMult: 10.0,
+		biomes: [1, 2, 13, 14],
+		layers: ['surface', 'deep'],
+		traits: ['Pious', 'Scholar', 'Strong'],
+		forms: ['Tomb Dynasty', 'Necropolis', 'Awakened Legion', 'Eternal Hegemony']
+	},
+	{
+		id: 'ogor',
+		name: 'Ogor',
+		plural: 'Ogors',
+		adjective: 'Ogor',
+		icon: '🍖',
+		desc: 'Massive nomadic brute warriors driven by eternal hunger and gut-magic across mountains and steppes.',
+		mods: { martial: 6, diplomacy: -2, stewardship: -2, intrigue: -1, health: 40 },
+		lifespanMult: 1.2,
+		biomes: [2, 3, 4, 10, 11],
+		layers: ['surface'],
+		traits: ['Strong', 'Brave', 'Fierce'],
+		forms: ['Mawtribe', 'Glutton-Horde', 'Nomad-Camp', 'Great Gut-Pact']
+	},
+	{
+		id: 'void_elf',
+		name: 'Void Elf',
+		plural: 'Void Elves',
+		adjective: 'Void-Elven',
+		icon: '🌌',
+		desc: 'Ancient psychic wanderers of cosmic webways with spirit stones preserving souls against the void.',
+		mods: { martial: 2, diplomacy: 2, stewardship: 2, intrigue: 4, health: 10 },
+		lifespanMult: 4.5,
+		biomes: [6, 12, 14],
+		layers: ['sky', 'surface'],
+		traits: ['Scholar', 'Pious', 'Ambitious'],
+		forms: ['Craft-Realm', 'Void Conclave', 'Star-Dominion', 'Webway Enclave']
+	},
+	{
+		id: 'warp_fiend',
+		name: 'Warp Fiend',
+		plural: 'Warp Fiends',
+		adjective: 'Daemonkin',
+		icon: '👹',
+		desc: 'Horned warp-manifestations born of cosmic fractures and excess emotion hungry for slaughter.',
+		mods: { martial: 6, diplomacy: -4, stewardship: -3, intrigue: 3, health: 45 },
+		lifespanMult: 8.0,
+		biomes: [13, 15, 16],
+		layers: ['surface', 'deep', 'sky'],
+		traits: ['Cruel', 'Fierce', 'Ambitious'],
+		forms: ['Chaos Legion', 'Ruinous Host', 'Warp Coven', 'Blood-Court']
+	},
+	{
+		id: 'chitin_swarm',
+		name: 'Chitin Swarm',
+		plural: 'Chitin Swarms',
+		adjective: 'Bio-Form',
+		icon: '🦗',
+		desc: 'Synaptic bio-constructs with chittering carapaces driven by a devouring hive-mind.',
+		mods: { martial: 5, diplomacy: -5, stewardship: 1, intrigue: 1, health: 20 },
+		lifespanMult: 0.8,
+		biomes: [1, 5, 7, 12, 15],
+		layers: ['surface', 'deep'],
+		traits: ['Fierce', 'Cruel', 'Strong'],
+		forms: ['Hive-Colony', 'Synaptic Brood', 'Chitin Swarm', 'Bio-Dominion']
 	}
 ];
 
@@ -265,12 +363,16 @@ export function pickSpeciesForCulture(
 	sphereId: string
 ): SpeciesDef {
 	if (activeAllow) return pickAllowed(rng, biome, layer, activeAllow);
-	// Deep layer defaults heavily to dwarves, goblins, or trolls
+	// Deep layer defaults heavily to dwarves, ratfolk, goblins, tomb revenants, trolls, etc.
 	if (layer === 'deep') {
 		const roll = rng();
-		if (roll < 0.45) return SPECIES_BY_ID['dwarf'];
-		if (roll < 0.70) return SPECIES_BY_ID['goblin'];
-		if (roll < 0.85) return SPECIES_BY_ID['troll'];
+		if (roll < 0.28) return SPECIES_BY_ID['dwarf'];
+		if (roll < 0.46) return SPECIES_BY_ID['ratfolk'];
+		if (roll < 0.60) return SPECIES_BY_ID['goblin'];
+		if (roll < 0.72) return SPECIES_BY_ID['tomb_undead'];
+		if (roll < 0.82) return SPECIES_BY_ID['troll'];
+		if (roll < 0.90) return SPECIES_BY_ID['chitin_swarm'];
+		if (roll < 0.96) return SPECIES_BY_ID['warp_fiend'];
 		return SPECIES_BY_ID['saurian'];
 	}
 
@@ -279,12 +381,14 @@ export function pickSpeciesForCulture(
 		return SPECIES_BY_ID['merfolk'];
 	}
 
-	// Sky layer defaults to celestials, elves, or giants
+	// Sky layer defaults to celestials, void elves, elves, or giants
 	if (layer === 'sky') {
 		const roll = rng();
-		if (roll < 0.45) return SPECIES_BY_ID['celestial'];
-		if (roll < 0.80) return SPECIES_BY_ID['elf'];
-		return SPECIES_BY_ID['giant'];
+		if (roll < 0.35) return SPECIES_BY_ID['celestial'];
+		if (roll < 0.60) return SPECIES_BY_ID['void_elf'];
+		if (roll < 0.82) return SPECIES_BY_ID['elf'];
+		if (roll < 0.93) return SPECIES_BY_ID['giant'];
+		return SPECIES_BY_ID['warp_fiend'];
 	}
 
 	// Surface: biome and sphere weighted
@@ -297,23 +401,39 @@ export function pickSpeciesForCulture(
 			else if (sp.biomes.includes(biome)) w = 2.4;
 			else w = 0.5;
 
-			// Mountain peaks favour giants and dwarves
+			// Mountain peaks favour giants, dwarves, and ogors
 			if (biome === 10) {
 				if (sp.id === 'giant') w = 4.0;
 				if (sp.id === 'dwarf') w = 3.0;
+				if (sp.id === 'ogor') w = 3.5;
 			}
-			// Swamps and jungles favour beastmen, trolls, orcs
-			if (biome === 7 || biome === 8) {
+			// Swamps and jungles favour beastmen, trolls, lizardfolk, ratfolk, and chitin swarm
+			if (biome === 7 || biome === 8 || biome === 12) {
 				if (sp.id === 'beastman' || sp.id === 'troll') w = 3.5;
+				if (sp.id === 'lizardfolk') w = 4.0;
+				if (sp.id === 'ratfolk') w = 3.0;
+				if (sp.id === 'chitin_swarm') w = 2.5;
 			}
 			// Old growth forests favour elves and halflings
 			if (biome === 6 || biome === 12) {
 				if (sp.id === 'elf') w = 3.5;
 				if (sp.id === 'halfling') w = 2.5;
 			}
-			// Steppes and volcanic ashlands favour orcs and saurians
-			if (biome === 2 || biome === 15) {
-				if (sp.id === 'orc' || sp.id === 'saurian') w = 3.5;
+			// Steppes and cold deserts favour orcs, ogors, and saurians
+			if (biome === 2 || biome === 3) {
+				if (sp.id === 'ogor') w = 3.5;
+				if (sp.id === 'orc') w = 3.0;
+			}
+			// Hot arid deserts favour tomb revenants and saurians
+			if (biome === 1) {
+				if (sp.id === 'tomb_undead') w = 4.0;
+				if (sp.id === 'saurian') w = 3.0;
+			}
+			// Volcanic ashlands and lava flats favour warp fiends, chitin swarm, saurians, and orcs
+			if (biome === 13 || biome === 15 || biome === 16) {
+				if (sp.id === 'warp_fiend') w = 4.5;
+				if (sp.id === 'chitin_swarm') w = 3.0;
+				if (sp.id === 'orc' || sp.id === 'saurian') w = 2.5;
 			}
 			candidates.push({ sp, weight: w });
 		}

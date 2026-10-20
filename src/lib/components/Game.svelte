@@ -31,7 +31,11 @@
 		burg: () => import('./BurgModal.svelte'),
 		leagues: () => import('./LeaguesModal.svelte'),
 		delve: () => import('./DelveModal.svelte'),
-		megastructure: () => import('./MegastructureModal.svelte')
+		megastructure: () => import('./MegastructureModal.svelte'),
+		apotheosis: () => import('./ApotheosisModal.svelte'),
+		crises: () => import('./CrisesModal.svelte'),
+		sagas: () => import('./SagasModal.svelte'),
+		congress: () => import('./CongressModal.svelte')
 	};
 
 	let { cosmos, onquit }: { cosmos: Cosmos; onquit: () => void } = $props();
@@ -64,6 +68,10 @@
 	let globeOpen = $state(false);
 	let burgModalId = $state<number | null>(null);
 	let leaguesOpen = $state(false);
+	let showApotheosis = $state(false);
+	let showCrises = $state(false);
+	let showSagas = $state(false);
+	let showCongress = $state(false);
 	let activeMegastructure = $state<any | null>(null);
 	let activeDungeon = $state<DelveDungeon | null>(null);
 	function startDelve(c: number) {
@@ -435,7 +443,7 @@
 			</div>
 			<div class="body scroll">
 				{#if tab === 'observe'}
-					<InfoPanel {sim} {v} {cell} {layer} terms={G.terms} onfocus={focus} onselect={(c) => (cell = c)} ondynasty={(id) => (dynastyRuler = id)} onburg={(bId) => (burgModalId = bId)} onleagues={() => (leaguesOpen = true)} ondelve={startDelve} onmegastructure={openMegastructure} />
+					<InfoPanel {sim} {v} {cell} {layer} terms={G.terms} onfocus={focus} onselect={(c) => (cell = c)} ondynasty={(id) => (dynastyRuler = id)} onburg={(bId) => (burgModalId = bId)} onleagues={() => (leaguesOpen = true)} ondelve={startDelve} onmegastructure={openMegastructure} onapotheosis={() => (showApotheosis = true)} oncrises={() => (showCrises = true)} onsagas={() => (showSagas = true)} oncongress={() => (showCongress = true)} />
 				{:else if tab === 'god'}
 					<GodPanel {sim} {v} {power} terms={G.terms} onpower={(p) => (power = p)} ontoggle={() => { sim.sandbox = !sim.sandbox; for (const s of cosmos.sims) s.sandbox = sim.sandbox; v++; }} oncastrandom={castRandom} />
 				{:else}
@@ -575,6 +583,66 @@
 				personId={cosmos.sims[pi].avatar || (cosmos.sims[pi].people.find((p) => p.alive && p.id)?.id ?? 1)}
 				onclose={() => (activeMegastructure = null)}
 				onrefresh={() => { v++; needDraw = true; }}
+			/>
+		{/await}
+	{/if}
+
+	{#if showApotheosis}
+		{#await lazy.apotheosis() then { default: ApotheosisModal }}
+			<ApotheosisModal
+				sim={cosmos.sims[pi]}
+				{v}
+				personId={cosmos.sims[pi].avatar || (cosmos.sims[pi].people.find((p) => p.alive && p.id)?.id ?? 1)}
+				onclose={() => (showApotheosis = false)}
+				onrefresh={() => { v++; needDraw = true; }}
+			/>
+		{/await}
+	{/if}
+
+	{#if showCrises}
+		{#await lazy.crises() then { default: CrisesModal }}
+			<CrisesModal
+				sim={cosmos.sims[pi]}
+				{v}
+				onclose={() => (showCrises = false)}
+				onselectcell={(c) => { focus(c); showCrises = false; }}
+				onrefresh={() => { v++; needDraw = true; }}
+			/>
+		{/await}
+	{/if}
+
+	{#if showSagas}
+		{#await lazy.sagas() then { default: SagasModal }}
+			<SagasModal
+				sim={cosmos.sims[pi]}
+				{v}
+				onclose={() => (showSagas = false)}
+				onselectburg={(bId) => {
+					const b = sim.w.burgs[bId];
+					if (b) focus(b.cell);
+					showSagas = false;
+				}}
+				onselectcell={(c) => { focus(c); showSagas = false; }}
+			/>
+		{/await}
+	{/if}
+
+	{#if showCongress}
+		{#await lazy.congress() then { default: CongressModal }}
+			<CongressModal
+				sim={cosmos.sims[pi]}
+				{v}
+				onclose={() => (showCongress = false)}
+				onselectburg={(bId) => {
+					const b = sim.w.burgs[bId];
+					if (b) focus(b.cell);
+					showCongress = false;
+				}}
+				onselectpolity={(pId) => {
+					const p = sim.polities[pId];
+					if (p) focus(sim.w.burgs[p.capital]?.cell);
+					showCongress = false;
+				}}
 			/>
 		{/await}
 	{/if}

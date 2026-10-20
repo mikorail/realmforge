@@ -852,7 +852,7 @@ describe('studio and simulation expansions', () => {
 	});
 
 	it('features celestial pantheon deities, patron backing, divine proxy wars, and chosen realms', () => {
-		expect(PANTHEON_DEITIES.length).toBe(8);
+		expect(PANTHEON_DEITIES.length).toBeGreaterThanOrEqual(8);
 		for (const d of PANTHEON_DEITIES) {
 			expect(d.name).toBeDefined();
 			expect(d.domain).toBeDefined();

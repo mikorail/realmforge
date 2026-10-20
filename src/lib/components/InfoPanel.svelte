@@ -18,7 +18,7 @@
 	import { getBurgDistricts } from '#lib/sim/burgs';
 	import { getMegastructureState } from '#lib/sim/megastructures';
 
-	let { sim, v, cell, layer, terms, onfocus, onselect, ondynasty, onburg, onleagues, ondelve, onmegastructure }: {
+	let { sim, v, cell, layer, terms, onfocus, onselect, ondynasty, onburg, onleagues, ondelve, onmegastructure, onapotheosis, oncrises, onsagas, oncongress }: {
 		sim: Simulation; v: number; cell: number; layer: number; terms: GenreDef['terms'];
 		onfocus: (c: number | undefined) => void; onselect: (c: number) => void;
 		ondynasty?: (rulerId: number) => void;
@@ -26,6 +26,10 @@
 		onleagues?: () => void;
 		ondelve?: (cell: number) => void;
 		onmegastructure?: (site: any) => void;
+		onapotheosis?: () => void;
+		oncrises?: () => void;
+		onsagas?: () => void;
+		oncongress?: () => void;
 	} = $props();
 
 	type MainTab = 'overview' | 'quests' | 'wonders' | 'monsters' | 'luminaries' | 'tech';
@@ -530,6 +534,18 @@
 				{/if}
 				{#if onleagues}
 					<button class="chip on" onclick={onleagues} title="Open Trade Leagues, Coalitions, and Outlaw Havens">⚖️ Leagues</button>
+				{/if}
+				{#if onapotheosis}
+					<button class="chip on" onclick={onapotheosis} title="Avatar Divine Ascension and Holy Orders">👑 Ascend</button>
+				{/if}
+				{#if oncrises}
+					<button class="chip on" onclick={oncrises} title="Planetary Grand Crises and Contagion Quarantine">☄️ Crises</button>
+				{/if}
+				{#if onsagas}
+					<button class="chip on" onclick={onsagas} title="Living Bardic Tradition, Heroic Sagas, and Monuments">📜 Sagas</button>
+				{/if}
+				{#if oncongress}
+					<button class="chip on" onclick={oncongress} title="Grand World Congress and Planetary Megaprojects">🌐 Congress</button>
 				{/if}
 			</div>
 		</div>

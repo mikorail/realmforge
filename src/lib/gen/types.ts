@@ -136,8 +136,30 @@ export interface Culture {
 	species?: string;
 }
 
-export type TheologyKind = 'monotheism' | 'polytheism' | 'animism' | 'pantheism' | 'dualism';
-export type DoctrineKind = 'caste' | 'evangelical' | 'militant' | 'liberation' | 'compassion' | 'esoteric' | 'ancestral';
+export type TheologyKind =
+	| 'monotheism'
+	| 'polytheism'
+	| 'animism'
+	| 'pantheism'
+	| 'dualism'
+	| 'chaos_cult'
+	| 'eldritch_horror'
+	| 'ancestral';
+
+export type DoctrineKind =
+	| 'caste'
+	| 'evangelical'
+	| 'militant'
+	| 'liberation'
+	| 'compassion'
+	| 'esoteric'
+	| 'ancestral'
+	| 'blood_offering'
+	| 'mutation_rites'
+	| 'void_whispers'
+	| 'cyclopean_rites'
+	| 'sacred_grove'
+	| 'mountain_pact';
 
 export interface Religion {
 	id: number;
