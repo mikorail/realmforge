@@ -2,6 +2,7 @@ import { createNoise2D } from 'simplex-noise';
 import type { Rng } from '../rng';
 import { clamp } from '../rng';
 import { findCell, neighbors } from './grid';
+import { earthHeights, imageHeights, type HeightmapExtra } from './earth';
 import type { Cells, Template } from './types';
 
 /**
@@ -92,6 +93,15 @@ const TEMPLATES: Record<Template, Step[]> = {
 		['smooth', 2],
 		['noise', 6],
 		['mask', 2]
+	],
+	// base heights come from earthHeights()/imageHeights(); no edge mask, since the map edges are real (or wrap)
+	earth: [
+		['smooth', 1],
+		['noise', 3]
+	],
+	image: [
+		['smooth', 2],
+		['noise', 4]
 	]
 };
 
@@ -101,7 +111,9 @@ export const TEMPLATE_NAMES: Record<Template, string> = {
 	pangea: 'Pangea',
 	highIsland: 'High Island',
 	inlandSea: 'Inland Sea',
-	peninsulas: 'Peninsulas'
+	peninsulas: 'Peninsulas',
+	earth: 'Earth-like',
+	image: 'Custom image'
 };
 
 function range(rng: Rng, s: string): number {
@@ -121,12 +133,14 @@ function linePower(n: number) {
 	return 0.88;
 }
 
-export function generateHeightmap(rng: Rng, c: Cells, template: Template, W: number, H: number) {
+export function generateHeightmap(rng: Rng, c: Cells, template: Template, W: number, H: number, ex: HeightmapExtra = {}) {
 	const n = c.n;
 	const h = new Float32Array(n);
 	const bp = blobPower(n);
 	const lp = linePower(n);
 	const noise = createNoise2D(rng);
+	if (template === 'earth') h.set(earthHeights(rng, c, W, H, ex));
+	else if (template === 'image' && ex.image) h.set(imageHeights(c, W, H, ex.image, !!ex.invert, !!ex.wrapX));
 
 	const randomCell = (xr: string, yr: string, limit = 90) => {
 		for (let tries = 0; tries < 50; tries++) {

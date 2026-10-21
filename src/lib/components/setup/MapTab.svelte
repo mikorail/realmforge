@@ -1,12 +1,32 @@
 <script lang="ts">
 	import { TEMPLATE_NAMES } from '#lib/gen/heightmap';
+	import { decodeHeightImage } from './imageGrid';
 	import LockButton from './LockButton.svelte';
 	import PlanetsSection from './PlanetsSection.svelte';
 	import { POINTS, rndSeed, SIZES, type SetupStore } from './store.svelte';
 
 	let { store }: { store: SetupStore } = $props();
 
-	const pointIdx = $derived(Math.max(0, POINTS.findIndex((p) => p >= store.s.cells)));
+	let imageError = $state('');
+	async function pickImage(e: Event) {
+		const input = e.currentTarget as HTMLInputElement;
+		const f = input.files?.[0];
+		if (!f) return;
+		try {
+			store.heightImage = await decodeHeightImage(f);
+			store.heightImageName = f.name;
+			imageError = '';
+		} catch {
+			imageError = 'That file could not be read as an image.';
+		}
+		input.value = '';
+	}
+	function clearImage() {
+		store.heightImage = null;
+		store.heightImageName = '';
+	}
+
+	const pointIdx =$derived(Math.max(0, POINTS.findIndex((p) => p >= store.s.cells)));
 </script>
 
 <section class="panel-card map-sec">
@@ -83,6 +103,31 @@
 				{#each Object.entries(TEMPLATE_NAMES) as [k, n] (k)}<option value={k}>{n}</option>{/each}
 			</select>
 		</div>
+		{#if store.s.template === 'earth'}
+			<p class="field-hint">Real continents and mountain belts. Pick Climate → Whole world to see all of it; smaller windows show a region.</p>
+			<label class="evolve">
+				<input type="checkbox" checked={!!store.s.flipX} onchange={(e) => (store.s.flipX = (e.currentTarget as HTMLInputElement).checked)} />
+				<span><strong>Mirror east–west</strong> <span class="muted">Flips the world so it is not quite our Earth.</span></span>
+			</label>
+			<label class="evolve">
+				<input type="checkbox" checked={!!store.s.flipY} onchange={(e) => (store.s.flipY = (e.currentTarget as HTMLInputElement).checked)} />
+				<span><strong>Flip north–south</strong></span>
+			</label>
+		{:else if store.s.template === 'image'}
+			<div class="field-input">
+				<input id="f-heightimg" type="file" accept="image/png,image/jpeg" onchange={pickImage} aria-label="Import a heightmap image" />
+			</div>
+			{#if store.heightImage}
+				<p class="field-hint">Custom image loaded: {store.heightImageName} ({store.heightImage.w}×{store.heightImage.h}). <button type="button" class="btn small danger" onclick={clearImage}>Remove</button></p>
+			{:else}
+				<p class="field-hint warn">{imageError || 'No image yet: until you import one, this forges Continents. Dark pixels become sea, bright ones land and mountains.'}</p>
+			{/if}
+			<label class="evolve">
+				<input type="checkbox" checked={!!store.s.invertImage} onchange={(e) => (store.s.invertImage = (e.currentTarget as HTMLInputElement).checked)} />
+				<span><strong>Invert</strong> <span class="muted">Bright is sea, dark is land.</span></span>
+			</label>
+			<p class="field-hint">The picture is not saved with settings or share links.</p>
+		{/if}
 	</div>
 
 	<div class="grid-pair">

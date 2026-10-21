@@ -1,7 +1,15 @@
 import type { Genre, LayerKind } from './genre';
 import type { RaceConfig } from './species';
 export type { Genre, LayerKind };
-export type Template = 'continents' | 'archipelago' | 'pangea' | 'highIsland' | 'inlandSea' | 'peninsulas';
+export type Template = 'continents' | 'archipelago' | 'pangea' | 'highIsland' | 'inlandSea' | 'peninsulas' | 'earth' | 'image';
+
+/** a user-supplied grayscale image used by the 'image' template (kept out of share links and saved settings) */
+export interface HeightImage {
+	w: number;
+	h: number;
+	/** w*h brightness values 0..255, row-major */
+	data: Uint8Array | number[];
+}
 export type PlanetKind = 'terran' | 'desert' | 'ocean' | 'ice' | 'volcanic' | 'shattered' | 'verdant' | 'exotic';
 
 export interface GenOptions {
@@ -46,6 +54,13 @@ export interface GenOptions {
 	races?: RaceConfig;
 	/** spherical world: the east and west edges join (cells across the seam become neighbours); forces a 2:1 map covering all 360 degrees */
 	wrapX?: boolean;
+	/** 'earth' template: mirror the real world east-west / north-south so it is not always our Earth */
+	flipX?: boolean;
+	flipY?: boolean;
+	/** 'image' template: the decoded picture (not persisted, not saved with the world) */
+	heightImage?: HeightImage;
+	/** 'image' template: treat bright as sea and dark as land */
+	invertImage?: boolean;
 }
 
 /** what callers pass in; missing fields are filled by withDefaults() */

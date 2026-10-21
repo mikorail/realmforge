@@ -4,9 +4,10 @@ import type { Template } from '../src/lib/gen/types';
 
 const template = (process.argv[2] ?? 'continents') as Template;
 const cells = Number(process.argv[3] ?? 8000);
+const wrapX = process.argv[4] === 'wrap'; // spherical 2:1 world (try: gen.ts earth 10000 wrap)
 for (const seed of ['alpha', 'beta', 'gamma']) {
 	const t0 = performance.now();
-	const w = generateWorld({ seed, template, cells, states: 14, width: 1600, height: 1000, genre: 'fantasy', planet: 'terran', spheres: null, depth: 3, sky: true, sea: true });
+	const w = generateWorld({ seed, template, cells, states: 14, width: 1600, height: 1000, wrapX, genre: 'fantasy', planet: 'terran', spheres: null, depth: 3, sky: true, sea: true });
 	const c = w.cells;
 	console.log('  layers', w.layers.map((l) => l.name + ':' + w.burgs.filter((b) => b.layer === l.kind && b.depth === l.depth).length).join(' '), '| polities', w.states.length, '| spheres', w.cultures.map((x) => x.sphere).join(','));
 	let landN = 0;
@@ -21,7 +22,7 @@ for (const seed of ['alpha', 'beta', 'gamma']) {
 	console.log('  burgs', w.burgs.slice(1, 9).map((b) => b.name).join(', '), '| rivers', w.rivers.slice(1, 5).map((r) => r.name).join(', '));
 }
 {
-	const w = generateWorld({ seed: 'alpha', template, cells, states: 14, width: 1600, height: 1000, genre: 'fantasy', planet: 'terran', spheres: null, depth: 3, sky: true, sea: true });
+	const w = generateWorld({ seed: 'alpha', template, cells, states: 14, width: 1600, height: 1000, wrapX, genre: 'fantasy', planet: 'terran', spheres: null, depth: 3, sky: true, sea: true });
 	const c = w.cells;
 	const hist = (arr: ArrayLike<number>, f: (i: number) => boolean, step: number) => {
 		const m = new Map<number, number>();
