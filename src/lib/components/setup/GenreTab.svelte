@@ -5,7 +5,25 @@
 	import LockButton from './LockButton.svelte';
 	import type { SetupStore } from './store.svelte';
 
+	import { ERAS } from '#lib/sim/tech';
+
 	let { store }: { store: SetupStore } = $props();
+
+	const agePick = $derived(store.s.ageLockGenre ? 'genre' : store.s.ageLock == null ? 'free' : String(store.s.ageLock));
+	const ageEra = $derived(store.resolvedAgeLock());
+
+	function setAgeLock(v: string) {
+		if (v === 'genre') {
+			store.s.ageLockGenre = true;
+			store.s.ageLock = null;
+		} else if (v === 'free') {
+			store.s.ageLockGenre = false;
+			store.s.ageLock = null;
+		} else {
+			store.s.ageLockGenre = false;
+			store.s.ageLock = Number(v);
+		}
+	}
 </script>
 
 <section class="panel-card genre-sec">
@@ -57,4 +75,24 @@
 		<input type="checkbox" checked={!!store.s.evolve} onchange={(e) => (store.s.evolve = (e.currentTarget as HTMLInputElement).checked)} />
 		<span><strong>Evolving genre</strong> <span class="muted">The world's voice follows its tech era: mythic, fantasy, steampunk, dieselpunk, then cyberpunk or solarpunk depending on how it got there.</span></span>
 	</label>
+
+	<div class="field mt-md">
+		<div class="field-head">
+			<div class="field-title">
+				<LockButton {store} k="ageLock" />
+				<label for="f-agelock">Age lock</label>
+			</div>
+			<span class="field-badge">{ageEra === null ? 'Free' : `Era ${ageEra}: ${ERAS[ageEra].genreName}`}</span>
+		</div>
+		<div class="field-input">
+			<select id="f-agelock" value={agePick} onchange={(e) => setAgeLock((e.currentTarget as HTMLSelectElement).value)}>
+				<option value="free">Free: the ages turn as usual</option>
+				<option value="genre">Lock to my genre's era</option>
+				{#each ERAS as era (era.index)}
+					<option value={String(era.index)}>Lock to era {era.index}: {era.name}</option>
+				{/each}
+			</select>
+		</div>
+		<p class="muted">An age lock keeps the world in one tech era forever. Discoveries still arrive, but only from that era or earlier.</p>
+	</div>
 </section>

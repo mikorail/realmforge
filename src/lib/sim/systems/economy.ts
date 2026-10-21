@@ -1,7 +1,7 @@
 /** Demographics, treasury/army/stability economics, innovation and eras, wonder upkeep and AI wonder construction. */
 import type { Simulation } from '../engine';
 import { clamp } from '../../rng';
-import { ERAS, checkNextDiscovery, type TechDiscovery } from '../tech';
+import { ERAS, checkNextDiscovery, lockedEra, type TechDiscovery } from '../tech';
 import { techName } from '../genre/techskins';
 import { buildWonder } from '../wonders';
 import type { LegendaryPlace } from '../types';
@@ -71,9 +71,10 @@ export function innovate(sim: Simulation) {
 	// diminishing returns so the ages unfold over centuries, not years (≈ era every 100–150 yrs)
 	sim.gainInnovation(0.9 + Math.sqrt(scholars) * 0.25 + Math.sqrt(stableRealms) * 0.15);
 
-	// Check epoch transition
+	// Check epoch transition (an age-locked world keeps its era for good: no wheel of ages)
+	const lock = lockedEra(sim.w.opts.ageLock);
 	const nextEra = ERAS.find((e) => e.index === sim.era + 1);
-	if (nextEra && sim.innovation >= nextEra.threshold) {
+	if (nextEra && (lock === null || nextEra.index <= lock) && sim.innovation >= nextEra.threshold) {
 		sim.era = nextEra.index;
 		sim.updateVoice();
 		sim.log('misc', `The grand wheel of ages turns: the ancient ways yield as the ${nextEra.name} (${nextEra.genreName}) dawns across the lands of ${sim.w.name}!`);

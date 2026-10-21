@@ -1,4 +1,5 @@
 import type { Rng } from '../rng';
+import type { Genre } from '../gen/genre';
 
 export type TechBranch = 'warfare' | 'arcana' | 'engineering' | 'agronomy' | 'navigation';
 
@@ -80,6 +81,24 @@ export const ERAS: EraDef[] = [
 	{ index: 3, name: 'Age of Steel and Combustion', genreName: 'Industrial Dieselpunk', threshold: 450, blurb: 'Telegraph networks, dreadnought hulls, and chemical foundries.' },
 	{ index: 4, name: 'Age of Silicon and Light', genreName: 'Synthetic Solarpunk', threshold: 700, blurb: 'Living cybergrids, clean solar towers, and bio-engineered flora.' }
 ];
+
+/** Era a genre naturally starts in, for the setup's "lock to my genre's era" age lock. */
+export const GENRE_AGE: Record<Genre, number> = {
+	mythic: 0,
+	fantasy: 1,
+	steampunk: 2,
+	dieselpunk: 3,
+	atompunk: 4,
+	cyberpunk: 4,
+	biopunk: 4,
+	solarpunk: 4
+};
+
+/** The era a world is pinned to by `GenOptions.ageLock` (clamped to the ERAS range), or null when the age is free. */
+export function lockedEra(lock: number | null | undefined): number | null {
+	if (lock == null || !Number.isFinite(lock)) return null;
+	return Math.min(ERAS.length - 1, Math.max(0, Math.round(lock)));
+}
 
 export const DISCOVERIES: TechDiscovery[] = [
 	// Era 0: Mythic Antiquity

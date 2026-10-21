@@ -8,7 +8,7 @@ import { SEA, type World } from '../gen/types';
 import { AGES } from './content';
 import { forgeArtifact, type Artifact } from './relics';
 import { updateCaravans, type CaravanToken } from './trade';
-import type { TechDiscovery } from './tech';
+import { lockedEra, type TechDiscovery } from './tech';
 import { generateWonders } from './wonders';
 import { generateMonsters, updateMonsters } from './monsters';
 import { generateFactionsForPolity } from './politics';
@@ -125,6 +125,9 @@ export class Simulation {
 		setRaces(world.opts.races);
 		this.rng = makeRng(world.opts.seed + ':sim');
 		this.voice = world.opts.genre;
+		// age lock: the world begins in its locked era; innovate() never leaves it, so discoveries stay within it
+		const locked = lockedEra(world.opts.ageLock);
+		if (locked !== null) this.era = locked;
 		const c = world.cells;
 		this.plague = new Float32Array(c.n);
 		this.basePop = c.pop.slice();
@@ -579,7 +582,7 @@ export class Simulation {
 		s.uprisings = d.uprisings ?? [];
 		s.nextWar = d.nextWar;
 		s.rng = makeRng(d.rng);
-		s.era = d.era ?? 0;
+		s.era = lockedEra(world.opts.ageLock) ?? d.era ?? 0;
 		s.innovation = d.innovation ?? 0;
 		s.techs = new Set(d.techs ?? []);
 		s.wonders = d.wonders ?? [];
