@@ -5,9 +5,11 @@ import { PLANETS } from '#lib/gen/physical';
 import type { GenOptions, PlanetKind, Template } from '#lib/gen/types';
 import { SPECIES, type SpeciesDef, sanitizeRace } from '#lib/gen/species';
 import { decodeSharePayload } from '#lib/share';
+import { GENRE_AGE, lockedEra } from '#lib/sim/tech';
 import type { Preset } from './presets';
 
-export type Settings = Omit<GenOptions, 'seed'> & { seed: string; planets: number; sphereSet: string };
+/** `ageLockGenre` = "lock to my genre's era": resolved to a number when generating, so changing genre moves the lock with it. */
+export type Settings = Omit<GenOptions, 'seed'> & { seed: string; planets: number; sphereSet: string; ageLockGenre?: boolean };
 
 export const STORE = 'realmforge:setup';
 export const POINTS = [1000, 2000, 4000, 6000, 8000, 10000, 15000, 20000, 30000, 40000, 60000, 80000, 100000, 150000, 200000];
@@ -29,7 +31,7 @@ const r = (a: number, b: number) => a + Math.random() * (b - a);
 const ri = (a: number, b: number) => Math.round(r(a, b));
 const pick = <T,>(arr: readonly T[]) => arr[Math.floor(Math.random() * arr.length)];
 
-const fresh = (): Settings => ({ ...structuredClone(DEFAULTS), seed: rndSeed(), planets: 1, sphereSet: 'All', planetOverrides: [] });
+const fresh = (): Settings => ({ ...structuredClone(DEFAULTS), seed: rndSeed(), planets: 1, sphereSet: 'All', planetOverrides: [], ageLock: null, ageLockGenre: false });
 
 /** All generator settings plus the lock list. One instance per Setup screen; tabs receive it as a prop. */
 export class SetupStore {
@@ -115,7 +117,18 @@ export class SetupStore {
 		if (u('sphereSet')) { n.sphereSet = pick(Object.keys(SPHERE_SETS).filter((x) => x !== 'Eldritch')); n.spheres = SPHERE_SETS[n.sphereSet]; }
 		if (u('layers')) { n.depth = ri(0, 4); n.sky = Math.random() < 0.7; n.sea = Math.random() < 0.7; n.density = { deep: +r(0.5, 2).toFixed(1), sky: +r(0.5, 2).toFixed(1), sea: +r(0.5, 2).toFixed(1) }; }
 		if (u('climate') && this.isLocked('planet')) n.climate = { ...n.climate, tEq: ri(15, 38), tN: ri(-40, -5), tS: ri(-40, -5), mapSize: ri(20, 80), latitude: ri(10, 90), prec: ri(50, 180) };
+		if (u('ageLock')) {
+			// most worlds stay free; some lock to their genre's era, some to an arbitrary era
+			const roll = Math.random();
+			n.ageLockGenre = roll >= 0.7 && roll < 0.8;
+			n.ageLock = roll >= 0.8 ? pick([0, 1, 2, 3, 4]) : null;
+		}
 		this.s = n;
+	}
+
+	/** The era the world will be pinned to (null = free), resolving "lock to my genre's era" against the current genre. */
+	resolvedAgeLock(): number | null {
+		return this.s.ageLockGenre ? GENRE_AGE[this.s.genre] : lockedEra(this.s.ageLock);
 	}
 
 	setPlanet(p: PlanetKind) {

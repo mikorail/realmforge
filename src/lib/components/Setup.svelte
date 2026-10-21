@@ -55,8 +55,13 @@
 		busy = true;
 		stage = 'Weaving tectonic plates';
 		pct = 0.05;
-		const { planets, sphereSet: _set, planetOverrides, ...opts } = $state.snapshot(store.s);
+		const { planets, sphereSet: _set, planetOverrides, ageLockGenre: _ageGenre, ...opts } = $state.snapshot(store.s);
 		void _set;
+		void _ageGenre;
+		// the age lock is stored as a number; absent means free, so unlocked worlds are generated exactly as before
+		const age = store.resolvedAgeLock();
+		if (age === null) delete opts.ageLock;
+		else opts.ageLock = age;
 		if (opts.spheres && !opts.spheres.length) opts.spheres = null;
 		const worker = new Worker(new URL('../gen/worker.ts', import.meta.url), { type: 'module' });
 		worker.onmessage = (e: MessageEvent<{ type: string; stage?: string; pct?: number; universe?: Universe }>) => {

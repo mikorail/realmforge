@@ -42,6 +42,8 @@ export interface GenOptions {
 	climate: Climate;
 	/** the narration voice follows the tech era (myth → fantasy → steam → diesel → cyber/solar) */
 	evolve?: boolean;
+	/** 0–4: pins the world to one tech era (sim/tech ERAS) for its whole history; null/undefined = free */
+	ageLock?: number | null;
 	/** which races exist: allow-list (null = all) plus user-made custom races; unset = classic behaviour */
 	races?: RaceConfig;
 	/** spherical world: the east and west edges join (cells across the seam become neighbours); forces a 2:1 map covering all 360 degrees */
