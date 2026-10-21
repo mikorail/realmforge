@@ -2,7 +2,7 @@ import { GENRES, type Genre } from '#lib/gen/genre';
 import { TEMPLATE_NAMES } from '#lib/gen/heightmap';
 import { climateFor, DEFAULTS, SPHERE_SETS } from '#lib/gen/options';
 import { PLANETS } from '#lib/gen/physical';
-import type { GenOptions, PlanetKind, Template } from '#lib/gen/types';
+import type { GenOptions, HeightImage, PlanetKind, Template } from '#lib/gen/types';
 import { SPECIES, type SpeciesDef, sanitizeRace } from '#lib/gen/species';
 import { decodeSharePayload } from '#lib/share';
 import { GENRE_AGE, lockedEra } from '#lib/sim/tech';
@@ -38,6 +38,9 @@ export class SetupStore {
 	s = $state<Settings>(fresh());
 	locked = $state<string[]>([]);
 	loaded = false;
+	/** decoded custom heightmap picture: too big for localStorage or share links, so it lives outside `s` and only until the page closes */
+	heightImage = $state.raw<HeightImage | null>(null);
+	heightImageName = $state('');
 
 	isLocked = (k: string) => this.locked.includes(k);
 	toggleLock = (k: string) => (this.locked = this.isLocked(k) ? this.locked.filter((x) => x !== k) : [...this.locked, k]);
@@ -101,7 +104,7 @@ export class SetupStore {
 		const n = { ...s, climate: { ...s.climate }, density: { ...s.density }, layerDetail: { ...s.layerDetail } };
 		const u = (k: string) => !this.isLocked(k);
 		if (u('seed')) n.seed = rndSeed();
-		if (u('template')) n.template = pick(Object.keys(TEMPLATE_NAMES) as Template[]);
+		if (u('template')) n.template = pick((Object.keys(TEMPLATE_NAMES) as Template[]).filter((t) => t !== 'image'));
 		if (u('planet')) {
 			n.planet = pick(Object.keys(PLANETS) as PlanetKind[]);
 			if (u('climate')) n.climate = { ...climateFor(n.planet), mapSize: ri(20, 80), latitude: ri(10, 90), longitude: ri(0, 100) };

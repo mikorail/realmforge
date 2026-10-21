@@ -21,7 +21,9 @@ export function generateWorld(input: GenInput, progress: Progress = () => {}, pl
 	const { cells: c, edges, spacing } = buildGrid(rng, opts.cells, W, H, !!opts.wrapX);
 	progress('Raising mountains', 0.12);
 	const pk = PLANETS[opts.planet];
-	generateHeightmap(rng, c, opts.planet === 'shattered' && opts.template === 'continents' ? 'archipelago' : opts.template, W, H);
+	// an 'image' map without its picture (saved settings, shared links) falls back to continents
+	const tpl = opts.template === 'image' && !opts.heightImage ? 'continents' : opts.template;
+	generateHeightmap(rng, c, opts.planet === 'shattered' && tpl === 'continents' ? 'archipelago' : tpl, W, H, { climate: opts.climate, wrapX: !!opts.wrapX, flipX: !!opts.flipX, flipY: !!opts.flipY, invert: !!opts.invertImage, image: opts.heightImage });
 	const shift = pk.sea - opts.seaLevel;
 	if (shift) for (let i = 0; i < c.n; i++) if (c.h[i] > 2) c.h[i] = Math.max(0, Math.min(100, c.h[i] + shift));
 	progress('Filling oceans', 0.3);
@@ -60,5 +62,8 @@ export function generateWorld(input: GenInput, progress: Progress = () => {}, pl
 	}
 	const name = makeName(langs[1], 'world');
 	progress('Done', 1);
-	return { planet: planetIndex, name, opts, layers, cells: c, edges, features, rivers: riverList, cultures, religions, burgs, states, routes, links };
+	// the picture is big and only needed here: keep it out of the saved world
+	const { heightImage: _img, ...savedOpts } = opts;
+	void _img;
+	return { planet: planetIndex, name, opts: savedOpts, layers, cells: c, edges, features, rivers: riverList, cultures, religions, burgs, states, routes, links };
 }

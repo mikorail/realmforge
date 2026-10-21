@@ -80,7 +80,9 @@
 			stage = `Generation failed: ${err.message}`;
 			busy = false;
 		};
-		worker.postMessage({ opts: { ...opts, planetOverrides: (planetOverrides ?? []).slice(0, planets) }, planets });
+		const hi = store.heightImage;
+		const heightImage = hi ? { w: hi.w, h: hi.h, data: hi.data } : undefined;
+		worker.postMessage({ opts: { ...opts, heightImage, planetOverrides: (planetOverrides ?? []).slice(0, planets) }, planets });
 	}
 
 	async function load(slot: string) {
