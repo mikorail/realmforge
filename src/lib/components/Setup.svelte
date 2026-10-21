@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { GENRES } from '#lib/gen/genre';
 	import type { Universe } from '#lib/gen/universe';
-	import { deleteSave, listSaves, loadGame, type SaveMeta } from '#lib/save';
+	import { deleteSave, exportSave, importSave, listSaves, loadGame, lowStorageWarning, renameSave, type SaveMeta } from '#lib/save';
 	import { Cosmos } from '#lib/sim/cosmos';
 	import { onMount } from 'svelte';
 	import './setup/setup.css';
@@ -18,7 +18,8 @@
 	import SocietyTab from './setup/SocietyTab.svelte';
 	import { SetupStore } from './setup/store.svelte';
 
-	let { onready }: { onready: (c: Cosmos) => void } = $props();
+	let { onready }: { onready: (c: Cosmos, slot?: string) => void } = $props();
+	let savesNote = $state('');
 
 	/** all generator settings, locks, presets and persistence (`localStorage['realmforge:setup']`) live in the store */
 	const store = new SetupStore();
@@ -43,7 +44,7 @@
 		{ id: 'climate', icon: '🌐', label: 'Climate' },
 		{ id: 'society', icon: '👥', label: 'Societies' },
 		{ id: 'layers', icon: '⛏️', label: 'Planes' },
-		...(saves.length > 0 ? [{ id: 'saves', icon: '📜', label: `Chronicles (${saves.length})` }] : [])
+		{ id: 'saves', icon: '📜', label: saves.length ? `Chronicles (${saves.length})` : 'Chronicles' }
 	]);
 	// a deleted last save must not leave the tab bar pointing at a missing tab
 	$effect(() => {
@@ -87,13 +88,49 @@
 		stage = 'Unrolling the ancient atlas';
 		pct = 0.5;
 		const c = await loadGame(slot);
-		if (c) onready(c);
-		else busy = false;
+		if (c) onready(c, slot);
+		else {
+			busy = false;
+			savesNote = 'That save could not be loaded (its world data is missing or damaged).';
+		}
 	}
 
 	async function remove(slot: string) {
 		await deleteSave(slot);
 		saves = await listSaves();
+	}
+
+	async function rename(slot: string, label: string) {
+		await renameSave(slot, label);
+		saves = await listSaves();
+	}
+
+	async function exportSlot(slot: string) {
+		try {
+			const f = await exportSave(slot);
+			if (!f) throw new Error('Save not found.');
+			const url = URL.createObjectURL(new Blob([f.bytes as BlobPart], { type: 'application/octet-stream' }));
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = f.filename;
+			a.click();
+			setTimeout(() => URL.revokeObjectURL(url), 2000);
+			savesNote = `Exported ${f.filename}.`;
+		} catch (e) {
+			savesNote = `Export failed: ${(e as Error).message}`;
+		}
+	}
+
+	async function importFile(file: File) {
+		try {
+			const m = await importSave(new Uint8Array(await file.arrayBuffer()));
+			saves = await listSaves();
+			savesNote = `Imported “${m.label ?? m.name}” (year ${m.year}).`;
+			const low = await lowStorageWarning();
+			if (low) savesNote += ` ${low}`;
+		} catch (e) {
+			savesNote = (e as Error).message;
+		}
 	}
 
 	const g = $derived(GENRES[store.s.genre]);
@@ -122,7 +159,7 @@
 			{#if show('climate')}<ClimateTab {store} />{/if}
 			{#if show('society')}<SocietyTab {store} />{/if}
 			{#if show('layers')}<LayersTab {store} />{/if}
-			{#if (viewMode === 'all' && saves.length > 0) || activeTab === 'saves'}<SavesTab {saves} onload={load} ondelete={remove} />{/if}
+			{#if show('saves')}<SavesTab {saves} note={savesNote} onload={load} ondelete={remove} onrename={rename} onexport={exportSlot} onimport={importFile} />{/if}
 		</main>
 
 		<ActionBar {store} onforge={generate} />

@@ -3,11 +3,11 @@
 	import { PLANETS } from '#lib/gen/physical';
 	import type { MapMode, MapRenderer } from '#lib/render/renderer';
 	import { THEMES } from '#lib/render/theme';
-	import { saveGame } from '#lib/save';
+	import { AUTO_SLOTS, listSaves, loadGame, lowStorageWarning, nextAutoSlot, nextSlotId, parseSlot, saveGame, slotId } from '#lib/save';
 	import { calendarCulture, monthName } from '#lib/sim/culture/index';
 	import type { Cosmos } from '#lib/sim/cosmos';
 	import type { Power } from '#lib/sim/engine';
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import AvatarPanel from './AvatarPanel.svelte';
 	import ClimatePanel from './ClimatePanel.svelte';
 	import type { Climate } from '#lib/gen/types';
@@ -38,7 +38,7 @@
 		congress: () => import('./CongressModal.svelte')
 	};
 
-	let { cosmos, onquit }: { cosmos: Cosmos; onquit: () => void } = $props();
+	let { cosmos, initialSlot = null, onquit, onload }: { cosmos: Cosmos; initialSlot?: string | null; onquit: () => void; onload: (c: Cosmos, slot: string | null) => void } = $props();
 
 	// the current narration voice: fixed genre, or the era's genre on evolving worlds
 	const genre = $derived.by(() => {
@@ -243,7 +243,10 @@
 					acc -= 1;
 					n++;
 				}
-				if (n) panelsStale = true;
+				if (n) {
+					panelsStale = true;
+					maybeAutosave();
+				}
 			}
 			// panels recompute from `v`; refreshing them every frame is the most expensive part of fast-forward
 			if (panelsStale && t - lastV > (speed >= 12 ? 350 : 200)) {
@@ -287,6 +290,12 @@
 		};
 		raf = requestAnimationFrame(frame);
 		const key = (e: KeyboardEvent) => {
+			// F5 / F9 only exist while a world is on screen (this component is mounted); plain F-keys type nothing
+			if ((e.key === 'F5' || e.key === 'F9') && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+				e.preventDefault();
+				if (!e.repeat) void (e.key === 'F5' ? quickSave() : quickLoad());
+				return;
+			}
 			if ((e.target as HTMLElement)?.tagName === 'INPUT') return;
 			if (e.key === ' ') { e.preventDefault(); speed = speed ? 0 : 3; }
 			else if (e.key >= '1' && e.key <= '5') speed = [0, 1, 3, 12, 36][+e.key - 1];
@@ -341,13 +350,102 @@
 		needDraw = true;
 	}
 
+	// ── saves: many slots per world ──
+	const seedKey = () => `${cosmos.u.seed}`;
+	/** slot the Save button overwrites: set by Resume or the first save (never an autosave/quicksave slot) */
+	let curSlot = $state<string | null>(untrack(() => (initialSlot && ['legacy', 'manual'].includes(parseSlot(initialSlot).kind) ? initialSlot : null)));
+	let saving = false;
+
+	async function write(slot: string, label?: string) {
+		saving = true;
+		try {
+			await saveGame(slot, cosmos, { label });
+		} finally {
+			saving = false;
+		}
+		void lowStorageWarning().then((w) => w && say(w));
+	}
+
 	async function save() {
 		try {
-			await saveGame(`${cosmos.u.seed}`, cosmos);
+			const slot = curSlot ?? nextSlotId(seedKey(), (await listSaves()).map((m) => m.slot));
+			await write(slot);
+			curSlot = slot;
 			say('Chronicle saved.');
 		} catch (e) {
 			say(`Save failed: ${(e as Error).message}`);
 		}
+	}
+
+	async function saveAs() {
+		const name = prompt('Name this save (optional)', '');
+		if (name === null) return;
+		try {
+			const slot = nextSlotId(seedKey(), (await listSaves()).map((m) => m.slot));
+			await write(slot, name.trim().slice(0, 80) || undefined);
+			curSlot = slot;
+			say(name.trim() ? `Saved as “${name.trim()}”.` : 'Chronicle saved as a new slot.');
+		} catch (e) {
+			say(`Save failed: ${(e as Error).message}`);
+		}
+	}
+
+	async function quickSave() {
+		try {
+			await write(slotId(seedKey(), 'quick'), 'Quicksave');
+			say('Quicksaved (F9 to load).');
+		} catch (e) {
+			say(`Quicksave failed: ${(e as Error).message}`);
+		}
+	}
+
+	async function quickLoad() {
+		try {
+			const c = await loadGame(slotId(seedKey(), 'quick'));
+			if (!c) return say('No quicksave for this world yet (F5 makes one).');
+			onload(c, curSlot);
+		} catch (e) {
+			say(`Quickload failed: ${(e as Error).message}`);
+		}
+	}
+
+	// ── rotating autosave: every N simulated years, in an idle callback, never two writes at once ──
+	const AUTO_KEY = 'realmforge:autosave';
+	function readAuto() {
+		try {
+			const n = Number(localStorage.getItem(AUTO_KEY) ?? 25);
+			return Number.isFinite(n) && n >= 0 ? n : 25;
+		} catch {
+			return 25;
+		}
+	}
+	let autoEvery = $state(readAuto()); // simulated years between autosaves, 0 = off
+	function setAuto(n: number) {
+		autoEvery = n;
+		try { localStorage.setItem(AUTO_KEY, String(n)); } catch { /* storage blocked */ }
+	}
+	let lastAuto = untrack(() => cosmos.year);
+	let autoBusy = false;
+	let ring: { slot: string; saved: number }[] | null = null;
+	const idle = (fn: () => void) => ('requestIdleCallback' in window ? window.requestIdleCallback(fn, { timeout: 3000 }) : setTimeout(fn, 60));
+
+	function maybeAutosave() {
+		if (!autoEvery || autoBusy || saving || cosmos.year - lastAuto < autoEvery) return;
+		autoBusy = true;
+		lastAuto = cosmos.year;
+		idle(async () => {
+			try {
+				const seed = seedKey();
+				ring ??= (await listSaves()).filter((m) => parseSlot(m.slot).seed === seed && parseSlot(m.slot).kind === 'auto');
+				const slot = nextAutoSlot(seed, ring);
+				await write(slot, 'Autosave');
+				ring = [...ring.filter((r) => r.slot !== slot), { slot, saved: Date.now() }].slice(0, AUTO_SLOTS);
+			} catch (e) {
+				say(`Autosave failed: ${(e as Error).message}`);
+			} finally {
+				autoBusy = false;
+			}
+		});
 	}
 
 	const modes: [MapMode, string][] = [['political', 'Realms'], ['biome', 'Biomes'], ['height', 'Relief'], ['culture', 'Cultures'], ['religion', 'Faiths'], ['population', 'People']];
@@ -384,7 +482,14 @@
 			<button class="btn" onclick={() => (globeOpen = true)} title="See the world as a rotatable globe">Globe</button>
 			<button class="btn" onclick={() => (exportOpen = true)} title="Export poster, vector map, or dossier">Export</button>
 			<button class="btn" onclick={() => { climate = structuredClone(cosmos.sims[pi].w.opts.climate); worldOpen = !worldOpen; }} aria-expanded={worldOpen}>Configure world</button>
-			<button class="btn" onclick={save}>Save</button>
+			<button class="btn" onclick={save} title="Save over the current slot (F5 quick-saves)">Save</button>
+			<button class="btn" onclick={saveAs} title="Save as a new slot with its own name">Save as…</button>
+			<label class="autosave small muted" title="Rotating autosave, in simulated years">
+				Auto
+				<select value={autoEvery} aria-label="Autosave every N simulated years" onchange={(e) => setAuto(Number(e.currentTarget.value))}>
+					{#each [0, 10, 25, 50, 100] as n (n)}<option value={n}>{n ? `${n}y` : 'off'}</option>{/each}
+				</select>
+			</label>
 			<button class="btn" onclick={onquit}>New world</button>
 		</div>
 	</header>
@@ -662,6 +767,8 @@
 	.planets, .speed { display: flex; gap: 0.25rem; flex-wrap: wrap; }
 	.speed .btn { min-width: 2.4rem; padding: 0.3rem 0.4rem; font-size: 0.85rem; }
 	.right { margin-left: auto; display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: flex-end; }
+	.autosave { display: inline-flex; align-items: center; gap: 0.25rem; }
+	.autosave select { background: transparent; color: inherit; border: 1px solid var(--line, #444); border-radius: 6px; padding: 0.2rem; }
 	.stage { position: relative; flex: 1; min-height: 0; }
 	.layerbar { position: absolute; left: 0.6rem; top: 0.6rem; display: flex; flex-direction: column; gap: 0.25rem; z-index: 2; }
 	.lay { background: var(--panel); display: flex; gap: 0.4rem; align-items: center; text-align: left; font-size: 0.85rem; }

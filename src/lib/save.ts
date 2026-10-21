@@ -5,7 +5,7 @@ import { Simulation } from './sim/engine';
 
 /**
  * Saves (format v2): a compressed, reference-preserving binary pack.
- * - The Universe as first saved is stored once per slot in the `bases` store.
+ * - The Universe as first saved is stored once per world seed (shared by all its slots) in the `bases` store.
  * - Each save stores the whole mutable graph, except that typed arrays whose
  *   contents still equal the base copy at the same path become a back-reference.
  *   So per save only changed arrays (cells.state/pop/culture/religion/h/biome,
@@ -38,6 +38,8 @@ export interface SaveMeta {
 	genre: string;
 	planets: number;
 	saved: number;
+	/** user name, 'Autosave' or 'Quicksave'; absent on older records */
+	label?: string;
 }
 
 export interface SaveData {
@@ -286,14 +288,139 @@ export function baseMatches(base: Universe, u: Universe) {
 	});
 }
 
+// ───────────────────────── slots (pure) ─────────────────────────
+
+export type SlotKind = 'legacy' | 'manual' | 'auto' | 'quick';
+export const AUTO_SLOTS = 3;
+
+/** slot ids: `${seed}#${n}` manual, `${seed}#auto1..3` autosave ring, `${seed}#quick`; a bare seed is a legacy slot */
+export function parseSlot(slot: string): { seed: string; kind: SlotKind; n: number } {
+	const m = /^([\s\S]*)#(\d+|auto\d+|quick)$/.exec(slot);
+	if (!m) return { seed: slot, kind: 'legacy', n: 0 };
+	const t = m[2];
+	if (t === 'quick') return { seed: m[1], kind: 'quick', n: 0 };
+	if (t.startsWith('auto')) return { seed: m[1], kind: 'auto', n: +t.slice(4) };
+	return { seed: m[1], kind: 'manual', n: +t };
+}
+
+export const slotId = (seed: string, n: number | string) => `${seed}#${n}`;
+
+export function nextSlotId(seed: string, slots: string[]): string {
+	let max = 0;
+	for (const s of slots) {
+		const p = parseSlot(s);
+		if (p.seed === seed && p.kind === 'manual') max = Math.max(max, p.n);
+	}
+	return slotId(seed, max + 1);
+}
+
+/** ring slot to write next: a free one, else the oldest */
+export function nextAutoSlot(seed: string, existing: { slot: string; saved: number }[]): string {
+	const ring = Array.from({ length: AUTO_SLOTS }, (_, i) => slotId(seed, `auto${i + 1}`));
+	const have = new Map(existing.filter((e) => ring.includes(e.slot)).map((e) => [e.slot, e.saved]));
+	const free = ring.find((s) => !have.has(s));
+	if (free) return free;
+	return ring.reduce((a, b) => (have.get(b)! < have.get(a)! ? b : a));
+}
+
+export interface SaveGroup { seed: string; name: string; latest: number; saves: SaveMeta[] }
+
+export function groupSaves(metas: SaveMeta[]): SaveGroup[] {
+	const by = new Map<string, SaveGroup>();
+	for (const m of metas) {
+		const seed = parseSlot(m.slot).seed;
+		let g = by.get(seed);
+		if (!g) by.set(seed, (g = { seed, name: m.name, latest: 0, saves: [] }));
+		g.saves.push(m);
+		if (m.saved >= g.latest) { g.latest = m.saved; g.name = m.name; }
+	}
+	for (const g of by.values()) g.saves.sort((a, b) => b.saved - a.saved);
+	return [...by.values()].sort((a, b) => b.latest - a.latest);
+}
+
+// ───────────────────────── .rfsave export / import (pure) ─────────────────────────
+
+const MAGIC = enc.encode('RFSAVE\x01\n'); // 8 bytes
+
+export interface ExportParts { seed: string; meta: SaveMeta; baseId: string; base: Uint8Array; blob: Uint8Array }
+
+/** container: magic, then three length-prefixed parts (JSON header, base blob, save blob) exactly as stored */
+export function encodeExport(p: ExportParts): Uint8Array {
+	const head = enc.encode(JSON.stringify({ v: 1, seed: p.seed, meta: p.meta, baseId: p.baseId }));
+	const out = new Uint8Array(MAGIC.length + 12 + head.length + p.base.length + p.blob.length);
+	const dv = new DataView(out.buffer);
+	let o = 0;
+	out.set(MAGIC, o); o += MAGIC.length;
+	for (const part of [head, p.base, p.blob]) {
+		dv.setUint32(o, part.length, true); o += 4;
+		out.set(part, o); o += part.length;
+	}
+	return out;
+}
+
+/** throws an Error with a user-readable message on anything that is not a valid, loadable save */
+export function decodeExport(bytes: Uint8Array, deep = true): ExportParts {
+	const bad = (why: string) => new Error(`Not a valid Realmforge save: ${why}`);
+	if (bytes.length < MAGIC.length + 12 || MAGIC.some((b, i) => bytes[i] !== b)) throw bad('missing .rfsave header');
+	const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+	let o = MAGIC.length;
+	const parts: Uint8Array[] = [];
+	for (let i = 0; i < 3; i++) {
+		if (o + 4 > bytes.length) throw bad('file is truncated');
+		const n = dv.getUint32(o, true); o += 4;
+		if (o + n > bytes.length) throw bad('file is truncated');
+		parts.push(bytes.slice(o, o + n)); o += n;
+	}
+	if (o !== bytes.length) throw bad('unexpected trailing data');
+	let h: any;
+	try { h = JSON.parse(dec.decode(parts[0])); } catch { throw bad('unreadable header'); }
+	const m = h?.meta;
+	if (h?.v !== 1 || typeof h.seed !== 'string' || typeof h.baseId !== 'string' || !m || typeof m.name !== 'string' || typeof m.year !== 'number' || typeof m.genre !== 'string' || typeof m.planets !== 'number' || typeof m.saved !== 'number' || (m.label !== undefined && typeof m.label !== 'string')) throw bad('unsupported or damaged header');
+	if (!parts[1].length || !parts[2].length) throw bad('empty world or save data');
+	if (deep) {
+		try {
+			const d = decodeSave(parts[2], decodeBase(parts[1]));
+			if (!d?.u?.planets?.length || !Array.isArray(d.sims)) throw new Error('shape');
+		} catch {
+			throw bad('the save data is corrupt');
+		}
+	}
+	return { seed: h.seed, meta: m as SaveMeta, baseId: h.baseId, base: parts[1], blob: parts[2] };
+}
+
+// ───────────────────────── storage ─────────────────────────
+
+/** a warning message when the browser says < 10% of the storage quota is left, else null */
+export async function lowStorageWarning(): Promise<string | null> {
+	try {
+		const e = await navigator.storage?.estimate?.();
+		if (!e?.quota || e.usage === undefined) return null;
+		const free = e.quota - e.usage;
+		if (free / e.quota < 0.1) return `Browser storage is almost full (${Math.max(0, free / 1048576).toFixed(0)} MB free). Delete old saves or export them.`;
+	} catch { /* unsupported */ }
+	return null;
+}
+
 // ───────────────────────── IndexedDB ─────────────────────────
 
 interface BaseRecord { id: string; blob: Uint8Array }
-interface V2Record { v: 2; meta: SaveMeta; baseId: string; blob: Uint8Array }
+/** baseKey: key in `bases`; absent on records written before shared bases (then it equals the slot, a bare seed) */
+interface V2Record { v: 2; meta: SaveMeta; baseId: string; baseKey?: string; blob: Uint8Array }
 interface V1Record { meta: SaveMeta; data: SaveData }
+export interface BaseRef { slot: string; baseKey: string; baseId: string }
 
-/** decoded bases by slot, so repeat saves skip re-reading the static world */
+const refOf = (slot: string, v: V1Record | V2Record): BaseRef | null => ('data' in v ? null : { slot, baseKey: v.baseKey ?? slot, baseId: v.baseId });
+
+/** decoded bases by base key, so repeat saves skip re-reading the static world */
 const baseCache = new Map<string, { id: string; u: Universe }>();
+
+/** one save-ish operation at a time (saves, deletes, imports never overlap) */
+let chain: Promise<unknown> = Promise.resolve();
+function serial<T>(fn: () => Promise<T>): Promise<T> {
+	const run = chain.then(fn, fn);
+	chain = run.catch(() => {});
+	return run;
+}
 
 function get<T>(d: IDBDatabase, store: string, key: string): Promise<T | undefined> {
 	return new Promise((res) => {
@@ -303,36 +430,95 @@ function get<T>(d: IDBDatabase, store: string, key: string): Promise<T | undefin
 	});
 }
 
-async function slotBase(d: IDBDatabase, slot: string): Promise<{ id: string; u: Universe } | null> {
-	const hit = baseCache.get(slot);
+function done(tx: IDBTransaction) {
+	return new Promise<void>((res, rej) => {
+		tx.oncomplete = () => res();
+		tx.onerror = () => rej(tx.error);
+		tx.onabort = () => rej(tx.error);
+	});
+}
+
+async function slotBase(d: IDBDatabase, key: string): Promise<{ id: string; u: Universe } | null> {
+	const hit = baseCache.get(key);
 	if (hit) return hit;
-	const rec = await get<BaseRecord>(d, BASES, slot);
+	const rec = await get<BaseRecord>(d, BASES, key);
 	if (!rec) return null;
 	const b = { id: rec.id, u: decodeBase(rec.blob) };
-	baseCache.set(slot, b);
+	baseCache.set(key, b);
 	return b;
 }
 
-export async function saveGame(slot: string, cos: Cosmos) {
-	const d = await db();
-	let base = await slotBase(d, slot).catch(() => null);
-	let newBase: BaseRecord | null = null;
-	if (!base || !baseMatches(base.u, cos.u)) {
-		const blob = encodeBase(cos.u);
-		newBase = { id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`, blob };
-		base = { id: newBase.id, u: decodeBase(blob) };
-	}
-	const blob = encodeSave(snapshotData(cos), base.u);
-	const meta: SaveMeta = { slot, name: cos.u.planets[0].name, year: cos.year, genre: cos.u.planets[0].opts.genre, planets: cos.u.planets.length, saved: Date.now() };
-	const rec: V2Record = { v: 2, meta, baseId: base.id, blob };
-	await new Promise<void>((res, rej) => {
-		const tx = d.transaction([STORE, BASES], 'readwrite');
-		if (newBase) tx.objectStore(BASES).put(newBase, slot);
-		tx.objectStore(STORE).put(rec, slot);
-		tx.oncomplete = () => res();
-		tx.onerror = () => rej(tx.error);
+/** base references of every stored slot */
+function allRefs(d: IDBDatabase): Promise<BaseRef[]> {
+	return new Promise((res) => {
+		const out: BaseRef[] = [];
+		const cur = d.transaction(STORE).objectStore(STORE).openCursor();
+		cur.onsuccess = () => {
+			const c = cur.result;
+			if (!c) return res(out);
+			const r = refOf(String(c.key), c.value as V1Record | V2Record);
+			if (r) out.push(r);
+			c.continue();
+		};
+		cur.onerror = () => res(out);
 	});
-	baseCache.set(slot, base);
+}
+
+/** stored base keys that no remaining slot references */
+export function unusedBaseKeys(keys: string[], refs: BaseRef[]) {
+	const used = new Set(refs.map((r) => r.baseKey));
+	return keys.filter((k) => !used.has(k));
+}
+
+/** bases no slot points to any more (deleted with the last slot that used them) */
+async function pruneBases(d: IDBDatabase) {
+	const refs = await allRefs(d);
+	const keys = await new Promise<string[]>((res) => {
+		const r = d.transaction(BASES).objectStore(BASES).getAllKeys();
+		r.onsuccess = () => res(r.result.map(String));
+		r.onerror = () => res([]);
+	});
+	const dead = unusedBaseKeys(keys, refs);
+	if (!dead.length) return;
+	const tx = d.transaction(BASES, 'readwrite');
+	for (const k of dead) { tx.objectStore(BASES).delete(k); baseCache.delete(k); }
+	await done(tx);
+}
+
+/** key for a new base of `seed`: the plain seed unless another slot still uses that key */
+export function newBaseKey(refs: BaseRef[], seed: string, slot: string, id: string) {
+	return refs.some((r) => r.slot !== slot && r.baseKey === seed) ? `${seed}@${id}` : seed;
+}
+
+const newId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
+export function saveGame(slot: string, cos: Cosmos, opts: { label?: string } = {}) {
+	return serial(async () => {
+		const d = await db();
+		const seed = `${cos.u.seed}`;
+		const own = await get<V1Record | V2Record>(d, STORE, slot);
+		const ownRef = own ? refOf(slot, own) : null;
+		let key = ownRef?.baseKey ?? seed;
+		let base = await slotBase(d, key).catch(() => null);
+		let newBase: (BaseRecord & { key: string }) | null = null;
+		if (!base || !baseMatches(base.u, cos.u)) {
+			const id = newId();
+			key = newBaseKey(await allRefs(d), seed, slot, id);
+			const blob = encodeBase(cos.u);
+			newBase = { id, blob, key };
+			base = { id, u: decodeBase(blob) };
+		}
+		const blob = encodeSave(snapshotData(cos), base.u);
+		const label = opts.label ?? own?.meta.label;
+		const meta: SaveMeta = { slot, name: cos.u.planets[0].name, year: cos.year, genre: cos.u.planets[0].opts.genre, planets: cos.u.planets.length, saved: Date.now(), ...(label ? { label } : {}) };
+		const rec: V2Record = { v: 2, meta, baseId: base.id, baseKey: key, blob };
+		const tx = d.transaction([STORE, BASES], 'readwrite');
+		if (newBase) tx.objectStore(BASES).put({ id: newBase.id, blob: newBase.blob } satisfies BaseRecord, newBase.key);
+		tx.objectStore(STORE).put(rec, slot);
+		await done(tx);
+		baseCache.set(key, base);
+		if (newBase) await pruneBases(d);
+	});
 }
 
 export async function listSaves(): Promise<SaveMeta[]> {
@@ -360,8 +546,9 @@ export async function loadGame(slot: string): Promise<Cosmos | null> {
 	const v = await get<V1Record | V2Record>(d, STORE, slot);
 	if (!v) return null;
 	if ('data' in v) return cosmosFromData(v.data); // v1: plain structured clone
-	baseCache.delete(slot);
-	const base = await slotBase(d, slot);
+	const key = v.baseKey ?? slot;
+	baseCache.delete(key);
+	const base = await slotBase(d, key);
 	if (!base || base.id !== v.baseId) {
 		console.warn(`save ${slot}: world data missing or mismatched`);
 		return null;
@@ -374,10 +561,65 @@ export async function loadGame(slot: string): Promise<Cosmos | null> {
 	}
 }
 
-export async function deleteSave(slot: string) {
+/** deletes the slot; its base goes only when no other slot still uses it */
+export function deleteSave(slot: string) {
+	return serial(async () => {
+		const d = await db();
+		const tx = d.transaction(STORE, 'readwrite');
+		tx.objectStore(STORE).delete(slot);
+		await done(tx);
+		await pruneBases(d);
+	});
+}
+
+export function renameSave(slot: string, label: string) {
+	return serial(async () => {
+		const d = await db();
+		const v = await get<V1Record | V2Record>(d, STORE, slot);
+		if (!v) return;
+		const l = label.trim().slice(0, 80);
+		const meta = { ...v.meta };
+		if (l) meta.label = l; else delete meta.label;
+		const tx = d.transaction(STORE, 'readwrite');
+		tx.objectStore(STORE).put({ ...v, meta }, slot);
+		await done(tx);
+	});
+}
+
+/** the .rfsave bytes for a slot (null if missing) */
+export async function exportSave(slot: string): Promise<{ filename: string; bytes: Uint8Array } | null> {
 	const d = await db();
-	baseCache.delete(slot);
-	const tx = d.transaction([STORE, BASES], 'readwrite');
-	tx.objectStore(STORE).delete(slot);
-	tx.objectStore(BASES).delete(slot);
+	const v = await get<V1Record | V2Record>(d, STORE, slot);
+	if (!v) return null;
+	let parts: ExportParts;
+	if ('data' in v) {
+		const base = encodeBase(v.data.u);
+		parts = { seed: `${v.data.u.seed}`, meta: v.meta, baseId: newId(), base, blob: encodeSave(v.data, decodeBase(base)) };
+	} else {
+		const b = await get<BaseRecord>(d, BASES, v.baseKey ?? slot);
+		if (!b || b.id !== v.baseId) throw new Error('This save’s world data is missing, so it cannot be exported.');
+		parts = { seed: parseSlot(slot).seed, meta: v.meta, baseId: v.baseId, base: b.blob, blob: v.blob };
+	}
+	const safe = (v.meta.label ?? v.meta.name).replace(/[^\w.-]+/g, '_').slice(0, 40) || 'world';
+	return { filename: `${safe}-y${v.meta.year}.rfsave`, bytes: encodeExport(parts) };
+}
+
+/** validates and stores an exported save as a fresh slot of its world; throws a readable Error on bad files */
+export function importSave(bytes: Uint8Array): Promise<SaveMeta> {
+	const p = decodeExport(bytes);
+	return serial(async () => {
+		const d = await db();
+		const refs = await allRefs(d);
+		const same = refs.find((r) => r.baseId === p.baseId);
+		const key = same?.baseKey ?? newBaseKey(refs, p.seed, '', p.baseId);
+		const writeBase = !same || !(await get(d, BASES, key));
+		const slot = nextSlotId(p.seed, refs.map((r) => r.slot));
+		const meta: SaveMeta = { ...p.meta, slot, label: p.meta.label ?? 'Imported' };
+		const tx = d.transaction([STORE, BASES], 'readwrite');
+		if (writeBase) tx.objectStore(BASES).put({ id: p.baseId, blob: p.base } satisfies BaseRecord, key);
+		tx.objectStore(STORE).put({ v: 2, meta, baseId: p.baseId, baseKey: key, blob: p.blob } satisfies V2Record, slot);
+		await done(tx);
+		baseCache.delete(key);
+		return meta;
+	});
 }
