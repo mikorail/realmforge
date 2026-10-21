@@ -2,7 +2,7 @@
 import { serialize } from 'node:v8';
 import { describe, expect, it } from 'vitest';
 import { generateUniverse } from './gen/universe';
-import { baseMatches, cosmosFromData, decodeBase, decodeSave, encodeBase, encodeSave, pack, snapshotData, unpack } from './save';
+import { baseMatches, cosmosFromData, decodeBase, decodeExport, decodeSave, encodeBase, encodeExport, encodeSave, groupSaves, newBaseKey, nextAutoSlot, nextSlotId, pack, parseSlot, snapshotData, unpack, unusedBaseKeys } from './save';
 import { Cosmos } from './sim/cosmos';
 
 describe('binary pack', () => {
@@ -78,4 +78,79 @@ describe('delta + compressed saves', () => {
 		expect(decodeSave(delta, base)).toEqual(data);
 		expect(delta.length).toBeLessThan(v1 / 4);
 	}, 120_000);
+});
+
+describe('slots, export and import', () => {
+	it('parses slot ids, including legacy bare seeds', () => {
+		expect(parseSlot('abc')).toEqual({ seed: 'abc', kind: 'legacy', n: 0 });
+		expect(parseSlot('abc#3')).toEqual({ seed: 'abc', kind: 'manual', n: 3 });
+		expect(parseSlot('abc#auto2')).toEqual({ seed: 'abc', kind: 'auto', n: 2 });
+		expect(parseSlot('a#b#quick')).toEqual({ seed: 'a#b', kind: 'quick', n: 0 });
+		expect(nextSlotId('abc', ['abc', 'abc#1', 'abc#4', 'abc#auto1', 'zzz#9'])).toBe('abc#5');
+		expect(nextSlotId('abc', ['abc'])).toBe('abc#1');
+	});
+
+	it('rotates the autosave ring, overwriting the oldest', () => {
+		expect(nextAutoSlot('s', [])).toBe('s#auto1');
+		expect(nextAutoSlot('s', [{ slot: 's#auto1', saved: 1 }, { slot: 's#auto3', saved: 2 }])).toBe('s#auto2');
+		const full = [{ slot: 's#auto1', saved: 30 }, { slot: 's#auto2', saved: 10 }, { slot: 's#auto3', saved: 20 }];
+		expect(nextAutoSlot('s', full)).toBe('s#auto2');
+	});
+
+	it('groups saves by world, newest first, tolerating records without a label', () => {
+		const m = (slot: string, saved: number, label?: string) => ({ slot, name: 'W', year: 1, genre: 'fantasy', planets: 1, saved, ...(label ? { label } : {}) });
+		const g = groupSaves([m('a', 5), m('b#1', 9, 'x'), m('a#2', 7), m('b#auto1', 3, 'Autosave')]);
+		expect(g.map((x) => x.seed)).toEqual(['b', 'a']);
+		expect(g[1].saves.map((x) => x.slot)).toEqual(['a#2', 'a']);
+	});
+
+	it('shares the seed base across slots; deleting one slot keeps the base while another uses it', () => {
+		const refs = [{ slot: 's#1', baseKey: 's', baseId: 'id1' }, { slot: 's#2', baseKey: 's', baseId: 'id1' }];
+		expect(newBaseKey(refs, 's', 's#1', 'id2')).toBe('s@id2'); // s#2 still needs the old base
+		expect(newBaseKey([refs[0]], 's', 's#1', 'id2')).toBe('s'); // only its own slot: may rewrite in place
+		expect(newBaseKey([], 's', 's#2', 'id2')).toBe('s');
+		// pruning after a delete keeps every base some remaining slot references, drops the rest
+		expect(unusedBaseKeys(['s', 'other'], refs.filter((r) => r.slot !== 's#1'))).toEqual(['other']);
+		expect(unusedBaseKeys(['s', 'other'], [])).toEqual(['s', 'other']);
+	});
+
+	it('two slots of one world round-trip against one shared base', () => {
+		const cos = new Cosmos(generateUniverse({ seed: 'slots-test', cells: 2500, states: 8 }, 1));
+		const base = decodeBase(encodeBase(cos.u));
+		for (let m = 0; m < 12 * 15; m++) cos.tick();
+		const a = encodeSave(snapshotData(cos), base);
+		const yearA = cos.year;
+		const stateA = Array.from(cos.sims[0].w.cells.state);
+		for (let m = 0; m < 12 * 15; m++) cos.tick();
+		const b = encodeSave(snapshotData(cos), base);
+		const backA = cosmosFromData(decodeSave(a, base)), backB = cosmosFromData(decodeSave(b, base));
+		expect(backA.year).toBe(yearA);
+		expect(Array.from(backA.sims[0].w.cells.state)).toEqual(stateA);
+		expect(backB.year).toBe(cos.year);
+		expect(backB.year).toBeGreaterThan(backA.year);
+		expect(b.length).toBeLessThan(encodeSave(snapshotData(cos), null).length); // the extra slot costs only a delta
+	}, 60_000);
+
+	it('exports and imports a slot byte-for-byte and rejects garbage', () => {
+		const cos = new Cosmos(generateUniverse({ seed: 'export-test', cells: 2000, states: 6 }, 1));
+		const baseBytes = encodeBase(cos.u);
+		const base = decodeBase(baseBytes);
+		for (let m = 0; m < 12 * 10; m++) cos.tick();
+		const blob = encodeSave(snapshotData(cos), base);
+		const meta = { slot: 'export-test#1', name: 'N', year: cos.year, genre: 'fantasy', planets: 1, saved: 123, label: 'Mine' };
+		const file = encodeExport({ seed: 'export-test', meta, baseId: 'b1', base: baseBytes, blob });
+		const back = decodeExport(file);
+		expect(back.meta).toEqual(meta);
+		expect(back.baseId).toBe('b1');
+		expect(back.seed).toBe('export-test');
+		expect(Array.from(back.blob)).toEqual(Array.from(blob));
+		expect(cosmosFromData(decodeSave(back.blob, decodeBase(back.base))).year).toBe(cos.year);
+
+		expect(() => decodeExport(new Uint8Array([1, 2, 3]))).toThrow(/Not a valid Realmforge save/);
+		expect(() => decodeExport(new TextEncoder().encode('{"hello":"world"} padding padding'))).toThrow(/missing .rfsave header/);
+		expect(() => decodeExport(file.slice(0, file.length - 10))).toThrow(/truncated/);
+		const corrupt = file.slice();
+		corrupt.fill(7, corrupt.length - 200);
+		expect(() => decodeExport(corrupt)).toThrow(/corrupt/);
+	}, 60_000);
 });
