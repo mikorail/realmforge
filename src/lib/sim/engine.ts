@@ -35,6 +35,7 @@ import { FrontIndex, OpenCells, SimIndex } from './indexes';
 import { armyFx, newSentiment, yearlyPeoples, type SentimentState } from './sentiment';
 import { yearlyCrossLayer } from './worldrules/crosslayer';
 import { extraColonize, navalMult, yearlyPlanetRules } from './worldrules/planets';
+import { newMotiveState, type MotiveState } from './motives';
 import { newStory, onCrown, yearlyStory, type StoryState } from './story';
 import type { Power } from './systems/godpowers';
 
@@ -99,6 +100,8 @@ export class Simulation {
 	story: StoryState = newStory();
 	/** feelings between peoples and per-realm racial effects (sentiment.ts) */
 	sx: SentimentState = newSentiment();
+	/** ruler motives: grudges per house (motives.ts) */
+	mv: MotiveState = newMotiveState();
 	era = 0;
 	innovation = 0;
 	techs = new Set<string>();
@@ -565,7 +568,7 @@ export class Simulation {
 			nextWar: this.nextWar, rng: this.rng.state(), plagueActive: this.plagueActive,
 			era: this.era, innovation: this.innovation, techs: Array.from(this.techs),
 			wonders: this.wonders, monsters: this.monsters,
-			missions: this.missions, quests: this.quests, cx: this.cx, sx: this.sx,
+			missions: this.missions, quests: this.quests, cx: this.cx, sx: this.sx, mv: this.mv,
 			divineTargetIdeology: this.divineTargetIdeology
 		};
 	}
@@ -595,6 +598,7 @@ export class Simulation {
 		s.quests = d.quests ?? [];
 		s.cx = { ...newCultureState(), ...(d.cx ?? {}) };
 		s.sx = { ...newSentiment(), ...((d as { sx?: Partial<SentimentState> }).sx ?? {}) };
+		s.mv = { ...newMotiveState(), ...((d as { mv?: MotiveState }).mv ?? {}) };
 		s.computeBorders();
 		s.updateVoice();
 		return s;

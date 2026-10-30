@@ -73,6 +73,12 @@ export interface Person {
 	regnal?: number;
 	epithet?: string;
 	plain?: string;
+	/** ruler motive (sim/motives.ts): the aim, when it began, the realm it targets (vengeance) and why, and how it ended */
+	motive?: 'vengeance' | 'faith' | 'glory' | 'gold' | 'legacy' | 'survival' | 'knowledge' | 'dynasty';
+	motiveSince?: number;
+	motiveTarget?: number;
+	motiveWhy?: string;
+	motiveEnd?: 'done' | 'dropped';
 	/** role in avatar adventuring warband / company */
 	partyRole?: 'champion' | 'spymaster' | 'quartermaster' | 'lorekeeper';
 }

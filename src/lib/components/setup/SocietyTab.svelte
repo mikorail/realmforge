@@ -404,6 +404,11 @@
 			</div>
 		{/if}
 	</div>
+
+	<label class="evolve mt-md">
+		<input type="checkbox" checked={store.s.motives !== false} onchange={(e) => (store.s.motives = (e.currentTarget as HTMLInputElement).checked)} />
+		<span><strong>Ruler motives</strong> <span class="muted">Each ruler is driven by an aim: vengeance, faith, glory, gold, legacy, survival, knowledge or dynasty. It shapes their wars, peace, treaties and monuments, and may pass to an heir.</span></span>
+	</label>
 </section>
 
 <style>

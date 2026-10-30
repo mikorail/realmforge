@@ -2,6 +2,7 @@
 import type { Simulation } from '../engine';
 import { clamp } from '../../rng';
 import { fullPersonName, makeName } from '../../gen/names';
+import { noteKinLost } from '../motives';
 import { onRulerDeath, rulerName } from '../story/people';
 import { TRAITS, TRAIT_FX } from '../content';
 import { narrateDeath, narrateHeirlessCrisis } from '../chronicle';
@@ -114,6 +115,7 @@ export function kill(sim: Simulation, p: Person, cause: string) {
 	p.cause = cause;
 	const pol = sim.polities[p.state];
 	if (p.role === 'ruler' || p.role === 'villain') onRulerDeath(sim, p);
+	noteKinLost(sim, p, cause); // motives: a house remembers kin lost in war
 	if ((p.role === 'ruler' || p.role === 'villain') && pol?.alive && pol.ruler === p.id) {
 		const heir = sim.people[pol.heir];
 		if (heir?.alive) {

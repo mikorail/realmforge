@@ -52,6 +52,8 @@ export interface GenOptions {
 	evolve?: boolean;
 	/** 0–4: pins the world to one tech era (sim/tech ERAS) for its whole history; null/undefined = free */
 	ageLock?: number | null;
+	/** rulers carry a driving motive (vengeance, faith, glory, ...); unset or true = on, false = off */
+	motives?: boolean;
 	/** which races exist: allow-list (null = all) plus user-made custom races; unset = classic behaviour */
 	races?: RaceConfig;
 	/** 0..2: how much a people's species shapes its realm (0 none, 1 default, 2 strong); unset = 1 */

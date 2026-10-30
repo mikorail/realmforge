@@ -1,4 +1,5 @@
 /** Rebellions and revolts, colonisation of neutral land, tribes and new realms, yearly random events. */
+import { motiveMod } from '../motives';
 import type { Simulation } from '../engine';
 import { clamp } from '../../rng';
 import { neighbors } from '../../gen/grid';
@@ -148,7 +149,7 @@ export function colonize(sim: Simulation) {
 		if (li === 0 && BIOMES[c.biome[i]].hab === 0) continue;
 		for (const j of neighbors(c, i)) {
 			const s = S[j];
-			if (s && sim.open(li, j) && sim.polities[s].alive && r.chance(0.25 * sim.polities[s].expansionism * cultureMod(sim, sim.polities[s], 'colonize'))) {
+			if (s && sim.open(li, j) && sim.polities[s].alive && r.chance(0.25 * sim.polities[s].expansionism * cultureMod(sim, sim.polities[s], 'colonize') * motiveMod(sim, sim.polities[s], 'colonize'))) {
 				S[i] = s;
 				const bid = sim.lb[li][i];
 				if (bid) {

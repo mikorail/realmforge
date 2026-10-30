@@ -3,6 +3,7 @@
 	import type { World } from '#lib/gen/types';
 	import type { Simulation } from '#lib/sim/engine';
 	import { IDEOLOGIES } from '#lib/sim/politics';
+	import { motiveInfo } from '#lib/sim/motives';
 	import HeraldryBadge from './HeraldryBadge.svelte';
 	import { getRealmCoatOfArms, getBurgCoatOfArms } from '#lib/render/heraldry';
 
@@ -25,6 +26,7 @@
 			realm,
 			burg: burg && burg.alive ? burg : null,
 			ruler: realm ? sim.ruler(realm) : undefined,
+			motive: realm ? motiveInfo(sim, sim.ruler(realm)) : null,
 			ideology: realm?.ideology ? IDEOLOGIES[realm.ideology]?.name ?? realm.ideology : '',
 			wars,
 			overlord: realm?.overlord ? sim.polities[realm.overlord] : undefined,
@@ -51,6 +53,7 @@
 			<div class="sub">{info.realm.form}{info.ideology ? ` · ${info.ideology}` : ''}</div>
 			<dl>
 				{#if info.ruler}<dt>Ruler</dt><dd>{info.ruler.name}{info.ruler.house ? ` of ${info.ruler.house}` : ''}</dd>{/if}
+				{#if info.motive}<dt>Motive</dt><dd title={info.motive.blurb}>{info.motive.icon} {info.motive.name}{info.motive.status === 'active' ? '' : info.motive.status === 'done' ? ' (fulfilled)' : ' (abandoned)'}</dd>{/if}
 				{#if info.overlord}<dt>Overlord</dt><dd>{info.overlord.name}</dd>{/if}
 				{#if info.wars.length}<dt class="war">At war</dt><dd class="war">{info.wars.join('; ')}</dd>{/if}
 			</dl>
