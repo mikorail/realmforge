@@ -54,4 +54,4 @@ Ready-made prompts for the open roadmap items are in `docs/AGENT_PROMPTS.md`.
 Static site: build with `npm run build`, publish `build/`. `netlify.toml` is included (Node 24, SPA fallback to `/200.html`, no-cache for the service worker). The PWA and offline mode only work over HTTPS.
 
 ## Status
-Roadmap is almost complete. Open items: per-sphere building styles and quests, and optional LLM-written chronicles (bring your own key). See `ROADMAP.md`.
+Roadmap is almost complete. Open items: the Social depth plan in `ROADMAP.md`. No AI model (LLM) API calls anywhere; narration stays procedural.
