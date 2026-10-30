@@ -38,6 +38,7 @@ import { extraColonize, navalMult, yearlyPlanetRules } from './worldrules/planet
 import { newMotiveState, type MotiveState } from './motives';
 import { newStory, onCrown, yearlyStory, type StoryState } from './story';
 import type { Power } from './systems/godpowers';
+import { initSectors, restoreSectors, sectorNaval, yearlySectors, type SectorState } from './sectors';
 
 export { POWERS, type Power } from './systems/godpowers';
 
@@ -125,6 +126,8 @@ export class Simulation {
 	openCells = new OpenCells();
 	/** polity id → bordering polity ids, derived from `borders`; reset by computeBorders */
 	neighborCache: Map<number, number[]> | null = null;
+	/** economic sectors per town/realm (sectors.ts); undefined when opts.sectors === false */
+	sectors?: SectorState;
 
 	constructor(world: World, restoring = false) {
 		this.w = world;
@@ -211,6 +214,7 @@ export class Simulation {
 				assignPatronDeity(pol, this.rng);
 			}
 		}
+		this.sectors = initSectors(this);
 		this.takeHistorySnapshot();
 		this.updateVoice();
 		this.log('misc', `The grand chronicle of ${world.name} begins: sovereign houses arise and uncharted lands await their destiny.`);
@@ -314,7 +318,7 @@ export class Simulation {
 			if (!p.alive) continue;
 			const g = this.general(p);
 			const lead = Math.max(this.ruler(p)?.martial ?? 0, g?.martial ?? 0);
-			s += p.army * (1 + lead * 0.04) * (0.6 + p.stability / 250) * navalMult(this, id) * armyFx(this, id);
+			s += p.army * (1 + lead * 0.04) * (0.6 + p.stability / 250) * navalMult(this, id) * armyFx(this, id) * sectorNaval(this, id);
 		}
 		return s;
 	}
@@ -415,6 +419,7 @@ export class Simulation {
 		yearly.yearlyCongress(this);
 		yearlySphereLore(this);
 		yearlyCulture(this);
+		yearlySectors(this);
 		yearlyLayerLife(this);
 		yearlyLetters(this);
 		yearlyEpochs(this);
@@ -569,7 +574,8 @@ export class Simulation {
 			era: this.era, innovation: this.innovation, techs: Array.from(this.techs),
 			wonders: this.wonders, monsters: this.monsters,
 			missions: this.missions, quests: this.quests, cx: this.cx, sx: this.sx, mv: this.mv,
-			divineTargetIdeology: this.divineTargetIdeology
+			divineTargetIdeology: this.divineTargetIdeology,
+			sectors: this.sectors
 		};
 	}
 
@@ -599,6 +605,7 @@ export class Simulation {
 		s.cx = { ...newCultureState(), ...(d.cx ?? {}) };
 		s.sx = { ...newSentiment(), ...((d as { sx?: Partial<SentimentState> }).sx ?? {}) };
 		s.mv = { ...newMotiveState(), ...((d as { mv?: MotiveState }).mv ?? {}) };
+		s.sectors = restoreSectors(s, d.sectors);
 		s.computeBorders();
 		s.updateVoice();
 		return s;

@@ -9,17 +9,19 @@ import { cellsByState } from '../indexes';
 import { cultureMod } from '../culture';
 import { growthTable } from '../sentiment';
 import { motiveMod, noteWonder, preferWonderBuilder, wonderKindFor } from '../motives';
+import { growthTable as sectorGrowth, sectorArmy, sectorIncome, sectorStability } from '../sectors';
 
 export function demographics(sim: Simulation) {
 	const c = sim.c;
 	const r = sim.rng;
 	const gt = growthTable(sim); // racial growth per realm; null = all neutral
+	const gm = sectorGrowth(sim);
 	for (let i = 0; i < c.n; i++) {
 		if (!sim.isLand(i)) continue;
 		const cap = sim.basePop[i] * (c.state[i] ? 1.6 : 1.1) + (c.burg[i] ? 2 : 0);
 		if (cap <= 0) continue;
 		const p = c.pop[i];
-		c.pop[i] = Math.max(0.01, p + p * 0.03 * (gt ? gt[c.state[i]] ?? 1 : 1) * (1 - p / cap) + (r() - 0.5) * 0.01);
+		c.pop[i] = Math.max(0.01, p + p * 0.03 * (gt ? gt[c.state[i]] ?? 1 : 1) * (gm && c.state[i] < gm.length ? gm[c.state[i]] : 1) * (1 - p / cap) + (r() - 0.5) * 0.01);
 	}
 	for (const b of sim.w.burgs) {
 		if (!b.id || !b.alive) continue;
@@ -39,10 +41,10 @@ export function economy(sim: Simulation) {
 		if (!p.alive) continue;
 		const ruler = sim.ruler(p);
 		const wars = sim.warsOf(p.id).length;
-		const income = p.pop * p.tax * (0.8 + (ruler?.stewardship ?? 5) * 0.04) * cultureMod(sim, p, 'trade') * motiveMod(sim, p, 'trade');
+		const income = p.pop * p.tax * (0.8 + (ruler?.stewardship ?? 5) * 0.04) * cultureMod(sim, p, 'trade') * motiveMod(sim, p, 'trade') * sectorIncome(sim, p.id);
 		const upkeep = p.army * 0.6;
 		p.treasury += income - upkeep;
-		const target = p.pop * (wars ? 0.05 : 0.02) * cultureMod(sim, p, 'army') * motiveMod(sim, p, 'army');
+		const target = p.pop * (wars ? 0.05 : 0.02) * cultureMod(sim, p, 'army') * motiveMod(sim, p, 'army') * sectorArmy(sim, p.id);
 		if (p.army < target && p.treasury > 0) {
 			const add = Math.min(target - p.army, p.pop * 0.01, p.treasury / 2);
 			p.army += add;
@@ -59,7 +61,7 @@ export function economy(sim: Simulation) {
 			if (c.religion[i] === p.religion) faith++;
 		}
 		const cs = tot ? cult / tot : 1, fs = tot ? faith / tot : 1;
-		const target2 = 45 + (ruler?.diplomacy ?? 5) * 1.6 + (cs - 0.7) * 40 + (fs - 0.7) * 30 - wars * 7 - (p.treasury < 0 ? 15 : 0) - (p.tax - 0.1) * 120 - Math.max(0, p.cells / Math.max(1, p.peak) < 0.6 ? 10 : 0);
+		const target2 = 45 + (ruler?.diplomacy ?? 5) * 1.6 + (cs - 0.7) * 40 + (fs - 0.7) * 30 - wars * 7 - (p.treasury < 0 ? 15 : 0) - (p.tax - 0.1) * 120 - Math.max(0, p.cells / Math.max(1, p.peak) < 0.6 ? 10 : 0) + sectorStability(sim, p.id);
 		p.stability = clamp(p.stability + (target2 - p.stability) * 0.2 + (r() - 0.5) * 6, 0, 100);
 		if (p.treasury < -60) {
 			p.army *= 0.8;

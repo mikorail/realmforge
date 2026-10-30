@@ -95,4 +95,8 @@
 		</div>
 		<p class="muted">An age lock keeps the world in one tech era forever. Discoveries still arrive, but only from that era or earlier.</p>
 	</div>
+	<label class="evolve mt-md">
+		<input type="checkbox" checked={store.s.sectors !== false} onchange={(e) => (store.s.sectors = (e.currentTarget as HTMLInputElement).checked)} />
+		<span><strong>Economic sectors</strong> <span class="muted">Each town works its land: farms, mines, workshops, markets, academies, temples, barracks and harbours. The mix drifts with era, war and policy and nudges growth, income, armies and stability.</span></span>
+	</label>
 </section>

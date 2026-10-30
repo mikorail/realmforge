@@ -9,6 +9,7 @@ import { narrateConversion, narrateProphet } from '../chronicle';
 import { destroyWonder } from '../wonders';
 import { cultureMod } from '../culture';
 import { onForcedConversion } from '../sentiment';
+import { sectorConversion } from '../sectors';
 
 export function faiths(sim: Simulation) {
 	const c = sim.c;
@@ -35,7 +36,7 @@ export function faiths(sim: Simulation) {
 	// state conversion when the realm's majority faith differs
 	let own: ReturnType<typeof cellsByState> | null = null; // built on first use; ownership is fixed in this loop
 	for (const pol of sim.polities) {
-		if (!pol.alive || pol.secularized || r() > 0.15 * cultureMod(sim, pol, 'conversion') * motiveMod(sim, pol, 'conversion')) continue;
+		if (!pol.alive || pol.secularized || r() > 0.15 * cultureMod(sim, pol, 'conversion') * motiveMod(sim, pol, 'conversion') * sectorConversion(sim, pol.id)) continue;
 		own ??= cellsByState(c.state, sim.polities.length);
 		const counts = new Map<number, number>();
 		for (let k = own.start[pol.id], end = own.start[pol.id + 1]; k < end; k++) {

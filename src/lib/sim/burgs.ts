@@ -1,5 +1,6 @@
 import type { Burg, BurgDistricts } from '../gen/types';
 import type { Simulation } from './engine';
+import { burgTradeMult } from './sectors';
 
 export type DistrictKind = keyof BurgDistricts;
 
@@ -460,7 +461,7 @@ export function processYearlyBurgs(sim: Simulation): void {
 			const baseTrade = TRADE_BASE_BY_LEVEL[d.market] ?? 0;
 			const popBonus = Math.round(b.pop * 0.15 * d.market);
 			const charterBonus = b.charter ? 3 : 0;
-			const totalTradeGold = baseTrade + popBonus + charterBonus;
+			const totalTradeGold = Math.round((baseTrade + popBonus + charterBonus) * burgTradeMult(sim, b));
 			pol.treasury += totalTradeGold;
 		}
 

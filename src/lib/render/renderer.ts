@@ -8,8 +8,9 @@ import { drawArchGlyph } from './glyphs';
 import { drawCanvasBanners } from './canvas_heraldry';
 import { renderSeasonalOverlay } from './seasons';
 import { drawMegastructureMarkers } from './megastructures';
+import { dominantSector, SECTOR_INFO, SECTORS } from '../sim/sectors';
 
-export type MapMode = 'political' | 'biome' | 'height' | 'culture' | 'religion' | 'population';
+export type MapMode = 'political' | 'biome' | 'height' | 'culture' | 'religion' | 'population' | 'economy';
 
 interface Label {
 	x: number;
@@ -429,7 +430,7 @@ export class MapRenderer {
 			return Math.max(-2, Math.min(2, Math.round(l * 4)));
 		};
 		const tint = (col: string) => (th.tintAmt ? mix(col, th.tint, th.tintAmt) : col);
-		const muted = this.mode === 'political' || this.mode === 'culture' || this.mode === 'religion' || this.mode === 'population';
+		const muted = this.mode === 'political' || this.mode === 'culture' || this.mode === 'religion' || this.mode === 'population' || this.mode === 'economy';
 		const cells = colourIndex((i) => {
 			if (isWater(i)) return null;
 			let base: string;
@@ -937,6 +938,8 @@ export class MapRenderer {
 				ctx.fillText(text, x, y);
 			}
 		}
+		// economy mode: a halo per town coloured by its dominant sector (vector marks only)
+		if (this.mode === 'economy') this.drawSectorHalos(S);
 		// burgs on this layer
 		for (const b of w.burgs) {
 			if (!b.id || !b.alive) continue;
@@ -947,7 +950,7 @@ export class MapRenderer {
 			if (!here) continue;
 			const big = b.capital;
 			const r = (big ? 3.4 : 2) * Math.min(2.2, Math.max(0.8, Math.sqrt(k)));
-			if (!big && k < 0.7) continue;
+			if (!big && k < 0.7 && this.mode !== 'economy') continue;
 			const style = k >= 1.1 ? archStyleOf(w.cultures[b.culture]?.sphere) : null;
 			const ink = th.glow ? (b.state ? this.sim!.polities[b.state].color : '#888') : '#2b2116';
 			if (style) {
@@ -993,6 +996,28 @@ export class MapRenderer {
 		}
 		this.snapStale = true;
 		this.drawOverlays();
+	}
+
+	private drawSectorHalos(S: (x: number, y: number) => [number, number]) {
+		const w = this.world!, s = this.sim!, ctx = this.ctx, k = this.k;
+		const zoom = Math.min(2.2, Math.max(0.6, Math.sqrt(k)));
+		ctx.globalAlpha = 0.8;
+		ctx.lineWidth = 1;
+		ctx.strokeStyle = 'rgba(30,22,14,0.7)';
+		for (const b of w.burgs) {
+			if (!b.id || !b.alive || s.burgLayer(b) !== this.layer) continue;
+			const d = dominantSector(s, b.id);
+			if (d < 0) continue;
+			const [x, y] = S(b.x, b.y);
+			if (x < -30 || y < -30 || x > this.w + 30 || y > this.h + 30) continue;
+			const r = (4.5 + Math.sqrt(Math.max(0.5, b.pop)) * 1.1) * zoom;
+			ctx.beginPath();
+			ctx.arc(x, y, r, 0, Math.PI * 2);
+			ctx.fillStyle = SECTOR_INFO[SECTORS[d]].color;
+			ctx.fill();
+			ctx.stroke();
+		}
+		ctx.globalAlpha = 1;
 	}
 
 	drawOverlays() {

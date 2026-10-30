@@ -448,7 +448,7 @@
 		});
 	}
 
-	const modes: [MapMode, string][] = [['political', 'Realms'], ['biome', 'Biomes'], ['height', 'Relief'], ['culture', 'Cultures'], ['religion', 'Faiths'], ['population', 'People']];
+	const modes: [MapMode, string][] = [['political', 'Realms'], ['biome', 'Biomes'], ['height', 'Relief'], ['culture', 'Cultures'], ['religion', 'Faiths'], ['population', 'People'], ['economy', 'Economy']];
 </script>
 
 <div class="game" class:neon={!!theme.glow}>

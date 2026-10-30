@@ -1,5 +1,6 @@
 /** Rebellions and revolts, colonisation of neutral land, tribes and new realms, yearly random events. */
 import { motiveMod } from '../motives';
+import { sectorFamineRelief } from '../sectors';
 import type { Simulation } from '../engine';
 import { clamp } from '../../rng';
 import { neighbors } from '../../gen/grid';
@@ -215,7 +216,8 @@ export function randomEvents(sim: Simulation) {
 			p.treasury += 30;
 			sim.log('misc', packLine(sim.voice, 'golden', sim.rng, { realm: p.name, town: cap.name }) ?? narrateMiscEvent(sim.rng, 'golden_age', cap.name, p.name), cap.cell, p.id, 'golden');
 		} else if (roll < 0.35) {
-			for (let i = 0; i < sim.c.n; i++) if (sim.c.state[i] === p.id) sim.c.pop[i] *= 0.85;
+			const famine = sectorFamineRelief(sim, p.id);
+			for (let i = 0; i < sim.c.n; i++) if (sim.c.state[i] === p.id) sim.c.pop[i] *= 0.85 + famine;
 			p.stability -= 10;
 			sim.log('disaster', packLine(sim.voice, 'famine', sim.rng, { realm: p.name, town: cap.name }) ?? narrateDisaster(sim.rng, 'famine', cap.name, p.name), cap.cell, p.id, 'famine');
 		} else if (roll < 0.45) {

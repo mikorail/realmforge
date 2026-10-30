@@ -3,6 +3,7 @@
 	import type { World } from '#lib/gen/types';
 	import { HYPSO, type MapMode } from '#lib/render/renderer';
 	import type { Simulation } from '#lib/sim/engine';
+	import { dominantSector, SECTOR_INFO, SECTORS } from '#lib/sim/sectors';
 
 	let { sim, world, layer, mode, v, year }: { sim: Simulation; world: World; layer: number; mode: MapMode; v: number; year: number } = $props();
 
@@ -20,7 +21,7 @@
 	const MAX = 9;
 	interface Row { color: string; label: string; note?: string }
 	const TITLES: Record<MapMode, string> = {
-		political: 'Realms', biome: 'Biomes', height: 'Relief', culture: 'Cultures', religion: 'Faiths', population: 'Population'
+		political: 'Realms', biome: 'Biomes', height: 'Relief', culture: 'Cultures', religion: 'Faiths', population: 'Population', economy: 'Economy'
 	};
 
 	/** counts per id over the visible layer's open cells */
@@ -52,6 +53,12 @@
 		void decade;
 		if (mode === 'culture') return tally(world.cells.culture).filter(([k]) => k && world.cultures[k]).slice(0, MAX).map(([k]) => ({ color: world.cultures[k].color, label: world.cultures[k].name, note: world.cultures[k].type }));
 		if (mode === 'religion') return tally(world.cells.religion).filter(([k]) => k && world.religions[k]).slice(0, MAX).map(([k]) => ({ color: world.religions[k].color, label: world.religions[k].name, note: world.religions[k].type }));
+		if (mode === 'economy') {
+			if (!sim.sectors) return [];
+			const n = new Array(SECTORS.length).fill(0);
+			for (const b of world.burgs) if (b.id && b.alive && sim.burgLayer(b) === layer) { const d = dominantSector(sim, b.id); if (d >= 0) n[d]++; }
+			return SECTORS.map((k, i) => ({ color: SECTOR_INFO[k].color, label: `${SECTOR_INFO[k].icon} ${SECTOR_INFO[k].name}`, note: n[i] ? `${n[i]} towns` : '', n: n[i] })).sort((a, b) => b.n - a.n).map(({ n: _n, ...r }) => r);
+		}
 		if (mode === 'biome') return tally(world.cells.biome, true).slice(0, 12).map(([k]) => ({ color: BIOMES[k].color, label: BIOMES[k].name }));
 		return [];
 	});
@@ -70,6 +77,8 @@
 			{:else if mode === 'population'}
 				<div class="ramp" style="background: linear-gradient(90deg, rgba(192,57,43,0.08), rgba(192,57,43,0.85))" role="img" aria-label="Population ramp from sparse to dense"></div>
 				<div class="ends"><span>Sparse</span><span>Dense</span></div>
+			{:else if mode === 'economy' && !sim.sectors}
+				<p class="more">Sectors are switched off for this world.</p>
 			{:else if rows.length}
 				<ul>
 					{#each rows as r (r.label + r.color)}

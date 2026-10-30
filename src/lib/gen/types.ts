@@ -69,6 +69,8 @@ export interface GenOptions {
 	heightImage?: HeightImage;
 	/** 'image' template: treat bright as sea and dark as land */
 	invertImage?: boolean;
+	/** economic sectors per town and realm (sim/sectors.ts); unset = on, false = off */
+	sectors?: boolean;
 }
 
 /** what callers pass in; missing fields are filled by withDefaults() */
