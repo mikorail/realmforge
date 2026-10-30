@@ -446,3 +446,52 @@ export function pickSpeciesForCulture(
 	}
 	return SPECIES_BY_ID['human'];
 }
+
+/**
+ * Racial trade-offs (sim/sentiment.ts applies them, scaled by `GenOptions.racialStrength`).
+ * econ / army / growth are multipliers around 1, `stab` is a stability shift in points at strength 1,
+ * `unrest` multiplies riot odds, `adapt` multiplies how hard mixed company hits a realm (low = adaptable).
+ */
+export interface RacialFx { econ: number; army: number; stab: number; growth: number; unrest: number; adapt: number }
+
+export const NEUTRAL_FX: RacialFx = { econ: 1, army: 1, stab: 0, growth: 1, unrest: 1, adapt: 1 };
+
+const FX: Record<string, Partial<RacialFx>> = {
+	human: { econ: 1.04, stab: 0.5, adapt: 0.6 },
+	elf: { econ: 1.03, army: 0.95, stab: 2, growth: 0.82, unrest: 0.9 },
+	dwarf: { econ: 1.14, army: 1.08, stab: 1, growth: 0.85, unrest: 0.9 },
+	orc: { econ: 0.94, army: 1.18, stab: -4, growth: 1.08, unrest: 1.3 },
+	troll: { econ: 0.88, army: 1.18, stab: -3, growth: 0.95, unrest: 1.2 },
+	beastman: { econ: 0.95, army: 1.1, stab: -1, growth: 1.05 },
+	halfling: { econ: 1.1, army: 0.88, stab: 3, growth: 1.03, unrest: 0.85, adapt: 0.8 },
+	giant: { econ: 0.95, army: 1.2, growth: 0.8 },
+	goblin: { econ: 1.02, army: 0.95, stab: -3, growth: 1.15, unrest: 1.2 },
+	saurian: { army: 1.12, stab: 1, growth: 0.92 },
+	merfolk: { econ: 1.08, army: 0.95, growth: 0.95 },
+	celestial: { econ: 1.05, stab: 3, growth: 0.75 },
+	ratfolk: { army: 0.92, stab: -3, growth: 1.2, unrest: 1.15 },
+	lizardfolk: { econ: 1.05, army: 1.08, stab: 1, growth: 0.9 },
+	tomb_undead: { army: 1.15, stab: 2, growth: 0.7 },
+	ogor: { econ: 0.88, army: 1.15, stab: -2 },
+	void_elf: { econ: 1.06, growth: 0.78 },
+	warp_fiend: { econ: 0.85, army: 1.2, stab: -5, growth: 0.9, unrest: 1.35 },
+	chitin_swarm: { econ: 0.92, army: 1.15, stab: -2, growth: 1.15 }
+};
+
+/** a species' trade-offs: the table above, or derived from stats and lifespan for custom races */
+export function racialFx(id: string): RacialFx {
+	const o = FX[id];
+	if (o) return { ...NEUTRAL_FX, ...o };
+	const sp = SPECIES_BY_ID[id];
+	if (!sp) return NEUTRAL_FX;
+	const m = sp.mods;
+	const c = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+	return {
+		econ: c(1 + 0.02 * m.stewardship, 0.85, 1.15),
+		army: c(1 + 0.02 * m.martial, 0.88, 1.2),
+		stab: c(0.6 * m.diplomacy, -5, 4),
+		growth: c(1.05 - 0.05 * sp.lifespanMult, 0.75, 1.1),
+		unrest: c(1 - 0.03 * m.diplomacy + 0.02 * Math.max(0, m.martial), 0.85, 1.3),
+		adapt: 1
+	};
+}

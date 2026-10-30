@@ -3,6 +3,7 @@ import type { Person, Polity, UprisingKind, UprisingRecord } from './types';
 import type { Simulation } from './engine';
 import { packCult, packLine } from './genrepacks';
 import { cultureMod } from './culture';
+import { unrestFx } from './sentiment';
 
 export interface UprisingEvent {
 	kind: 'uprising';
@@ -44,7 +45,8 @@ export function processYearlyUprisings(sim: Simulation): UprisingEvent[] {
 
 	for (const pol of alivePolities) {
 		if ((sim.unrestUntil.get(pol.id) ?? 0) > sim.year) continue;
-		cultureUnrest = cultureMod(sim, pol, 'unrest');
+		const sfx = unrestFx(sim, pol.id);
+		cultureUnrest = cultureMod(sim, pol, 'unrest') * sfx.mult;
 		const towns = sim.idx.burgsIn(sim.w.burgs, pol.id).filter((b) => b.id && b.alive && b.state === pol.id);
 		if (!towns.length) continue;
 
@@ -54,7 +56,7 @@ export function processYearlyUprisings(sim: Simulation): UprisingEvent[] {
 		const highTax = pol.tax >= 0.20;
 		const lowStab = pol.stability < 35;
 
-		if ((highTax || lowStab || longWar) && roll(0.3)) {
+		if ((highTax || lowStab || longWar || sfx.tense) && roll(0.3)) {
 			const town = rng.pick(towns);
 			let subtype: 'bread_riot' | 'tax_riot' | 'conscription_riot' | 'sectarian_riot' = 'bread_riot';
 
@@ -62,7 +64,7 @@ export function processYearlyUprisings(sim: Simulation): UprisingEvent[] {
 				subtype = 'conscription_riot';
 			} else if (highTax && rng.chance(0.50)) {
 				subtype = 'tax_riot';
-			} else if (town.culture !== pol.culture && rng.chance(0.40)) {
+			} else if (town.culture !== pol.culture && rng.chance(sfx.tense ? 0.6 : 0.40)) {
 				subtype = 'sectarian_riot';
 			}
 

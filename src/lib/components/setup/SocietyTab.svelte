@@ -9,6 +9,7 @@
 	let { store }: { store: SetupStore } = $props();
 
 	const autoCultures = $derived(Math.max(5, Math.round(store.s.states * 0.75)));
+	const racialLabel = $derived(['None', 'Faint', 'Default', 'Marked', 'Strong'][Math.round((store.s.racialStrength ?? 1) * 2)]);
 	const autoBurgs = $derived(Math.round(store.s.cells / 45) + store.s.states);
 
 	const customRaces = $derived(store.s.races?.custom ?? []);
@@ -91,6 +92,32 @@
 			</div>
 			<div class="field-input">
 				<input id="f-cultures" type="range" min="0" max="40" bind:value={store.s.cultures} />
+			</div>
+		</div>
+	</div>
+
+	<div class="grid-pair">
+		<div class="field">
+			<div class="field-head">
+				<div class="field-title">
+					<label for="f-racial">Racial Advantage</label>
+				</div>
+				<span class="field-badge">{racialLabel}</span>
+			</div>
+			<div class="field-input">
+				<input id="f-racial" type="range" min="0" max="2" step="0.5" value={store.s.racialStrength ?? 1} oninput={(e) => (store.s.racialStrength = Number(e.currentTarget.value))} />
+			</div>
+		</div>
+
+		<div class="field">
+			<div class="field-head">
+				<div class="field-title">
+					<label for="f-sentiment">Feelings Between Peoples</label>
+				</div>
+				<span class="field-badge">{store.s.sentiment === false ? 'Off' : 'On'}</span>
+			</div>
+			<div class="field-input">
+				<label class="evolve"><input id="f-sentiment" type="checkbox" checked={store.s.sentiment !== false} onchange={(e) => (store.s.sentiment = e.currentTarget.checked)} /> Grudges, gratitude and feuds</label>
 			</div>
 		</div>
 	</div>

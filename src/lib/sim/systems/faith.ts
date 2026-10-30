@@ -7,6 +7,7 @@ import { palette } from '../../gen/society';
 import { narrateConversion, narrateProphet } from '../chronicle';
 import { destroyWonder } from '../wonders';
 import { cultureMod } from '../culture';
+import { onForcedConversion } from '../sentiment';
 
 export function faiths(sim: Simulation) {
 	const c = sim.c;
@@ -25,7 +26,11 @@ export function faiths(sim: Simulation) {
 		if (sim.w.religions[c.religion[j]]?.type !== 'Folk') p += 0.08;
 		if (r.chance(p)) changes.push([i, c.religion[j]]);
 	}
-	for (const [i, rel] of changes) c.religion[i] = rel;
+	for (const [i, rel] of changes) {
+		const owner = sim.polities[c.state[i]];
+		if (owner?.alive && owner.religion === rel) onForcedConversion(sim, c.religion[i], rel);
+		c.religion[i] = rel;
+	}
 	// state conversion when the realm's majority faith differs
 	let own: ReturnType<typeof cellsByState> | null = null; // built on first use; ownership is fixed in this loop
 	for (const pol of sim.polities) {

@@ -54,6 +54,10 @@ export interface GenOptions {
 	ageLock?: number | null;
 	/** which races exist: allow-list (null = all) plus user-made custom races; unset = classic behaviour */
 	races?: RaceConfig;
+	/** 0..2: how much a people's species shapes its realm (0 none, 1 default, 2 strong); unset = 1 */
+	racialStrength?: number;
+	/** feelings between species, cultures and faiths (grievance, gratitude, feuds); unset = on */
+	sentiment?: boolean;
 	/** spherical world: the east and west edges join (cells across the seam become neighbours); forces a 2:1 map covering all 360 degrees */
 	wrapX?: boolean;
 	/** 'earth' template: mirror the real world east-west / north-south so it is not always our Earth */

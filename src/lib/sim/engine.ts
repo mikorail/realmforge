@@ -32,6 +32,7 @@ import * as yearly from './systems/yearly';
 import * as godpowers from './systems/godpowers';
 import * as avatar from './systems/avatar';
 import { FrontIndex, OpenCells, SimIndex } from './indexes';
+import { armyFx, newSentiment, yearlyPeoples, type SentimentState } from './sentiment';
 import { yearlyCrossLayer } from './worldrules/crosslayer';
 import { extraColonize, navalMult, yearlyPlanetRules } from './worldrules/planets';
 import { newStory, onCrown, yearlyStory, type StoryState } from './story';
@@ -96,6 +97,8 @@ export class Simulation {
 	epoch: ClimateEpoch | null = null;
 	/** story layer state: world moments, contacts (story/) */
 	story: StoryState = newStory();
+	/** feelings between peoples and per-realm racial effects (sentiment.ts) */
+	sx: SentimentState = newSentiment();
 	era = 0;
 	innovation = 0;
 	techs = new Set<string>();
@@ -308,7 +311,7 @@ export class Simulation {
 			if (!p.alive) continue;
 			const g = this.general(p);
 			const lead = Math.max(this.ruler(p)?.martial ?? 0, g?.martial ?? 0);
-			s += p.army * (1 + lead * 0.04) * (0.6 + p.stability / 250) * navalMult(this, id);
+			s += p.army * (1 + lead * 0.04) * (0.6 + p.stability / 250) * navalMult(this, id) * armyFx(this, id);
 		}
 		return s;
 	}
@@ -377,6 +380,7 @@ export class Simulation {
 	private yearly() {
 		this.recount();
 		this.computeBorders();
+		yearlyPeoples(this);
 		economy.demographics(this);
 		economy.economy(this);
 		diplomacy.diplomacy(this);
@@ -561,7 +565,7 @@ export class Simulation {
 			nextWar: this.nextWar, rng: this.rng.state(), plagueActive: this.plagueActive,
 			era: this.era, innovation: this.innovation, techs: Array.from(this.techs),
 			wonders: this.wonders, monsters: this.monsters,
-			missions: this.missions, quests: this.quests, cx: this.cx,
+			missions: this.missions, quests: this.quests, cx: this.cx, sx: this.sx,
 			divineTargetIdeology: this.divineTargetIdeology
 		};
 	}
@@ -590,6 +594,7 @@ export class Simulation {
 		s.missions = d.missions ?? [];
 		s.quests = d.quests ?? [];
 		s.cx = { ...newCultureState(), ...(d.cx ?? {}) };
+		s.sx = { ...newSentiment(), ...((d as { sx?: Partial<SentimentState> }).sx ?? {}) };
 		s.computeBorders();
 		s.updateVoice();
 		return s;
