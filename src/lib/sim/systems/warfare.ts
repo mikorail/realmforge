@@ -1,4 +1,5 @@
 /** Monthly war fronts (cell-by-cell on every layer + shaft raids), conquest, capital relocation, realm falls, army tokens. */
+import { noteCapitalSack } from '../motives';
 import type { Simulation } from '../engine';
 import { clamp } from '../../rng';
 import { narrateFall, narrateRelicLoot, narrateSiege } from '../chronicle';
@@ -125,6 +126,7 @@ export function takeCell(sim: Simulation, cell: number, taker: number, war?: War
 	if (loser && loser.capital === bid) {
 		const siegeText = narrateSiege(sim.rng, winnerName, loserName, b.name, true);
 		sim.log('capture', siegeText, cell, taker, 'capital');
+		noteCapitalSack(sim, loser, winner, b.name); // motives: grudge + vengeance fulfilment
 		loser.stability -= 20;
 		loser.treasury *= 0.6;
 		if (winner) winner.treasury += 20;

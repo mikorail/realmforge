@@ -6,6 +6,7 @@ import { transitionRegime } from '../politics';
 import { vassalizeAfterWar } from '../consolidation';
 import type { War } from '../types';
 import { cultureMod } from '../culture';
+import { allianceMod, motiveMod, noteWarEnd, peaceMod, warBias } from '../motives';
 
 export function computeBorders(sim: Simulation) {
 	const { edges } = sim.w;
@@ -58,7 +59,7 @@ export function diplomacy(sim: Simulation) {
 	for (const [k] of sim.borders) {
 		const [a, b] = k.split('-').map(Number);
 		const pa = sim.polities[a], pb = sim.polities[b];
-		if (sim.rel(a, b) > 55 && !pa.allies.includes(b) && !sim.atWar(a, b) && r.chance(0.3)) {
+		if (sim.rel(a, b) > 55 && !pa.allies.includes(b) && !sim.atWar(a, b) && r.chance(0.3 * allianceMod(sim, pa, pb))) {
 			pa.allies.push(b);
 			pb.allies.push(a);
 			sim.log('peace', `Envoys from ${pa.name} and ${pb.name} exchange solemn vows of mutual defense, binding their courts in a grand alliance.`, sim.w.burgs[pa.capital].cell, a);
@@ -73,14 +74,15 @@ export function aiWars(sim: Simulation) {
 		if (sim.warsOf(p.id).length >= 1 || p.stability < 30 || p.overlord) continue;
 		const ruler = sim.ruler(p);
 		const aggression = 0.12 + (ruler?.traits.includes('Ambitious') ? 0.12 : 0) + (ruler?.traits.includes('Cruel') ? 0.05 : 0) - (ruler?.traits.includes('Content') ? 0.08 : 0);
-		if (!r.chance(aggression * cultureMod(sim, p, 'aggression'))) continue;
+		if (!r.chance(aggression * cultureMod(sim, p, 'aggression') * motiveMod(sim, p, 'aggression'))) continue;
 		const targets = sim.neighborsOf(p.id).filter((t) => {
 			const tp = sim.polities[t];
 			if (!tp.alive || p.allies.includes(t) || sim.atWar(p.id, t) || tp.overlord === p.id || (tp.overlord && tp.overlord === p.overlord)) return false;
-			return sim.rel(p.id, t) < -20 && sim.strength([p.id]) > sim.strength([t, ...tp.allies.filter((x) => sim.neighborsOf(t).length)]) * 1.15;
+			const bias = warBias(sim, p, t); // motives: vengeance/faith widen the pick and vengeance dares a closer fight
+			return sim.rel(p.id, t) + bias.relBias < -20 && sim.strength([p.id]) > sim.strength([t, ...tp.allies.filter((x) => sim.neighborsOf(t).length)]) * bias.strengthNeed;
 		});
 		if (!targets.length) continue;
-		targets.sort((a, b) => sim.rel(p.id, a) - sim.rel(p.id, b));
+		targets.sort((a, b) => sim.rel(p.id, a) + warBias(sim, p, a).relBias - (sim.rel(p.id, b) + warBias(sim, p, b).relBias));
 		sim.declareWar(p.id, targets[0]);
 	}
 }
@@ -118,6 +120,7 @@ export function endWars(sim: Simulation) {
 		// proud cultures hold out, insular ones tire early: mean over the belligerents
 		const sides = [...w.attackers, ...w.defenders];
 		chance *= sides.reduce((s, id) => s + cultureMod(sim, sim.polities[id], 'peace'), 0) / Math.max(1, sides.length);
+		chance *= peaceMod(sim, w); // motives: vengeance holds out, survival tires early
 		if (!sim.rng.chance(chance)) continue;
 		sim.finishWar(w, w.score > 8 ? 'attackers' : w.score < -4 ? 'defenders' : 'white');
 	}
@@ -137,6 +140,7 @@ export function finishWar(sim: Simulation, w: War, winner: War['winner']) {
 	for (const x of lose) { sim.polities[x].stability -= 10; sim.polities[x].treasury -= 10; }
 	for (const x of w.attackers) for (const y of w.defenders) sim.addRel(x, y, 25);
 	vassalizeAfterWar(sim, w, winner);
+	noteWarEnd(sim, w, winner); // motives: grudges for the losers, fulfilment for the victors
 
 	// Post-war Enforced Regime Change:
 	// Decisive victory (|score| >= 10) with opposing ideologies can impose a sister system

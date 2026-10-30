@@ -3,6 +3,7 @@ import type { Simulation } from '../engine';
 import { makeRng } from '../../rng';
 import { epithet, nextRegnalNumber, regnalName, withEpithet } from '../../gen/names';
 import { SPHERE_BY_ID } from '../../gen/spheres';
+import { motiveLine, rollOnCrown } from '../motives';
 import type { ChronEvent, Person, Polity } from '../types';
 
 /** a ruler enters a realm's roll of rulers and gets a regnal number (1 + earlier rulers with the same given name) */
@@ -10,7 +11,9 @@ export function onCrown(sim: Simulation, pol: Polity, person: Person) {
 	const reigns = (pol.reigns ??= []);
 	if (reigns.length && reigns[reigns.length - 1].id === person.id) return;
 	person.regnal = nextRegnalNumber(reigns.map((r) => r.given), person.name);
+	const prevId = reigns.length ? reigns[reigns.length - 1].id : undefined;
 	reigns.push({ id: person.id, given: person.name, from: sim.year });
+	rollOnCrown(sim, pol, person, prevId); // ruler motive (no-op when GenOptions.motives is false)
 }
 
 /** a dead ruler is remembered by an epithet drawn from their traits and sphere (own rng: never shifts the sim stream) */
@@ -46,6 +49,7 @@ export interface Biography {
 }
 
 const NOTABLE = new Set(['war', 'peace', 'capture', 'fall', 'coup', 'rebel', 'death', 'found', 'disaster', 'faith', 'wonder', 'quest', 'luminary', 'monster', 'tech', 'intrigue', 'uprising', 'culture']);
+// motive lines carry the tag 'motive' and are picked up through `e.tag`
 
 /** first index in the (year-sorted) archive with y >= year */
 function firstFrom(all: readonly ChronEvent[], year: number): number {
@@ -100,6 +104,8 @@ export function biography(sim: Simulation, personId: number): Biography | null {
 		const reignEnd = p.died ?? sim.year;
 		parts.push(`${p.name} took the throne of ${(ruled[0] ?? pol)?.name ?? 'the realm'} in ${reign.from} and held it ${reignEnd - reign.from <= 0 ? 'only briefly' : `for ${reignEnd - reign.from} years`}.`);
 	}
+	const mline = motiveLine(sim, p);
+	if (mline) parts.push(mline);
 	const wars = mentions.filter((e) => e.kind === 'war' || e.tag === 'war').length;
 	const lost = mentions.some((e) => e.tag === 'capital' || e.kind === 'fall');
 	if (wars) parts.push(`Their days were marked by ${wars === 1 ? 'a war' : `${wars} wars`}${lost ? ' and the loss of cities' : ''}.`);

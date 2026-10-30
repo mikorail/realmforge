@@ -7,6 +7,7 @@
 	import { SPECIES_BY_ID } from '#lib/gen/species';
 	import { ERAS, DISCOVERIES, TECH_BRANCHES, type TechBranch } from '#lib/sim/tech';
 	import { synthesizeAnnualAnnals, compileAnnalsBookMarkdown } from '#lib/sim/chronicle';
+	import { motiveInfo } from '#lib/sim/motives';
 	import { annalsAppendix, biography, rulerName } from '#lib/sim/story/index';
 	import { IDEOLOGIES } from '#lib/sim/politics';
 	import { techName, techDesc } from '#lib/sim/genre/techskins';
@@ -324,6 +325,11 @@
 					<span>Ruler</span>
 					<span>{rulerName(realm.ruler)} {realm.ruler.house}, {sim.ageOf(realm.ruler)} <span class="muted small">({rulerSp.icon} {rulerSp.name})</span></span>
 				</div>
+				{@const mot = motiveInfo(sim, realm.ruler)}
+				{#if mot}
+					<div class="stat small" title={mot.blurb}><span>Motive</span><span>{mot.icon} {mot.detail}</span></div>
+					<div class="small muted">{mot.blurb}</div>
+				{/if}
 				<div class="small muted">{realm.ruler.traits.join(' · ')} · ⚔{realm.ruler.martial} ✉{realm.ruler.diplomacy} ⚖{realm.ruler.stewardship} 🗝{realm.ruler.intrigue}</div>
 			{/if}
 			{#if p.era}

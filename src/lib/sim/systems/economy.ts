@@ -7,6 +7,7 @@ import { buildWonder } from '../wonders';
 import type { LegendaryPlace } from '../types';
 import { cellsByState } from '../indexes';
 import { cultureMod } from '../culture';
+import { motiveMod, noteWonder, preferWonderBuilder, wonderKindFor } from '../motives';
 
 export function demographics(sim: Simulation) {
 	const c = sim.c;
@@ -36,10 +37,10 @@ export function economy(sim: Simulation) {
 		if (!p.alive) continue;
 		const ruler = sim.ruler(p);
 		const wars = sim.warsOf(p.id).length;
-		const income = p.pop * p.tax * (0.8 + (ruler?.stewardship ?? 5) * 0.04) * cultureMod(sim, p, 'trade');
+		const income = p.pop * p.tax * (0.8 + (ruler?.stewardship ?? 5) * 0.04) * cultureMod(sim, p, 'trade') * motiveMod(sim, p, 'trade');
 		const upkeep = p.army * 0.6;
 		p.treasury += income - upkeep;
-		const target = p.pop * (wars ? 0.05 : 0.02) * cultureMod(sim, p, 'army');
+		const target = p.pop * (wars ? 0.05 : 0.02) * cultureMod(sim, p, 'army') * motiveMod(sim, p, 'army');
 		if (p.army < target && p.treasury > 0) {
 			const add = Math.min(target - p.army, p.pop * 0.01, p.treasury / 2);
 			p.army += add;
@@ -138,7 +139,7 @@ export function yearlyWonderConstruction(sim: Simulation) {
 	);
 	if (!candidates.length || !sim.rng.chance(0.22)) return;
 
-	const pol = sim.rng.pick(candidates);
+	const pol = preferWonderBuilder(sim, candidates, sim.rng.pick(candidates)); // motives: monument-minded rulers get a say
 	const ruler = sim.people[pol.ruler];
 	const builderName = ruler?.alive ? `${ruler.name} of ${pol.name}` : pol.name;
 	const capitalBurg = sim.w.burgs[pol.capital];
@@ -153,6 +154,7 @@ export function yearlyWonderConstruction(sim: Simulation) {
 	else if (sim.rng.chance(0.5)) kind = 'university';
 	else kind = 'bridge';
 
+	kind = wonderKindFor(sim, pol, kind);
 	pol.treasury -= 90;
 	pol.stability = clamp(pol.stability + 12, 0, 100);
 	if (ruler?.alive) ruler.renown += 25;
@@ -172,6 +174,7 @@ export function yearlyWonderConstruction(sim: Simulation) {
 	sim.nextWonderId = nextWdObj.val;
 	sim.wonders.push(wonder);
 
+	noteWonder(sim, pol, wonder.kind, wonder.name);
 	sim.log(
 		'wonder',
 		`MONUMENT ERECTED: ${builderName} commissions and completes the ${wonder.name} (${wonder.icon}) in ${capitalBurg.name}! ${wonder.effect}`,

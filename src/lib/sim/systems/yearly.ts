@@ -1,4 +1,5 @@
 /** Thin yearly bridges into politics, intrigue, ecology, pantheon, quests, monster hunts and uprisings modules. */
+import { yearlyMotives } from '../motives';
 import type { Simulation } from '../engine';
 import { clamp } from '../../rng';
 import { forgeMonsterRelic } from '../relics';
@@ -195,6 +196,7 @@ export function yearlyBurgs(sim: Simulation) {
 
 export function yearlyLeagues(sim: Simulation) {
 	processYearlyLeagues(sim);
+	yearlyMotives(sim); // ruler motives: fulfil, fade, dynastic marriages
 }
 
 export function yearlyMegastructures(sim: Simulation) {

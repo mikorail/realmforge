@@ -34,6 +34,7 @@ import * as avatar from './systems/avatar';
 import { FrontIndex, OpenCells, SimIndex } from './indexes';
 import { yearlyCrossLayer } from './worldrules/crosslayer';
 import { extraColonize, navalMult, yearlyPlanetRules } from './worldrules/planets';
+import { newMotiveState, type MotiveState } from './motives';
 import { newStory, onCrown, yearlyStory, type StoryState } from './story';
 import type { Power } from './systems/godpowers';
 
@@ -96,6 +97,8 @@ export class Simulation {
 	epoch: ClimateEpoch | null = null;
 	/** story layer state: world moments, contacts (story/) */
 	story: StoryState = newStory();
+	/** ruler motives: grudges per house (motives.ts) */
+	mv: MotiveState = newMotiveState();
 	era = 0;
 	innovation = 0;
 	techs = new Set<string>();
@@ -558,7 +561,7 @@ export class Simulation {
 			nextWar: this.nextWar, rng: this.rng.state(), plagueActive: this.plagueActive,
 			era: this.era, innovation: this.innovation, techs: Array.from(this.techs),
 			wonders: this.wonders, monsters: this.monsters,
-			missions: this.missions, quests: this.quests, cx: this.cx,
+			missions: this.missions, quests: this.quests, cx: this.cx, mv: this.mv,
 			divineTargetIdeology: this.divineTargetIdeology
 		};
 	}
@@ -587,6 +590,7 @@ export class Simulation {
 		s.missions = d.missions ?? [];
 		s.quests = d.quests ?? [];
 		s.cx = { ...newCultureState(), ...(d.cx ?? {}) };
+		s.mv = { ...newMotiveState(), ...((d as { mv?: MotiveState }).mv ?? {}) };
 		s.computeBorders();
 		s.updateVoice();
 		return s;
