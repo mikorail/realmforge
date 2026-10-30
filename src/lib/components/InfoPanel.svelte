@@ -13,6 +13,8 @@
 	import { monsterSkin, wonderSkin } from '#lib/sim/genre/creatureskins';
 	import CultureCard from './CultureCard.svelte';
 	import CultureLists from './CultureLists.svelte';
+	import PeoplesHeat from './PeoplesHeat.svelte';
+	import { realmPeoples, sentimentOn } from '#lib/sim/sentiment';
 	import HeraldryBadge from './HeraldryBadge.svelte';
 	import { getRealmCoatOfArms, getBurgCoatOfArms } from '#lib/render/heraldry';
 	import { getBurgDistricts } from '#lib/sim/burgs';
@@ -130,6 +132,12 @@
 		const enemies = wars.flatMap((w) => (w.attackers.includes(p.id) ? w.defenders : w.attackers)).map((id) => sim.polities[id]);
 		const speciesDef = SPECIES_BY_ID[p.species ?? 'human'] ?? SPECIES_BY_ID['human'];
 		return { p, ruler, heir: heir?.alive ? heir : null, wars, enemies, allies: p.allies.map((a) => sim.polities[a]), layerName: sim.w.layers[p.layer]?.name, speciesDef };
+	});
+
+	const peoples = $derived.by(() => {
+		void v;
+		const p = realm?.p;
+		return p ? realmPeoples(sim, p) : null;
 	});
 
 	const rulerBio = $derived.by(() => {
@@ -467,6 +475,12 @@
 					</button>
 				</div>
 			</div>
+			{#if peoples}
+				<p class="small"><strong>Peoples</strong> {peoples.species.map((s) => `${s.icon} ${s.name} ${Math.round(s.share * 100)}%`).join(' · ')}</p>
+				{#if sentimentOn(sim) && (peoples.grudge || peoples.tension > 0.05)}
+					<p class="small muted">{peoples.grudge ? `Strongest grudge: ${peoples.grudge}. ` : ''}Tension {Math.round(peoples.tension * 100)}% · harmony {Math.round(peoples.harmony * 100)}%</p>
+				{/if}
+			{/if}
 			{#if realm.enemies.length}<p class="small"><strong class="bad">At war with</strong> {realm.enemies.map((e) => e.name).join(', ')}</p>{/if}
 			{#if realm.allies.length}<p class="small"><strong>Allies</strong> {realm.allies.map((e) => e.name).join(', ')}</p>{/if}
 			{#if realmArtifacts.length > 0}
@@ -598,6 +612,7 @@
 	</section>
 
 	<CultureLists {sim} {v} {onfocus} />
+	<PeoplesHeat {sim} {v} />
 
 	<section class="chronicle-section">
 		<div class="row between chronicle-header">

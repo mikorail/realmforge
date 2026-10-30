@@ -7,16 +7,18 @@ import { buildWonder } from '../wonders';
 import type { LegendaryPlace } from '../types';
 import { cellsByState } from '../indexes';
 import { cultureMod } from '../culture';
+import { growthTable } from '../sentiment';
 
 export function demographics(sim: Simulation) {
 	const c = sim.c;
 	const r = sim.rng;
+	const gt = growthTable(sim); // racial growth per realm; null = all neutral
 	for (let i = 0; i < c.n; i++) {
 		if (!sim.isLand(i)) continue;
 		const cap = sim.basePop[i] * (c.state[i] ? 1.6 : 1.1) + (c.burg[i] ? 2 : 0);
 		if (cap <= 0) continue;
 		const p = c.pop[i];
-		c.pop[i] = Math.max(0.01, p + p * 0.03 * (1 - p / cap) + (r() - 0.5) * 0.01);
+		c.pop[i] = Math.max(0.01, p + p * 0.03 * (gt ? gt[c.state[i]] ?? 1 : 1) * (1 - p / cap) + (r() - 0.5) * 0.01);
 	}
 	for (const b of sim.w.burgs) {
 		if (!b.id || !b.alive) continue;

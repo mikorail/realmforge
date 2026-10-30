@@ -5,6 +5,7 @@ import { narrateFall, narrateRelicLoot, narrateSiege } from '../chronicle';
 import { destroyWonder } from '../wonders';
 import { campaignHalted } from '../worldrules/planets';
 import { noteConquest } from '../culture';
+import { onConquest, onSack } from '../sentiment';
 import type { ArmyToken, Polity, War } from '../types';
 
 export function monthlyWars(sim: Simulation) {
@@ -109,7 +110,7 @@ export function takeCell(sim: Simulation, cell: number, taker: number, war?: War
 	const st = sim.st(layer);
 	const old = st[cell];
 	st[cell] = taker;
-	if (layer === 0) noteConquest(sim, cell, taker);
+	if (layer === 0) { noteConquest(sim, cell, taker); onConquest(sim, cell, taker); }
 	sim.fronts.rekey(sim.w, cell, layer);
 	if (layer === 0) c.pop[cell] *= 0.93;
 	const bid = sim.lb[layer][cell];
@@ -120,6 +121,7 @@ export function takeCell(sim: Simulation, cell: number, taker: number, war?: War
 	b.pop = +(b.pop * 0.85).toFixed(2);
 	const loser = sim.polities[old];
 	const winner = sim.polities[taker];
+	onSack(sim, b.culture, taker, loser && loser.capital === bid ? 4 : 1);
 	const winnerName = winner?.name ?? 'An invading vanguard';
 	const loserName = loser?.name ?? 'the frontier';
 	if (loser && loser.capital === bid) {
@@ -153,6 +155,7 @@ export function takeCell(sim: Simulation, cell: number, taker: number, war?: War
 		const shouldDestroy = isCapital ? sim.rng.chance(0.55) : sim.rng.chance(0.35);
 		if (shouldDestroy) {
 			const res = destroyWonder(wonder, winnerName, sim.year, 'sacked and razed during siege conquest');
+			onSack(sim, b.culture, taker, 2);
 			sim.log('wonder', res.event.text, cell, taker);
 		} else {
 			wonder.stateId = taker;

@@ -61,7 +61,9 @@ export const DEFAULTS: Omit<GenOptions, 'seed'> = {
 	rivers: 1,
 	density: { deep: 1, sky: 1, sea: 1 },
 	layerDetail: { deep: 1, sky: 1, sea: 1 },
-	climate: CLIMATE_DEFAULT
+	climate: CLIMATE_DEFAULT,
+	racialStrength: 1,
+	sentiment: true
 };
 
 /** fill any missing fields (old saves, scripts, tests) */
