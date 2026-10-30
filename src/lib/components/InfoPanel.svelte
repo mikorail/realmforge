@@ -14,6 +14,7 @@
 	import CultureCard from './CultureCard.svelte';
 	import CultureLists from './CultureLists.svelte';
 	import HeraldryBadge from './HeraldryBadge.svelte';
+	import SectorBars from './SectorBars.svelte';
 	import { getRealmCoatOfArms, getBurgCoatOfArms } from '#lib/render/heraldry';
 	import { getBurgDistricts } from '#lib/sim/burgs';
 	import { getMegastructureState } from '#lib/sim/megastructures';
@@ -252,6 +253,7 @@
 					{#if dists.temple > 0}<span class="chip" title="Temple level {dists.temple}">✨ T{dists.temple}</span>{/if}
 					{#if dists.academy > 0}<span class="chip" title="Academy level {dists.academy}">📚 A{dists.academy}</span>{/if}
 				</div>
+				<SectorBars {sim} {v} burg={info.burg.id} />
 			{/if}
 			{#if layer === 0}
 				<div class="stat"><span>Land</span><span>{info.c.h[cell] < 20 ? 'Water' : BIOMES[info.c.biome[cell]].name}</span></div>
@@ -347,6 +349,7 @@
 				<div class="stat"><span>Stability</span><span class:bad={p.stability < 30}>{p.stability.toFixed(0)}</span></div>
 				<div class="stat"><span>Tax</span><span>{(p.tax * 100).toFixed(0)}%</span></div>
 			</div>
+			<SectorBars {sim} {v} realm={p.id} />
 			{#if p.patronDeity}
 				<div class="stat small" style="margin-top: 4px;">
 					<span>Patron God</span>

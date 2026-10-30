@@ -16,6 +16,7 @@
 	} from '#lib/sim/burgs';
 	import { onMount } from 'svelte';
 	import HeraldryBadge from './HeraldryBadge.svelte';
+	import SectorBars from './SectorBars.svelte';
 	import { getBurgCoatOfArms } from '#lib/render/heraldry';
 
 	let {
@@ -150,6 +151,7 @@
 				</div>
 				<button bind:this={closeBtn} class="btn icon" onclick={onclose} aria-label="Close settlement dialog">✕</button>
 			</header>
+			<SectorBars {sim} {v} burg={burgId} />
 
 			{#if actionMsg}
 				<div class="banner" class:ok={actionMsg.type === 'ok'} class:err={actionMsg.type === 'err'}>

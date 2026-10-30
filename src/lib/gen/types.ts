@@ -46,6 +46,8 @@ export interface GenOptions {
 	races?: RaceConfig;
 	/** spherical world: the east and west edges join (cells across the seam become neighbours); forces a 2:1 map covering all 360 degrees */
 	wrapX?: boolean;
+	/** economic sectors per town and realm (sim/sectors.ts); unset = on, false = off */
+	sectors?: boolean;
 }
 
 /** what callers pass in; missing fields are filled by withDefaults() */

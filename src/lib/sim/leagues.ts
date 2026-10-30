@@ -2,6 +2,7 @@ import type { Simulation } from './engine';
 import type { War } from './types';
 import type { Burg } from '../gen/types';
 import { getBurgDistricts } from './burgs';
+import { burgTradeMult } from './sectors';
 import { declareWar } from './systems/diplomacy';
 
 export interface TradeLeague {
@@ -590,7 +591,7 @@ export function processYearlyLeagues(sim: Simulation): {
 			if (!pol || !pol.alive) continue;
 
 			const baseTrade = Math.max(2, Math.round(burg.pop * 0.25));
-			const dividend = Math.round(baseTrade * 1.2);
+			const dividend = Math.round(baseTrade * 1.2 * burgTradeMult(sim, burg));
 			pol.treasury += dividend;
 			totalPayout += dividend;
 			league.treasury += Math.max(1, Math.round(dividend * 0.1));

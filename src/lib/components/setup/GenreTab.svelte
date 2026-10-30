@@ -57,4 +57,8 @@
 		<input type="checkbox" checked={!!store.s.evolve} onchange={(e) => (store.s.evolve = (e.currentTarget as HTMLInputElement).checked)} />
 		<span><strong>Evolving genre</strong> <span class="muted">The world's voice follows its tech era: mythic, fantasy, steampunk, dieselpunk, then cyberpunk or solarpunk depending on how it got there.</span></span>
 	</label>
+	<label class="evolve mt-md">
+		<input type="checkbox" checked={store.s.sectors !== false} onchange={(e) => (store.s.sectors = (e.currentTarget as HTMLInputElement).checked)} />
+		<span><strong>Economic sectors</strong> <span class="muted">Each town works its land: farms, mines, workshops, markets, academies, temples, barracks and harbours. The mix drifts with era, war and policy and nudges growth, income, armies and stability.</span></span>
+	</label>
 </section>
