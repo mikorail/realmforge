@@ -14,6 +14,9 @@ import { SPHERE_CULTURE, FALLBACK_CULTURE } from '../sim/culture/data';
 import { PLANETS } from '../gen/physical';
 import { ERAS } from '../sim/tech';
 import type { ChronEvent } from '../sim/types';
+import { burgMix, SECTORS } from '../sim/sectors';
+import { getLeagueState } from '../sim/leagues';
+import type { MegastructureState } from '../sim/megastructures';
 
 const NOTABLE = new Set(['ruler', 'heir', 'general', 'hero', 'prophet', 'magician', 'thinker', 'priest', 'villain', 'artist', 'inventor', 'merchant']);
 
@@ -52,6 +55,8 @@ export function exportAdventure(sim: Simulation): string {
 	// settlements: one per parasang per layer (alive and larger wins)
 	const burgAt: number[] = new Array(n).fill(0);
 	const layerBurgs = w.layers.map(() => new Map<number, number>());
+	const ls = getLeagueState(sim);
+	const leagues = ls.tradeLeagues;
 	const burgs = [];
 	for (const b of w.burgs) {
 		if (!b.id) continue;
@@ -68,7 +73,10 @@ export function exportAdventure(sim: Simulation): string {
 		burgs.push({
 			id: b.id, name: b.name, kind: b.kind, layer: b.layer, depth: b.depth, state: b.state, culture: b.culture, pop: b.pop,
 			capital: b.capital, port: b.port, alive: b.alive, p, districts: b.districts ?? {}, governor: gov?.alive ? gov.name : '',
-			bandit: !!(b.banditCove || b.pirateCove), original: b.originalName ?? ''
+			bandit: !!(b.banditCove || b.pirateCove), original: b.originalName ?? '',
+			// economic sector shares in SECTORS order (empty when the world runs without sectors)
+			sectors: (burgMix(sim, b.id) ?? []).map((v) => Math.round(v * 100) / 100),
+			garrison: Math.round(b.garrison ?? 0), charter: !!b.charter, league: b.tradeLeague ? (leagues.get(b.tradeLeague)?.name ?? '') : ''
 		});
 	}
 
@@ -182,6 +190,16 @@ export function exportAdventure(sim: Simulation): string {
 		id: wd.id, name: wd.name, kind: wd.kind, p: pOfCell(wd.cell), layer: layerOf(wd.layer).kind, destroyed: !!wd.destroyed, lore: wd.lore, builder: wd.builder ?? '', year: Math.round(wd.builtYear), effect: wd.effect
 	}));
 
+	const outlaws = [...ls.banditCamps.values()].map((cmp) => {
+		const b = w.burgs[cmp.burgId];
+		return { burg: cmp.burgId, kind: cmp.kind, name: cmp.name, strength: Math.round(cmp.strength), gold: Math.round(cmp.lootedGold), p: b ? pOf(b.x, b.y) : pOfCell(cmp.cell) };
+	});
+	// megastructures exist only once the sim has placed them (cell 0 = never placed)
+	const ms = (sim as unknown as { _megastructureState?: MegastructureState })._megastructureState;
+	const megastructures = ms
+		? [ms.tower, ms.abyss].filter((m) => m.cell > 0).map((m) => ({ kind: m.kind, name: m.name, p: pOfCell(m.cell), cleared: m.highestClearedFloor }))
+		: [];
+
 	const speciesCount = new Map<string, number>();
 	for (const cu of w.cultures) speciesCount.set(cu.species ?? 'human', (speciesCount.get(cu.species ?? 'human') ?? 0) + 1);
 	const species = SPECIES.map((s) => ({
@@ -193,7 +211,7 @@ export function exportAdventure(sim: Simulation): string {
 	const out = {
 		seed: `${w.opts.seed}:${w.planet}`, name: w.name, genre: sim.voice, planet: PLANETS[w.opts.planet]?.name ?? '', planetKind: w.opts.planet,
 		year: sim.year, era: ERAS[sim.era]?.name ?? '', w: PW, h: PH, biome, height, temp, river, road, state, culture, religion, burg: burgAt,
-		cell: Array.from(cellOf), layers, burgs, states, cultures, religions, people, events, monsters, artifacts, wonders, species,
+		cell: Array.from(cellOf), layers, burgs, states, cultures, religions, people, events, monsters, artifacts, wonders, species, outlaws, megastructures, sectorNames: SECTORS,
 		terms: G.terms, layerNames: G.layerNames
 	};
 	return JSON.stringify(out);
