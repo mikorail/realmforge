@@ -5,6 +5,7 @@
 	import type { MapRenderer } from '#lib/render/renderer';
 	import type { Cosmos } from '#lib/sim/cosmos';
 	import { getShareUrl } from '#lib/share';
+	import { exportAdventure } from '#lib/adventure/export';
 
 	let {
 		cosmos,
@@ -56,6 +57,11 @@
 		const md = compileAnnalsBookMarkdown(evList, world.name, 1000, annalsAppendix(sim));
 		downloadFile(md, `${world.name.toLowerCase().replace(/\s+/g, '-')}-complete-annals.md`, 'text/markdown');
 		onsay('Complete historical annals book downloaded.');
+	}
+
+	function exportWanderer() {
+		downloadFile(exportAdventure(sim), `${world.name.toLowerCase().replace(/\s+/g, '-')}-y${sim.year}.wanderer.json`, 'application/json');
+		onsay('Wanderer world downloaded: open it in Realmforge Wanderer to walk this world.');
 	}
 
 	function copyShareLink() {
@@ -139,6 +145,13 @@
 				<h3>Complete Annals Book</h3>
 				<p class="muted small">Full narrative chronicle book transcribing all recorded years, major battles, coronations, and uprisings from Year 1 to the present.</p>
 				<button class="btn" onclick={exportCompleteAnnals}>Download Complete Annals (MD)</button>
+			</div>
+
+			<div class="card">
+				<div class="card-icon">@</div>
+				<h3>Wanderer World</h3>
+				<p class="muted small">This world as it stands in year {sim.year}: realms, people, relics, monsters and chronicle, for the Realmforge Wanderer roguelike.</p>
+				<button class="btn" onclick={exportWanderer}>Download World (JSON)</button>
 			</div>
 
 			<div class="card">

@@ -128,6 +128,14 @@
 	const world = $derived(cosmos.u.planets[pi]);
 	const layers = $derived(world.layers);
 
+	// world file for the separate Realmforge Wanderer roguelike (loaded on demand: the exporter is only needed here)
+	async function wandererWorld() {
+		const [{ exportAdventure }, { downloadFile }] = await Promise.all([import('#lib/adventure/export'), import('#lib/export')]);
+		const s = cosmos.sims[pi];
+		downloadFile(exportAdventure(s), `${s.w.name.toLowerCase().replace(/\s+/g, '-')}-y${s.year}.wanderer.json`, 'application/json');
+		say('Wanderer world saved: open it in Realmforge Wanderer → Your own world.');
+	}
+
 	function say(t: string) {
 		if (!t) return;
 		toast = t;
@@ -481,6 +489,7 @@
 			<button class="btn" onclick={() => openMegastructure()} title="The Spire of Trials and The Bottomless Abyss">Megastructures</button>
 			<button class="btn" onclick={() => (globeOpen = true)} title="See the world as a rotatable globe">Globe</button>
 			<button class="btn" onclick={() => (exportOpen = true)} title="Export poster, vector map, or dossier">Export</button>
+			<button class="btn" onclick={wandererWorld} title="Save this world as a .json file for the Realmforge Wanderer roguelike">Wanderer JSON</button>
 			<button class="btn" onclick={() => { climate = structuredClone(cosmos.sims[pi].w.opts.climate); worldOpen = !worldOpen; }} aria-expanded={worldOpen}>Configure world</button>
 			<button class="btn" onclick={save} title="Save over the current slot (F5 quick-saves)">Save</button>
 			<button class="btn" onclick={saveAs} title="Save as a new slot with its own name">Save as…</button>
