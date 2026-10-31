@@ -21,12 +21,11 @@ export { prestigeMult, prestigeView, type PrestigeView } from './prestige';
 export function yearlySociety(sim: Simulation) {
 	if (!w3On(sim)) return;
 	const shares = sharesOf(sim);
-	const SK: string = (globalThis as any).__w3skip ?? ''; // TEMP
-	if (!SK.includes('mix')) yearlyMixing(sim, shares);
-	if (!SK.includes('pers')) yearlyPersecution(sim, shares);
-	if (!SK.includes('ref')) yearlyReforms(sim, shares);
-	if (!SK.includes('lean')) yearlyLeanYears(sim, shares);
-	if (!SK.includes('pres')) yearlyPrestige(sim);
+	yearlyMixing(sim, shares);
+	yearlyPersecution(sim, shares);
+	yearlyReforms(sim, shares);
+	yearlyLeanYears(sim, shares);
+	yearlyPrestige(sim);
 }
 
 export interface RealmSocietyView {

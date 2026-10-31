@@ -74,6 +74,7 @@ export function yearlyPrestige(sim: Simulation) {
 	for (const [id, p] of raw) next[id] = 0.6 * (st.prestige[id] ?? total(p)) + 0.4 * total(p);
 	for (const k of Object.keys(st.prestige)) if (!(+k in next) && st.prestige[+k] * 0.6 > 0.5) next[+k] = st.prestige[+k] * 0.6;
 	st.prestige = next;
+	st.pmean = mean(sim);
 	let top = 0, best = 0;
 	for (const [k, v] of Object.entries(next)) if (v > best || (v === best && +k < top)) { best = v; top = +k; }
 	if (top && top !== st.top && sim.year > 20) {
@@ -99,7 +100,7 @@ function mean(sim: Simulation): number {
 export function prestigeMult(sim: Simulation, culture: number): number {
 	if (!sim.w3 || !w3On(sim)) return 1;
 	const s = sim.w3.prestige[culture];
-	const m = mean(sim);
+	const m = sim.w3.pmean ?? mean(sim);
 	if (s === undefined || m <= 0) return 1;
 	return Math.min(1.4, Math.max(0.8, 0.8 + 0.2 * (s / m)));
 }

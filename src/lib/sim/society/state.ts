@@ -79,6 +79,8 @@ export interface W3State {
 	prestige: Record<number, number>;
 	/** culture id → decaying count of great works and art */
 	works: Record<number, number>;
+	/** world mean of `prestige`, cached when it is rescored (missing in older saves) */
+	pmean?: number;
 	/** culture id currently held most admired */
 	top: number;
 	famines: FamineRecord[];

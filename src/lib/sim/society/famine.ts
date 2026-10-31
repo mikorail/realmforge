@@ -50,7 +50,6 @@ function scaleCells(sim: Simulation, pol: Polity, k: number) {
 /** the ruler's answer to a famine just logged as `ev` */
 export function onFamine(sim: Simulation, pol: Polity, ev?: ChronEvent) {
 	if (!sim.w3 || !w3On(sim) || !pol.alive || !pol.id) return;
-	if (((globalThis as any).__w3skip ?? '').includes('fam')) return; // TEMP
 	const r = w3Rng(sim, 'famine', sim.year, pol.id, ev?.id ?? 0);
 	const ruler = rulerOf(sim, pol);
 	const m = activeMotive(sim, pol);
