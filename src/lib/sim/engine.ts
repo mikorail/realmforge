@@ -38,6 +38,7 @@ import { extraColonize, navalMult, yearlyPlanetRules } from './worldrules/planet
 import { newMotiveState, type MotiveState } from './motives';
 import { newStory, onCrown, yearlyStory, type StoryState } from './story';
 import type { Power } from './systems/godpowers';
+import { initSocialOrders, restoreSocialOrders, yearlySocialOrders, type SocialOrderState } from './society/orders';
 import { initSectors, restoreSectors, sectorNaval, yearlySectors, type SectorState } from './sectors';
 
 export { POWERS, type Power } from './systems/godpowers';
@@ -128,6 +129,8 @@ export class Simulation {
 	neighborCache: Map<number, number[]> | null = null;
 	/** economic sectors per town/realm (sectors.ts); undefined when opts.sectors === false */
 	sectors?: SectorState;
+	/** social order per realm (society/orders.ts); undefined when opts.socialOrders === false */
+	so?: SocialOrderState;
 
 	constructor(world: World, restoring = false) {
 		this.w = world;
@@ -215,6 +218,7 @@ export class Simulation {
 			}
 		}
 		this.sectors = initSectors(this);
+		this.so = initSocialOrders(this);
 		this.takeHistorySnapshot();
 		this.updateVoice();
 		this.log('misc', `The grand chronicle of ${world.name} begins: sovereign houses arise and uncharted lands await their destiny.`);
@@ -420,6 +424,7 @@ export class Simulation {
 		yearlySphereLore(this);
 		yearlyCulture(this);
 		yearlySectors(this);
+		yearlySocialOrders(this);
 		yearlyLayerLife(this);
 		yearlyLetters(this);
 		yearlyEpochs(this);
@@ -575,7 +580,8 @@ export class Simulation {
 			wonders: this.wonders, monsters: this.monsters,
 			missions: this.missions, quests: this.quests, cx: this.cx, sx: this.sx, mv: this.mv,
 			divineTargetIdeology: this.divineTargetIdeology,
-			sectors: this.sectors
+			sectors: this.sectors,
+			so: this.so
 		};
 	}
 
@@ -606,6 +612,7 @@ export class Simulation {
 		s.sx = { ...newSentiment(), ...((d as { sx?: Partial<SentimentState> }).sx ?? {}) };
 		s.mv = { ...newMotiveState(), ...((d as { mv?: MotiveState }).mv ?? {}) };
 		s.sectors = restoreSectors(s, d.sectors);
+		s.so = restoreSocialOrders(s, d.so);
 		s.computeBorders();
 		s.updateVoice();
 		return s;

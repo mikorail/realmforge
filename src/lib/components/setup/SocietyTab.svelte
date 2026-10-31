@@ -409,6 +409,10 @@
 		<input type="checkbox" checked={store.s.motives !== false} onchange={(e) => (store.s.motives = (e.currentTarget as HTMLInputElement).checked)} />
 		<span><strong>Ruler motives</strong> <span class="muted">Each ruler is driven by an aim: vengeance, faith, glory, gold, legacy, survival, knowledge or dynasty. It shapes their wars, peace, treaties and monuments, and may pass to an heir.</span></span>
 	</label>
+	<label class="evolve mt-md">
+		<input type="checkbox" checked={store.s.socialOrders !== false} onchange={(e) => (store.s.socialOrders = (e.currentTarget as HTMLInputElement).checked)} />
+		<span><strong>Social orders</strong> <span class="muted">Each realm is free, caste-bound, feudal, egalitarian or built on unfree labour (thralls, bound spirits, golems, company towns, automata). Unfree orders produce more but breed unrest, risings and stagnation; reform movements can win, be crushed or start a civil war.</span></span>
+	</label>
 </section>
 
 <style>
