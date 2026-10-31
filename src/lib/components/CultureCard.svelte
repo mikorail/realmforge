@@ -29,6 +29,8 @@
 			</header>
 
 			<dl class="facts">
+				{#if card.origin}<dt>Origin</dt><dd>{card.origin}</dd>{/if}
+				{#if card.prestige}<dt>Prestige</dt><dd>{card.prestige.score} <span class="muted small">· rank {card.prestige.rank} of {card.prestige.of}{card.prestige.sources ? ` · from ${card.prestige.sources}` : ''}{card.prestige.mult >= 1.1 ? ' · its tongue and ways spread' : ''}</span></dd>{/if}
 				<dt>Food</dt><dd>{card.food}</dd>
 				<dt>Dress</dt><dd>{card.dress}</dd>
 				<dt>Architecture</dt><dd>{card.architecture}{#if card.archStyle} <span class="muted small">· map style: {card.archStyle}</span>{/if}</dd>

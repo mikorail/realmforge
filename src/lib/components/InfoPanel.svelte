@@ -16,6 +16,7 @@
 	import CultureLists from './CultureLists.svelte';
 	import PeoplesHeat from './PeoplesHeat.svelte';
 	import { realmPeoples, sentimentOn } from '#lib/sim/sentiment';
+	import { realmSociety } from '#lib/sim/society/index';
 	import HeraldryBadge from './HeraldryBadge.svelte';
 	import SectorBars from './SectorBars.svelte';
 	import { getRealmCoatOfArms, getBurgCoatOfArms } from '#lib/render/heraldry';
@@ -140,6 +141,12 @@
 		void v;
 		const p = realm?.p;
 		return p ? realmPeoples(sim, p) : null;
+	});
+
+	const society = $derived.by(() => {
+		void v;
+		const p = realm?.p;
+		return p ? realmSociety(sim, p) : null;
 	});
 
 	const rulerBio = $derived.by(() => {
@@ -489,6 +496,13 @@
 				{#if sentimentOn(sim) && (peoples.grudge || peoples.tension > 0.05)}
 					<p class="small muted">{peoples.grudge ? `Strongest grudge: ${peoples.grudge}. ` : ''}Tension {Math.round(peoples.tension * 100)}% · harmony {Math.round(peoples.harmony * 100)}%</p>
 				{/if}
+			{/if}
+			{#if society}
+				{#if society.persecutions.length}<p class="small"><strong class="bad">Persecution</strong> {society.persecutions.join('; ')}</p>{/if}
+				{#if society.reforms.length}<p class="small"><strong>Reform movement</strong> {society.reforms.join('; ')}</p>{/if}
+				{#if society.enacted.length}<p class="small"><strong>Reforms in force</strong> {society.enacted.join(' · ')}</p>{/if}
+				{#if society.mixed.length}<p class="small muted">{society.mixed.join('; ')}</p>{/if}
+				{#if society.famine}<p class="small muted">{society.famine}.</p>{/if}
 			{/if}
 			{#if realm.enemies.length}<p class="small"><strong class="bad">At war with</strong> {realm.enemies.map((e) => e.name).join(', ')}</p>{/if}
 			{#if realm.allies.length}<p class="small"><strong>Allies</strong> {realm.allies.map((e) => e.name).join(', ')}</p>{/if}

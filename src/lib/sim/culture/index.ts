@@ -6,6 +6,7 @@ import type { Simulation } from '../engine';
 import { FEAST_TEXT } from './data';
 import { cultureMod, realmFeasts } from './profile';
 import { yearlyMovements } from './orders';
+import { prestigeMult } from '../society/prestige';
 
 export { cultureMod, cultureProfile, monthName, realmFeasts, calendarCulture, TRAITS, type TraitKey, type ModKey } from './profile';
 export { newCultureState, type CultureState } from './state';
@@ -46,8 +47,9 @@ function linguaFranca(sim: Simulation) {
 		if (rt.kind !== 'road' && rt.kind !== 'sea') continue;
 		const A = burgs[rt.a], B = burgs[rt.b];
 		if (!A?.alive || !B?.alive || !A.state || !B.state || A.culture === B.culture) continue;
-		const w = Math.min(A.pop, B.pop) * (rt.kind === 'sea' ? 1.2 : 1);
-		scored.push({ a: rt.a, b: rt.b, w, culture: A.pop >= B.pop ? A.culture : B.culture });
+		const culture = A.pop * prestigeMult(sim, A.culture) >= B.pop * prestigeMult(sim, B.culture) ? A.culture : B.culture;
+		const w = Math.min(A.pop, B.pop) * (rt.kind === 'sea' ? 1.2 : 1) * prestigeMult(sim, culture);
+		scored.push({ a: rt.a, b: rt.b, w, culture });
 	}
 	scored.sort((x, y) => y.w - x.w || x.a - y.a);
 	const top = scored.slice(0, 3);
@@ -72,7 +74,7 @@ export function assimilate(sim: Simulation) {
 		const cell = Number(key);
 		const pol = sim.polities[c.state[cell]];
 		if (!pol?.alive || !pol.culture || c.culture[cell] === pol.culture) { delete cx.conquered[cell]; continue; }
-		if (sim.year - cx.conquered[cell] < 40 || !r.chance(0.015)) continue;
+		if (sim.year - cx.conquered[cell] < 40 || !r.chance(0.015 * prestigeMult(sim, pol.culture))) continue;
 		c.culture[cell] = pol.culture;
 		const b = sim.w.burgs[c.burg[cell]];
 		if (b?.alive && b.state === pol.id) b.culture = pol.culture;

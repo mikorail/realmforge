@@ -123,4 +123,4 @@ Each item is optional per world (Society tab toggle), uses side rngs where possi
 - [ ] **W1 · Sectors per area**: farming, industry, mining, trade, crafts/arts, scholarship, military, faith, seafaring weights per town/region from terrain + species + policy; economic effects; overlay map and realm pie.
 - [ ] **W1 · Genre forces**: factory unrest and smog (steam), fallout and arms race (atom), green commons (solar), megacorps (cyber), leyline magic (high fantasy); pairs with age lock.
 - [ ] **W2 · Social orders**: free / caste / feudal / slave / egalitarian per realm (needs sectors); slavery output vs unrest and revolts, abolition movements, caste stability vs stagnation, fantasy forms (thralls, bound spirits, golems). In-world pressures, not endorsement; toggle off by default-safe.
-- [ ] **W3 · Smaller**: intermarriage and mixed peoples, pogroms/expulsions/refugees, reform movements, cultural prestige, famine ethics.
+- [x] **W3 · Smaller**: intermarriage and mixed peoples, pogroms/expulsions/refugees, reform movements, cultural prestige, famine ethics. _(done: `sim/society/` mixing, persecution, reforms, prestige, famine; Society tab "Social life" toggle)_

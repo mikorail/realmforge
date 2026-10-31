@@ -406,6 +406,11 @@
 	</div>
 
 	<label class="evolve mt-md">
+		<input type="checkbox" checked={store.s.socialLife !== false} onchange={(e) => (store.s.socialLife = (e.currentTarget as HTMLInputElement).checked)} />
+		<span><strong>Social life</strong> <span class="muted">Peoples who live together intermarry and may birth a mixed people; bitter ones suffer pogroms and expulsions and flee as refugees. Reform movements rise and pass or are crushed, cultures earn prestige, and rulers choose how to meet famine.</span></span>
+	</label>
+
+	<label class="evolve mt-md">
 		<input type="checkbox" checked={store.s.motives !== false} onchange={(e) => (store.s.motives = (e.currentTarget as HTMLInputElement).checked)} />
 		<span><strong>Ruler motives</strong> <span class="muted">Each ruler is driven by an aim: vengeance, faith, glory, gold, legacy, survival, knowledge or dynasty. It shapes their wars, peace, treaties and monuments, and may pass to an heir.</span></span>
 	</label>
