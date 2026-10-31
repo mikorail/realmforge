@@ -4,6 +4,7 @@ import type { Simulation } from './engine';
 import { packCult, packLine } from './genrepacks';
 import { cultureMod } from './culture';
 import { unrestFx } from './sentiment';
+import { orderUnrest } from './society/socialorders';
 
 export interface UprisingEvent {
 	kind: 'uprising';
@@ -46,7 +47,7 @@ export function processYearlyUprisings(sim: Simulation): UprisingEvent[] {
 	for (const pol of alivePolities) {
 		if ((sim.unrestUntil.get(pol.id) ?? 0) > sim.year) continue;
 		const sfx = unrestFx(sim, pol.id);
-		cultureUnrest = cultureMod(sim, pol, 'unrest') * sfx.mult;
+		cultureUnrest = cultureMod(sim, pol, 'unrest') * sfx.mult * orderUnrest(sim, pol.id);
 		const towns = sim.idx.burgsIn(sim.w.burgs, pol.id).filter((b) => b.id && b.alive && b.state === pol.id);
 		if (!towns.length) continue;
 
