@@ -190,7 +190,9 @@ export function exportAdventure(sim: Simulation): string {
 		id: wd.id, name: wd.name, kind: wd.kind, p: pOfCell(wd.cell), layer: layerOf(wd.layer).kind, destroyed: !!wd.destroyed, lore: wd.lore, builder: wd.builder ?? '', year: Math.round(wd.builtYear), effect: wd.effect
 	}));
 
-	const outlaws = [...ls.banditCamps.values()].map((cmp) => {
+	// nearly every town grows a camp: keep the strongest ~20% (3..40) so the wild is not saturated
+	const camps = [...ls.banditCamps.values()].sort((a, b) => b.strength - a.strength || a.burgId - b.burgId);
+	const outlaws = camps.slice(0, Math.min(40, Math.max(3, Math.ceil(camps.length * 0.2)))).map((cmp) => {
 		const b = w.burgs[cmp.burgId];
 		return { burg: cmp.burgId, kind: cmp.kind, name: cmp.name, strength: Math.round(cmp.strength), gold: Math.round(cmp.lootedGold), p: b ? pOf(b.x, b.y) : pOfCell(cmp.cell) };
 	});

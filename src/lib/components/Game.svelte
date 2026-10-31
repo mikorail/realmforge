@@ -7,6 +7,7 @@
 	import { calendarCulture, monthName } from '#lib/sim/culture/index';
 	import type { Cosmos } from '#lib/sim/cosmos';
 	import type { Power } from '#lib/sim/engine';
+	import type { WandererDeed, WandererChronicle } from '#lib/adventure/chronicle';
 	import { onMount, untrack } from 'svelte';
 	import AvatarPanel from './AvatarPanel.svelte';
 	import ClimatePanel from './ClimatePanel.svelte';
@@ -135,6 +136,66 @@
 		downloadFile(exportAdventure(s), `${s.w.name.toLowerCase().replace(/\s+/g, '-')}-y${s.year}.wanderer.json`, 'application/json');
 		say('Wanderer world saved: open it in Realmforge Wanderer → Your own world.');
 	}
+
+	// ---- Realmforge Wanderer link: chronicle import (file) and live window.postMessage link ----
+	let wandererWin: Window | null = null;
+	let wandererInput = $state<HTMLInputElement | null>(null);
+
+	function simForSeed(seed: string) {
+		return cosmos.sims.find((x) => `${x.w.opts.seed}:${x.w.planet}` === seed) ?? null;
+	}
+	function afterWanderer() {
+		v++;
+		panelsStale = true;
+		needDraw = true;
+		r?.invalidatePolitical();
+	}
+	async function takeWandererDeeds(seed: string, deeds: WandererDeed[], turns: number, hero?: string): Promise<string> {
+		const { ingest } = await import('#lib/adventure/chronicle');
+		const target = simForSeed(seed);
+		if (!target) return `That chronicle belongs to another world (${seed}).`;
+		const res = ingest(cosmos, target, deeds, turns, hero);
+		afterWanderer();
+		return `${res.deeds} wanderer deed${res.deeds === 1 ? '' : 's'} entered history${res.months ? `; ${res.months} month${res.months === 1 ? '' : 's'} passed` : ''}.`;
+	}
+	async function importChronicle(e: Event) {
+		const input = e.currentTarget as HTMLInputElement;
+		const f = input.files?.[0];
+		input.value = '';
+		if (!f) return;
+		try {
+			const c = JSON.parse(await f.text()) as WandererChronicle;
+			if (!c || typeof c.seed !== 'string' || !Array.isArray(c.deeds)) return say('That is not a Wanderer chronicle file.');
+			say(await takeWandererDeeds(c.seed, c.deeds, Number(c.turns) || 0, c.hero?.name));
+		} catch (err) {
+			say(`Chronicle import failed: ${(err as Error).message}`);
+		}
+	}
+	async function playInWanderer() {
+		const { WANDERER_URL } = await import('#lib/adventure/chronicle');
+		wandererWin = window.open(WANDERER_URL, 'realmforge-wanderer');
+		if (!wandererWin) say('The browser blocked the Wanderer window: allow pop-ups for this page.');
+		else say('Opening Wanderer: the world is handed over when it is ready.');
+	}
+	onMount(() => {
+		const onMsg = async (ev: MessageEvent) => {
+			const d = ev.data;
+			if (!d || typeof d.type !== 'string') return;
+			const { wandererOriginOk } = await import('#lib/adventure/chronicle');
+			if (!wandererOriginOk(ev.origin) || ev.source !== wandererWin) return;
+			if (d.type === 'wanderer-ready') {
+				const { exportAdventure } = await import('#lib/adventure/export');
+				const json = exportAdventure(cosmos.sims[pi]);
+				(ev.source as Window).postMessage({ type: 'world', json }, ev.origin);
+				say('World handed to Wanderer.');
+			} else if (d.type === 'deeds' && Array.isArray(d.deeds) && typeof d.seed === 'string') {
+				const msg = await takeWandererDeeds(d.seed, d.deeds as WandererDeed[], Number(d.turns) || 0);
+				if (d.deeds.length) say(msg);
+			}
+		};
+		window.addEventListener('message', onMsg);
+		return () => window.removeEventListener('message', onMsg);
+	});
 
 	function say(t: string) {
 		if (!t) return;
@@ -490,6 +551,9 @@
 			<button class="btn" onclick={() => (globeOpen = true)} title="See the world as a rotatable globe">Globe</button>
 			<button class="btn" onclick={() => (exportOpen = true)} title="Export poster, vector map, or dossier">Export</button>
 			<button class="btn" onclick={wandererWorld} title="Save this world as a .json file for the Realmforge Wanderer roguelike">Wanderer JSON</button>
+			<button class="btn" onclick={playInWanderer} title="Open Realmforge Wanderer and hand it this world; the hero's deeds flow back live">Play in Wanderer</button>
+			<button class="btn" onclick={() => wandererInput?.click()} title="Read a *-wanderer-chronicle.json exported from Wanderer">Import chronicle</button>
+			<input type="file" accept=".json,application/json" hidden bind:this={wandererInput} onchange={importChronicle} />
 			<button class="btn" onclick={() => { climate = structuredClone(cosmos.sims[pi].w.opts.climate); worldOpen = !worldOpen; }} aria-expanded={worldOpen}>Configure world</button>
 			<button class="btn" onclick={save} title="Save over the current slot (F5 quick-saves)">Save</button>
 			<button class="btn" onclick={saveAs} title="Save as a new slot with its own name">Save as…</button>
