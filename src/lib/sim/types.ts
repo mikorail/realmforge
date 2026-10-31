@@ -79,6 +79,8 @@ export interface Person {
 	motiveTarget?: number;
 	motiveWhy?: string;
 	motiveEnd?: 'done' | 'dropped';
+	/** child of two peoples (sim/society/mixing.ts): the other parent's culture and, if different, species */
+	mixed?: { culture: number; species?: string };
 	/** role in avatar adventuring warband / company */
 	partyRole?: 'champion' | 'spymaster' | 'quartermaster' | 'lorekeeper';
 }

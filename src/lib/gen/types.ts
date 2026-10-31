@@ -71,6 +71,8 @@ export interface GenOptions {
 	invertImage?: boolean;
 	/** economic sectors per town and realm (sim/sectors.ts); unset = on, false = off */
 	sectors?: boolean;
+	/** intermarriage, persecution and refugees, reform movements, cultural prestige, famine ethics (sim/society); unset = on, false = off */
+	socialLife?: boolean;
 }
 
 /** what callers pass in; missing fields are filled by withDefaults() */

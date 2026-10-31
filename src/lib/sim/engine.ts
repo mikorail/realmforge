@@ -39,6 +39,7 @@ import { newMotiveState, type MotiveState } from './motives';
 import { newStory, onCrown, yearlyStory, type StoryState } from './story';
 import type { Power } from './systems/godpowers';
 import { initSectors, restoreSectors, sectorNaval, yearlySectors, type SectorState } from './sectors';
+import { newW3, restoreW3, yearlySociety, type W3State } from './society';
 
 export { POWERS, type Power } from './systems/godpowers';
 
@@ -103,6 +104,8 @@ export class Simulation {
 	sx: SentimentState = newSentiment();
 	/** ruler motives: grudges per house (motives.ts) */
 	mv: MotiveState = newMotiveState();
+	/** intermarriage, persecution, reforms, prestige, famine choices (society/) */
+	w3: W3State = newW3();
 	era = 0;
 	innovation = 0;
 	techs = new Set<string>();
@@ -420,6 +423,7 @@ export class Simulation {
 		yearlySphereLore(this);
 		yearlyCulture(this);
 		yearlySectors(this);
+		yearlySociety(this);
 		yearlyLayerLife(this);
 		yearlyLetters(this);
 		yearlyEpochs(this);
@@ -575,7 +579,8 @@ export class Simulation {
 			wonders: this.wonders, monsters: this.monsters,
 			missions: this.missions, quests: this.quests, cx: this.cx, sx: this.sx, mv: this.mv,
 			divineTargetIdeology: this.divineTargetIdeology,
-			sectors: this.sectors
+			sectors: this.sectors,
+			w3: this.w3
 		};
 	}
 
@@ -606,6 +611,7 @@ export class Simulation {
 		s.sx = { ...newSentiment(), ...((d as { sx?: Partial<SentimentState> }).sx ?? {}) };
 		s.mv = { ...newMotiveState(), ...((d as { mv?: MotiveState }).mv ?? {}) };
 		s.sectors = restoreSectors(s, d.sectors);
+		s.w3 = restoreW3((d as { w3?: Partial<W3State> }).w3);
 		s.computeBorders();
 		s.updateVoice();
 		return s;
