@@ -409,6 +409,17 @@
 		<input type="checkbox" checked={store.s.motives !== false} onchange={(e) => (store.s.motives = (e.currentTarget as HTMLInputElement).checked)} />
 		<span><strong>Ruler motives</strong> <span class="muted">Each ruler is driven by an aim: vengeance, faith, glory, gold, legacy, survival, knowledge or dynasty. It shapes their wars, peace, treaties and monuments, and may pass to an heir.</span></span>
 	</label>
+
+	<label class="evolve mt-md" for="f-forces">
+		<span><strong>Genre forces</strong> <span class="muted">Pressures of the age: smog and strikes (steam, diesel), war economy (diesel), arms race and fallout (atom), megacorps (cyber), green commons (solar), gene vats (bio), leylines (fantasy, mythic). They follow the voice of the age.</span></span>
+		<select id="f-forces" value={String(store.s.genreForces ?? 1)} onchange={(e) => (store.s.genreForces = Number(e.currentTarget.value))}>
+			<option value="0">Off</option>
+			<option value="0.5">Faint</option>
+			<option value="1">Default</option>
+			<option value="1.5">Marked</option>
+			<option value="2">Strong</option>
+		</select>
+	</label>
 </section>
 
 <style>

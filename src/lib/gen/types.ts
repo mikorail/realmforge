@@ -71,6 +71,8 @@ export interface GenOptions {
 	invertImage?: boolean;
 	/** economic sectors per town and realm (sim/sectors.ts); unset = on, false = off */
 	sectors?: boolean;
+	/** genre forces strength (sim/genre/forces.ts): 0 off, 1 default (unset), up to 2 */
+	genreForces?: number;
 }
 
 /** what callers pass in; missing fields are filled by withDefaults() */

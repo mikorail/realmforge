@@ -39,6 +39,7 @@ import { newMotiveState, type MotiveState } from './motives';
 import { newStory, onCrown, yearlyStory, type StoryState } from './story';
 import type { Power } from './systems/godpowers';
 import { initSectors, restoreSectors, sectorNaval, yearlySectors, type SectorState } from './sectors';
+import { newForces, restoreForces, yearlyGenreForces } from './genre/forces';
 
 export { POWERS, type Power } from './systems/godpowers';
 
@@ -128,6 +129,8 @@ export class Simulation {
 	neighborCache: Map<number, number[]> | null = null;
 	/** economic sectors per town/realm (sectors.ts); undefined when opts.sectors === false */
 	sectors?: SectorState;
+	/** genre forces: smog, strikes, arms races, fallout, megacorps, commons, leylines, gene vats (genre/forces.ts) */
+	gf = newForces();
 
 	constructor(world: World, restoring = false) {
 		this.w = world;
@@ -420,6 +423,7 @@ export class Simulation {
 		yearlySphereLore(this);
 		yearlyCulture(this);
 		yearlySectors(this);
+		yearlyGenreForces(this);
 		yearlyLayerLife(this);
 		yearlyLetters(this);
 		yearlyEpochs(this);
@@ -575,7 +579,7 @@ export class Simulation {
 			wonders: this.wonders, monsters: this.monsters,
 			missions: this.missions, quests: this.quests, cx: this.cx, sx: this.sx, mv: this.mv,
 			divineTargetIdeology: this.divineTargetIdeology,
-			sectors: this.sectors
+			sectors: this.sectors, gf: this.gf
 		};
 	}
 
@@ -606,6 +610,7 @@ export class Simulation {
 		s.sx = { ...newSentiment(), ...((d as { sx?: Partial<SentimentState> }).sx ?? {}) };
 		s.mv = { ...newMotiveState(), ...((d as { mv?: MotiveState }).mv ?? {}) };
 		s.sectors = restoreSectors(s, d.sectors);
+		s.gf = restoreForces((d as { gf?: Partial<ReturnType<typeof newForces>> }).gf);
 		s.computeBorders();
 		s.updateVoice();
 		return s;
