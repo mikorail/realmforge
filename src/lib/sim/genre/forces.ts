@@ -127,12 +127,12 @@ function smog(sim: Simulation, s: number, rng: Rng) {
 		if (level < 0.15) continue;
 		c.pop[b.cell] *= 1 - 0.01 * level * s;
 		for (const j of neighbors(c, b.cell)) if (c.pop[j] > 0) c.pop[j] *= 1 - 0.005 * level * s;
-		if (b.state) hit.set(b.state, (hit.get(b.state) ?? 0) + 0.4 * level * s);
+		if (b.state) hit.set(b.state, (hit.get(b.state) ?? 0) + 0.15 * level * s);
 		if (level > best && !gf.smog.includes(b.id)) { best = level; pick = b.id; }
 	}
 	for (const [id, h] of hit) {
 		const p = sim.polities[id];
-		if (alive(p)) p.stability = Math.max(5, p.stability - Math.min(3, h));
+		if (alive(p)) p.stability = Math.max(20, p.stability - Math.min(0.8 * s, h));
 	}
 	if (pick > 0) {
 		gf.smog.push(pick);
@@ -161,13 +161,13 @@ function strikes(sim: Simulation, s: number, rng: Rng) {
 		gf.strikes[p.id] = sim.year;
 		sim.unrestUntil.set(p.id, sim.year + rng.int(3, 7));
 		p.treasury = Math.max(0, p.treasury - Math.min(Math.max(0, p.treasury), 6 + Math.max(0, p.treasury) * 0.08 * s));
-		p.stability = Math.max(5, p.stability - rng.int(3, 6) * s);
+		p.stability = Math.max(10, p.stability - rng.int(2, 4) * s);
 		town.pop = +Math.max(0.2, town.pop * 0.98).toFixed(2);
 		const rec = { id: sim.uprisings.length + 1, kind: 'riot' as const, subtype: 'factory_strike', title: `Strike at ${town.name}`, burgId: town.id, burgName: town.name, stateId: p.id, stateName: p.name, year: sim.year, cell: town.cell, description: `Workers of ${town.name} walk out of the factories.`, active: true };
 		sim.uprisings.push(rec);
 		sim.log('uprising', forceLine('strike', rng, { town: town.name, realm: p.name }), town.cell, p.id);
 		// a strike in a realm already on the brink can tip into revolt
-		if (p.stability <= 15 && p.cells >= 10 && towns.length > 1 && rng.chance(0.2)) sim.revolt(p, town.cell);
+		if (p.stability <= 12 && p.cells >= 10 && towns.length > 1 && rng.chance(0.1)) sim.revolt(p, town.cell);
 	}
 }
 
