@@ -182,9 +182,9 @@ function warEconomy(sim: Simulation, s: number, rng: Rng) {
 			const p = sim.polities[id];
 			if (!alive(p)) continue;
 			const f = clamp(realmRel(sim, id, IND), 0.6, 1.5);
-			p.army *= 1 + 0.02 * s * f;
-			p.treasury -= Math.max(0, p.treasury) * 0.03 * s;
-			p.stability = Math.max(5, p.stability - 0.5 * s);
+			p.army *= 1 + 0.015 * s * f;
+			p.treasury -= Math.max(0, p.treasury) * 0.02 * s;
+			p.stability = Math.max(20, p.stability - 0.3 * s);
 		}
 		if (!gf.mob.includes(w.id) && w.months >= 12) {
 			gf.mob.push(w.id);
