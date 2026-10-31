@@ -11,6 +11,7 @@ import { techName } from '../genre/techskins';
 import { buildWonder, destroyWonder } from '../wonders';
 import { MONSTER_ARCHETYPES } from '../monsters';
 import { transitionRegime } from '../politics';
+import { emancipate } from '../society/socialorders';
 import type { Monster, LegendaryPlace, IdeologyKind, Polity, War } from '../types';
 
 export type Power =
@@ -47,7 +48,8 @@ export type Power =
 	| 'worldwar'
 	| 'ragnarok'
 	| 'conspiracy'
-	| 'resurgence';
+	| 'resurgence'
+	| 'emancipate';
 
 export const POWERS: Record<Power, { name: string; cost: number; icon: string; desc: string }> = {
 	dig: { name: 'Dig Caverns', cost: 6, icon: '⛏', desc: 'Carve new caverns and tunnels in the underdark below' },
@@ -83,7 +85,8 @@ export const POWERS: Record<Power, { name: string; cost: number; icon: string; d
 	worldwar: { name: 'Incite World War', cost: 50, icon: '🌐', desc: 'Polarize all nations into two ideological coalitions locked in total global war' },
 	ragnarok: { name: 'True Ragnarok', cost: 60, icon: '🐺', desc: 'Summon the World-Eaters and Harbingers of the End, forcing a mortal stalemate' },
 	conspiracy: { name: 'Grand Conspiracy', cost: 30, icon: '🗡️', desc: 'Shatter an empire from within through assassination, bankruptcy, and mutiny' },
-	resurgence: { name: 'Phoenix Resurgence', cost: 35, icon: '🦅', desc: 'Resurrect a fallen or dying realm into a burgeoning golden empire' }
+	resurgence: { name: 'Phoenix Resurgence', cost: 35, icon: '🦅', desc: 'Resurrect a fallen or dying realm into a burgeoning golden empire' },
+	emancipate: { name: 'Emancipate', cost: 18, icon: '🕊', desc: 'End the unfree, caste or feudal order of a realm; it becomes a free society' }
 };
 
 export function canCast(sim: Simulation, p: Power) {
@@ -96,7 +99,7 @@ export function cast(sim: Simulation, power: Power, cell: number, layer = 0): st
 	if (layer > 0 && ['meteor', 'raise', 'sink', 'cataclysm', 'apocalypse', 'ragnarok'].includes(power)) layer = 0;
 	const pol = sim.stateAt(cell, layer);
 	const hasRealm = pol && pol.alive && pol.id > 0;
-	const needRealm = ['inspire', 'host', 'peace', 'discord', 'chaos', 'rebel', 'smite', 'relic', 'patron', 'reform', 'revolution', 'coup', 'conspiracy'].includes(power);
+	const needRealm = ['inspire', 'host', 'peace', 'discord', 'chaos', 'rebel', 'smite', 'relic', 'patron', 'reform', 'revolution', 'coup', 'conspiracy', 'emancipate'].includes(power);
 	if (needRealm && !hasRealm) return 'Choose a realm.';
 	const spend = () => { if (!sim.sandbox) sim.mana -= POWERS[power].cost; };
 	const area = (radius: number, center = cell) => {
@@ -599,6 +602,12 @@ export function cast(sim: Simulation, power: Power, cell: number, layer = 0): st
 
 			sim.terraform();
 			sim.log('god', `EXTRATERRESTRIAL DESCENT: An alien star-dreadnought impacts at ${b.name}! The Starborn Hegemony establishes a forward citadel and begins planetary subjugation.`, cell, xenoRealm.id);
+			break;
+		}
+		case 'emancipate': {
+			if (!hasRealm) return 'Choose a realm to emancipate.';
+			const err = emancipate(sim, pol);
+			if (err) return err;
 			break;
 		}
 		case 'patron': {
@@ -1118,7 +1127,7 @@ export function castRandom(sim: Simulation, power: Power, layer = 0): { text: st
 	const aliveRealms = sim.polities.filter((p) => p.id && p.alive);
 
 	let targetCell = 0;
-	if (aliveRealms.length && ['inspire', 'host', 'peace', 'relic', 'discord', 'chaos', 'smite', 'wonder', 'patron', 'reform', 'revolution', 'coup', 'conspiracy'].includes(power)) {
+	if (aliveRealms.length && ['inspire', 'host', 'peace', 'relic', 'discord', 'chaos', 'smite', 'wonder', 'patron', 'reform', 'revolution', 'coup', 'conspiracy', 'emancipate'].includes(power)) {
 		const picked = r.pick(aliveRealms);
 		targetCell = sim.w.burgs[picked.capital]?.cell ?? r.int(0, c.n - 1);
 	} else if (power === 'resurgence') {

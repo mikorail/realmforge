@@ -22,7 +22,7 @@
 	});
 	const groups: [string, Power[]][] = [
 		['Grace & Destiny', ['bless', 'inspire', 'host', 'peace', 'hero', 'prophet', 'relic', 'enlighten', 'patron']],
-		['Statecraft & Regime', ['reform', 'revolution', 'coup', 'conspiracy', 'resurgence', 'worldwar']],
+		['Statecraft & Regime', ['reform', 'revolution', 'coup', 'conspiracy', 'resurgence', 'worldwar', 'emancipate']],
 		['Earth & Genesis', ['raise', 'sink', 'dig', 'cataclysm', 'species', 'monster', 'wonder']],
 		['Chaos & Calamity', ['discord', 'chaos', 'rebel', 'smite', 'villain', 'plague', 'pandemic']],
 		['Cosmos & Apocalypse', ['tear', 'meteor', 'alien', 'apocalypse', 'ragnarok']]

@@ -8,6 +8,7 @@
 	import { ERAS, DISCOVERIES, TECH_BRANCHES, type TechBranch } from '#lib/sim/tech';
 	import { synthesizeAnnualAnnals, compileAnnalsBookMarkdown } from '#lib/sim/chronicle';
 	import { motiveInfo } from '#lib/sim/motives';
+	import { orderInfo } from '#lib/sim/society/socialorders';
 	import { annalsAppendix, biography, rulerName } from '#lib/sim/story/index';
 	import { IDEOLOGIES } from '#lib/sim/politics';
 	import { techName, techDesc } from '#lib/sim/genre/techskins';
@@ -348,6 +349,13 @@
 					<div class="small muted">{mot.blurb}</div>
 				{/if}
 				<div class="small muted">{realm.ruler.traits.join(' · ')} · ⚔{realm.ruler.martial} ✉{realm.ruler.diplomacy} ⚖{realm.ruler.stewardship} 🗝{realm.ruler.intrigue}</div>
+			{/if}
+			{#if sim.so}
+				{@const so = orderInfo(sim, p)}
+				{#if so}
+				<div class="stat small" title={so.blurb}><span>Society</span><span>{so.icon} {so.form} <span class="muted">({so.name.toLowerCase()}, since {so.since})</span></span></div>
+				{#if so.movement}<div class="small muted">A reform movement is growing ({so.pressure}%).</div>{/if}
+				{/if}
 			{/if}
 			{#if p.era}
 				<div class="stat small" title={p.eras?.map((e) => `${e.name} (${e.from}-${e.to})`).join('\n')}><span>Era</span><span>{p.era}</span></div>
