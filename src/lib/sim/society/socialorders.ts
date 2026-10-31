@@ -156,6 +156,25 @@ function reformTarget(pol: Polity, k: OrderKind, rng: Rng, era: number): OrderKi
 	return rng.chance(0.85) ? 'free' : 'egalitarian';
 }
 
+/** wars that ended this year in a decisive win: the victor may impose its order on the beaten realm */
+function conquestImposition(sim: Simulation, st: SocialOrderState) {
+	for (let i = sim.wars.length - 1; i >= 0; i--) {
+		const w = sim.wars[i];
+		if (w.end === undefined) continue;
+		if (w.end < sim.year - 1) { if (w.start < sim.year - 60) break; continue; }
+		if (w.end !== sim.year || Math.abs(w.score) < 12 || !w.winner || w.winner === 'white') continue;
+		const win = w.winner === 'attackers' ? w.attackers : w.defenders;
+		const lose = w.winner === 'attackers' ? w.defenders : w.attackers;
+		const victor = sim.polities[win[0]], beaten = sim.polities[lose[0]];
+		if (!victor?.alive || !beaten?.alive || !victor.id || !beaten.id) continue;
+		const vr = st.r[victor.id], br = st.r[beaten.id];
+		if (!vr || !br || vr.k === br.k) continue;
+		const rng = makeRng(`${sim.w.opts.seed}:so:war:${w.id}`);
+		if (!rng.chance(0.2)) continue;
+		change(sim, beaten, br, vr.k, rng, 'conquest', { overlord: victor.name });
+	}
+}
+
 // ───────────── yearly ─────────────
 export function yearlySocialOrders(sim: Simulation) {
 	const st = sim.so;
@@ -168,6 +187,7 @@ export function yearlySocialOrders(sim: Simulation) {
 	for (const p of alive) worldPop += p.pop;
 	let innov = 0;
 	const scale = Math.min(1, 10 / alive.length);
+	conquestImposition(sim, st);
 	for (const pol of alive) {
 		let rec = st.r[pol.id];
 		if (!rec) rec = st.r[pol.id] = chooseOrder(sim, pol);

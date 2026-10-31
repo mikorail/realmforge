@@ -192,6 +192,10 @@ export const LINES = {
 		'{overlord} imposes {new} upon its vassal {realm}.',
 		'Under the hand of {overlord}, {realm} gives up {form} for {new}.'
 	],
+	conquest: [
+		'Victorious in the field, {overlord} forces {new} upon the beaten {realm}.',
+		'The peace dictated by {overlord} ends {form} in {realm}; {new} is imposed by the victors.'
+	],
 	regime: [
 		'With the new regime, {realm} turns from {form} to {new}.',
 		'The new rulers of {realm} sweep away {form} and decree {new}.'
