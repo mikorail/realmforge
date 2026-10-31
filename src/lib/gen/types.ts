@@ -60,6 +60,8 @@ export interface GenOptions {
 	racialStrength?: number;
 	/** feelings between species, cultures and faiths (grievance, gratitude, feuds); unset = on */
 	sentiment?: boolean;
+	/** social order per realm: free, caste, feudal, unfree labour, egalitarian (sim/society/socialorders.ts); unset = on, false = off */
+	socialOrders?: boolean;
 	/** spherical world: the east and west edges join (cells across the seam become neighbours); forces a 2:1 map covering all 360 degrees */
 	wrapX?: boolean;
 	/** 'earth' template: mirror the real world east-west / north-south so it is not always our Earth */
@@ -71,6 +73,10 @@ export interface GenOptions {
 	invertImage?: boolean;
 	/** economic sectors per town and realm (sim/sectors.ts); unset = on, false = off */
 	sectors?: boolean;
+	/** intermarriage, persecution and refugees, reform movements, cultural prestige, famine ethics (sim/society); unset = on, false = off */
+	socialLife?: boolean;
+	/** genre forces strength (sim/genre/forces.ts): 0 off, 1 default (unset), up to 2 */
+	genreForces?: number;
 }
 
 /** what callers pass in; missing fields are filled by withDefaults() */

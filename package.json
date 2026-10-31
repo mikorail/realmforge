@@ -8,7 +8,7 @@
 		"build": "./scripts/run-with-nvm.sh vite build",
 		"preview": "./scripts/run-with-nvm.sh vite preview",
 		"prepare": "./scripts/run-with-nvm.sh svelte-kit sync || echo ''",
-		"check": "./scripts/run-with-nvm.sh svelte-check --tsconfig ./tsconfig.json",
+		"check": "./scripts/run-with-nvm.sh svelte-kit sync && ./scripts/run-with-nvm.sh svelte-check --tsconfig ./tsconfig.json",
 		"test": "./scripts/run-with-nvm.sh vitest run",
 		"e2e": "./scripts/run-with-nvm.sh playwright test",
 		"sim": "./scripts/run-with-nvm.sh tsx scripts/sim.ts"
@@ -23,6 +23,7 @@
 		"@sveltejs/kit": "^3.0.1",
 		"@sveltejs/vite-plugin-svelte": "^7.3.1",
 		"@types/d3-delaunay": "^6.0.4",
+		"@types/node": "^22.20.5",
 		"svelte": "^5.57.2",
 		"svelte-check": "^4.7.6",
 		"tsx": "^4.23.15",

@@ -10,7 +10,9 @@ import { findCell } from '../gen/grid';
 import { SPECIES } from '../gen/species';
 import { SPHERE_BY_ID } from '../gen/spheres';
 import { makeLang, fullPersonName, makeName } from '../gen/names';
-import { SPHERE_CULTURE, FALLBACK_CULTURE } from '../sim/culture/data';
+import { SPHERE_CULTURE, FALLBACK_CULTURE, FEAST_MONTH, FEAST_TEXT } from '../sim/culture/data';
+import { cultureProfile, monthName, realmFeasts } from '../sim/culture/profile';
+import { SPHERE_LORE } from '../sim/spherelore';
 import { PLANETS } from '../gen/physical';
 import { ERAS } from '../sim/tech';
 import type { ChronEvent } from '../sim/types';
@@ -116,7 +118,9 @@ export function exportAdventure(sim: Simulation): string {
 		return {
 			id: s.id, name: s.name, fullName: s.fullName, form: s.form, color: s.color, culture: s.culture, religion: s.religion, alive: s.alive,
 			ruler: r?.alive ? `${rulerTitle(s.culture)} ${r.name}` : '', rulerId: r?.id ?? 0, species: s.species ?? '', ideology: s.ideology ?? '',
-			relations: Object.fromEntries(Object.entries(s.relations).map(([k, v]) => [k, Math.round(v)])), wars: atWar(s.id), capital: s.capital, founded: Math.round(s.founded), fell: Math.round(s.fell ?? 0)
+			relations: Object.fromEntries(Object.entries(s.relations).map(([k, v]) => [k, Math.round(v)])), wars: atWar(s.id), capital: s.capital, founded: Math.round(s.founded), fell: Math.round(s.fell ?? 0),
+			// the realm's own feast days (its culture's feasts, month shifted per realm; pure side rng, see realmFeasts)
+			feasts: s.alive && s.id ? realmFeasts(w, s).map((f) => ({ name: f.name, kind: f.kind, month: f.month, text: FEAST_TEXT[f.kind] })) : []
 		};
 	});
 
@@ -127,7 +131,16 @@ export function exportAdventure(sim: Simulation): string {
 		const places: string[] = [];
 		for (let i = 0; i < 12; i++) places.push(makeName(L, 'city'));
 		const sc = SPHERE_CULTURE[cu.sphere] ?? FALLBACK_CULTURE;
-		return { id: cu.id, name: cu.name, sphere: cu.sphere, species: cu.species ?? 'human', layer: cu.layer, given, houses: [], places, food: sc.food, dress: sc.dress };
+		// calendar: twelve month names from month 0 = the dark of the year (midwinter), the culture's feasts
+		// (FEAST_TEXT keeps {realm}/{town} placeholders) and the sphere's festival lore lines
+		const prof = cultureProfile(w, cu.id);
+		const months: string[] = [];
+		for (let m = 0; m < 12; m++) months.push(monthName(w, cu.id, m));
+		const feasts = prof.feasts.map(([name, kind]) => ({ name, kind, month: FEAST_MONTH[kind], text: FEAST_TEXT[kind] }));
+		return {
+			id: cu.id, name: cu.name, sphere: cu.sphere, species: cu.species ?? 'human', layer: cu.layer, given, houses: [], places, food: sc.food, dress: sc.dress,
+			months, feasts, festivals: SPHERE_LORE[cu.sphere]?.festivals ?? [], music: sc.music, architecture: sc.architecture, values: sc.values
+		};
 	});
 
 	const religions = w.religions.map((r) => ({ id: r.id, name: r.name, deity: r.deity, theology: r.theology ?? '', doctrine: r.doctrine ?? '', type: r.type }));

@@ -8,6 +8,7 @@
 	import { ERAS, DISCOVERIES, TECH_BRANCHES, type TechBranch } from '#lib/sim/tech';
 	import { synthesizeAnnualAnnals, compileAnnalsBookMarkdown } from '#lib/sim/chronicle';
 	import { motiveInfo } from '#lib/sim/motives';
+	import { orderInfo } from '#lib/sim/society/socialorders';
 	import { annalsAppendix, biography, rulerName } from '#lib/sim/story/index';
 	import { IDEOLOGIES } from '#lib/sim/politics';
 	import { techName, techDesc } from '#lib/sim/genre/techskins';
@@ -16,8 +17,10 @@
 	import CultureLists from './CultureLists.svelte';
 	import PeoplesHeat from './PeoplesHeat.svelte';
 	import { realmPeoples, sentimentOn } from '#lib/sim/sentiment';
+	import { realmSociety } from '#lib/sim/society/index';
 	import HeraldryBadge from './HeraldryBadge.svelte';
 	import SectorBars from './SectorBars.svelte';
+	import GenreForces from './GenreForces.svelte';
 	import { getRealmCoatOfArms, getBurgCoatOfArms } from '#lib/render/heraldry';
 	import { getBurgDistricts } from '#lib/sim/burgs';
 	import { getMegastructureState } from '#lib/sim/megastructures';
@@ -140,6 +143,12 @@
 		void v;
 		const p = realm?.p;
 		return p ? realmPeoples(sim, p) : null;
+	});
+
+	const society = $derived.by(() => {
+		void v;
+		const p = realm?.p;
+		return p ? realmSociety(sim, p) : null;
 	});
 
 	const rulerBio = $derived.by(() => {
@@ -342,6 +351,13 @@
 				{/if}
 				<div class="small muted">{realm.ruler.traits.join(' · ')} · ⚔{realm.ruler.martial} ✉{realm.ruler.diplomacy} ⚖{realm.ruler.stewardship} 🗝{realm.ruler.intrigue}</div>
 			{/if}
+			{#if sim.so}
+				{@const so = orderInfo(sim, p)}
+				{#if so}
+				<div class="stat small" title={so.blurb}><span>Society</span><span>{so.icon} {so.form} <span class="muted">({so.name.toLowerCase()}, since {so.since})</span></span></div>
+				{#if so.movement}<div class="small muted">A reform movement is growing ({so.pressure}%).</div>{/if}
+				{/if}
+			{/if}
 			{#if p.era}
 				<div class="stat small" title={p.eras?.map((e) => `${e.name} (${e.from}-${e.to})`).join('\n')}><span>Era</span><span>{p.era}</span></div>
 			{/if}
@@ -364,6 +380,7 @@
 				<div class="stat"><span>Tax</span><span>{(p.tax * 100).toFixed(0)}%</span></div>
 			</div>
 			<SectorBars {sim} {v} realm={p.id} />
+			<GenreForces {sim} {v} realm={p.id} />
 			{#if p.patronDeity}
 				<div class="stat small" style="margin-top: 4px;">
 					<span>Patron God</span>
@@ -489,6 +506,13 @@
 				{#if sentimentOn(sim) && (peoples.grudge || peoples.tension > 0.05)}
 					<p class="small muted">{peoples.grudge ? `Strongest grudge: ${peoples.grudge}. ` : ''}Tension {Math.round(peoples.tension * 100)}% · harmony {Math.round(peoples.harmony * 100)}%</p>
 				{/if}
+			{/if}
+			{#if society}
+				{#if society.persecutions.length}<p class="small"><strong class="bad">Persecution</strong> {society.persecutions.join('; ')}</p>{/if}
+				{#if society.reforms.length}<p class="small"><strong>Reform movement</strong> {society.reforms.join('; ')}</p>{/if}
+				{#if society.enacted.length}<p class="small"><strong>Reforms in force</strong> {society.enacted.join(' · ')}</p>{/if}
+				{#if society.mixed.length}<p class="small muted">{society.mixed.join('; ')}</p>{/if}
+				{#if society.famine}<p class="small muted">{society.famine}.</p>{/if}
 			{/if}
 			{#if realm.enemies.length}<p class="small"><strong class="bad">At war with</strong> {realm.enemies.map((e) => e.name).join(', ')}</p>{/if}
 			{#if realm.allies.length}<p class="small"><strong>Allies</strong> {realm.allies.map((e) => e.name).join(', ')}</p>{/if}
