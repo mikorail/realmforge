@@ -7,7 +7,7 @@ const seeds = Number(process.argv[3] ?? 4);
 const from = Number(process.argv[4] ?? 1); // first seed number, to split a run across processes
 let A = 0, W = 0, U = 0, E = 0;
 for (let k = from; k < from + seeds; k++) {
-	const u = generateUniverse({ seed: 'bench-' + k, template: 'continents', cells: 6000, states: 14, width: 1600, height: 1000, genre: 'fantasy', planet: 'terran', spheres: null, depth: 2, sky: true, sea: true, ...(process.env.MOTIVES === '0' ? { motives: false } : {}) }, 1);
+	const u = generateUniverse({ seed: 'bench-' + k, template: 'continents', cells: 6000, states: 14, width: 1600, height: 1000, genre: (process.env.GENRE ?? 'fantasy') as any, planet: 'terran', spheres: null, depth: 2, sky: true, sea: true, ...(process.env.MOTIVES === '0' ? { motives: false } : {}), ...(process.env.GF ? { genreForces: Number(process.env.GF) } : {}), ...(process.env.EVOLVE === '1' ? { evolve: true } : {}) }, 1);
 	const cos = new Cosmos(u);
 	for (let m = 0; m < years * 12; m++) cos.tick();
 	const s = cos.sims[0];

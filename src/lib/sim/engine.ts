@@ -41,6 +41,7 @@ import type { Power } from './systems/godpowers';
 import { initSocialOrders, restoreSocialOrders, yearlySocialOrders, type SocialOrderState } from './society/socialorders';
 import { initSectors, restoreSectors, sectorNaval, yearlySectors, type SectorState } from './sectors';
 import { newW3, restoreW3, yearlySociety, type W3State } from './society';
+import { newForces, restoreForces, yearlyGenreForces } from './genre/forces';
 
 export { POWERS, type Power } from './systems/godpowers';
 
@@ -134,6 +135,8 @@ export class Simulation {
 	sectors?: SectorState;
 	/** social order per realm (society/socialorders.ts); undefined when opts.socialOrders === false */
 	so?: SocialOrderState;
+	/** genre forces: smog, strikes, arms races, fallout, megacorps, commons, leylines, gene vats (genre/forces.ts) */
+	gf = newForces();
 
 	constructor(world: World, restoring = false) {
 		this.w = world;
@@ -429,6 +432,7 @@ export class Simulation {
 		yearlySectors(this);
 		yearlySociety(this);
 		yearlySocialOrders(this);
+		yearlyGenreForces(this);
 		yearlyLayerLife(this);
 		yearlyLetters(this);
 		yearlyEpochs(this);
@@ -586,7 +590,8 @@ export class Simulation {
 			divineTargetIdeology: this.divineTargetIdeology,
 			sectors: this.sectors,
 			w3: this.w3,
-			so: this.so
+			so: this.so,
+			gf: this.gf
 		};
 	}
 
@@ -619,6 +624,7 @@ export class Simulation {
 		s.sectors = restoreSectors(s, d.sectors);
 		s.w3 = restoreW3((d as { w3?: Partial<W3State> }).w3);
 		s.so = restoreSocialOrders(s, d.so);
+		s.gf = restoreForces((d as { gf?: Partial<ReturnType<typeof newForces>> }).gf);
 		s.computeBorders();
 		s.updateVoice();
 		return s;

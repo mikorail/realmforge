@@ -75,6 +75,8 @@ export interface GenOptions {
 	sectors?: boolean;
 	/** intermarriage, persecution and refugees, reform movements, cultural prestige, famine ethics (sim/society); unset = on, false = off */
 	socialLife?: boolean;
+	/** genre forces strength (sim/genre/forces.ts): 0 off, 1 default (unset), up to 2 */
+	genreForces?: number;
 }
 
 /** what callers pass in; missing fields are filled by withDefaults() */
