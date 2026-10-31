@@ -8,7 +8,7 @@
 	import { ERAS, DISCOVERIES, TECH_BRANCHES, type TechBranch } from '#lib/sim/tech';
 	import { synthesizeAnnualAnnals, compileAnnalsBookMarkdown } from '#lib/sim/chronicle';
 	import { motiveInfo } from '#lib/sim/motives';
-	import { orderInfo } from '#lib/sim/society/orders';
+	import { orderInfo } from '#lib/sim/society/socialorders';
 	import { annalsAppendix, biography, rulerName } from '#lib/sim/story/index';
 	import { IDEOLOGIES } from '#lib/sim/politics';
 	import { techName, techDesc } from '#lib/sim/genre/techskins';

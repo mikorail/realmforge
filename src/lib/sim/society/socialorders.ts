@@ -17,9 +17,9 @@ import { pushSector, realmMix, SECTORS } from '../sectors';
 import {
 	BASE_WEIGHT, DOCTRINE_ORDER, DOCTRINE_SLAVE_MULT, FORM_BY_ID, GENRE_ORDER, IDEOLOGY_ORDER, LINES, MOVEMENT_NAME, ORDER_DEFS, ORDER_FORMS,
 	ORDER_KINDS, ORIGIN_ORDER, SECTOR_ORDER, SPHERE_ORDER, TRAIT_ORDER, type OrderForm, type OrderKind
-} from './data';
+} from './socialorderdata';
 
-export { ORDER_DEFS, ORDER_KINDS, type OrderKind } from './data';
+export { ORDER_DEFS, ORDER_KINDS, type OrderKind } from './socialorderdata';
 
 export interface OrderRec {
 	/** order kind */

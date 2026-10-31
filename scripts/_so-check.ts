@@ -1,7 +1,7 @@
 import { generateUniverse } from '../src/lib/gen/universe';
 import { Cosmos } from '../src/lib/sim/cosmos';
 import { Simulation } from '../src/lib/sim/engine';
-import { orderInfo } from '../src/lib/sim/society/orders';
+import { orderInfo } from '../src/lib/sim/society/socialorders';
 const mode = process.argv[2];
 if (mode === 'off') {
 	const u = generateUniverse({ seed: 'bench-1', template: 'continents', cells: 6000, states: 14, width: 1600, height: 1000, genre: 'fantasy', planet: 'terran', spheres: null, depth: 2, sky: true, sea: true, socialOrders: false }, 1);

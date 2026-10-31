@@ -4,7 +4,7 @@
 	import type { Simulation } from '#lib/sim/engine';
 	import { IDEOLOGIES } from '#lib/sim/politics';
 	import { motiveInfo } from '#lib/sim/motives';
-	import { orderInfo } from '#lib/sim/society/orders';
+	import { orderInfo } from '#lib/sim/society/socialorders';
 	import HeraldryBadge from './HeraldryBadge.svelte';
 	import { getRealmCoatOfArms, getBurgCoatOfArms } from '#lib/render/heraldry';
 

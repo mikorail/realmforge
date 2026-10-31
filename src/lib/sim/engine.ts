@@ -38,7 +38,7 @@ import { extraColonize, navalMult, yearlyPlanetRules } from './worldrules/planet
 import { newMotiveState, type MotiveState } from './motives';
 import { newStory, onCrown, yearlyStory, type StoryState } from './story';
 import type { Power } from './systems/godpowers';
-import { initSocialOrders, restoreSocialOrders, yearlySocialOrders, type SocialOrderState } from './society/orders';
+import { initSocialOrders, restoreSocialOrders, yearlySocialOrders, type SocialOrderState } from './society/socialorders';
 import { initSectors, restoreSectors, sectorNaval, yearlySectors, type SectorState } from './sectors';
 
 export { POWERS, type Power } from './systems/godpowers';
@@ -129,7 +129,7 @@ export class Simulation {
 	neighborCache: Map<number, number[]> | null = null;
 	/** economic sectors per town/realm (sectors.ts); undefined when opts.sectors === false */
 	sectors?: SectorState;
-	/** social order per realm (society/orders.ts); undefined when opts.socialOrders === false */
+	/** social order per realm (society/socialorders.ts); undefined when opts.socialOrders === false */
 	so?: SocialOrderState;
 
 	constructor(world: World, restoring = false) {

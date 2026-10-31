@@ -1,6 +1,6 @@
 import { generateUniverse } from '../src/lib/gen/universe';
 import { Cosmos } from '../src/lib/sim/cosmos';
-import { orderInfo } from '../src/lib/sim/society/orders';
+import { orderInfo } from '../src/lib/sim/society/socialorders';
 const years = Number(process.argv[2] ?? 300), genre = (process.argv[3] ?? 'fantasy') as any, seed = process.argv[4] ?? 'sim-test';
 const u = generateUniverse({ seed, template: 'continents', cells: 6000, states: 14, width: 1600, height: 1000, genre, planet: 'terran', spheres: null, depth: 2, sky: true, sea: true, ...(process.env.SO === '0' ? { socialOrders: false } : {}) }, 1);
 const cos = new Cosmos(u);

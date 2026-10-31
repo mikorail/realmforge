@@ -4,7 +4,7 @@ import type { Simulation } from './engine';
 import { packCult, packLine } from './genrepacks';
 import { cultureMod } from './culture';
 import { unrestFx } from './sentiment';
-import { orderUnrest } from './society/orders';
+import { orderUnrest } from './society/socialorders';
 
 export interface UprisingEvent {
 	kind: 'uprising';

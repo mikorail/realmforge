@@ -11,7 +11,7 @@ import { techName } from '../genre/techskins';
 import { buildWonder, destroyWonder } from '../wonders';
 import { MONSTER_ARCHETYPES } from '../monsters';
 import { transitionRegime } from '../politics';
-import { emancipate } from '../society/orders';
+import { emancipate } from '../society/socialorders';
 import type { Monster, LegendaryPlace, IdeologyKind, Polity, War } from '../types';
 
 export type Power =
