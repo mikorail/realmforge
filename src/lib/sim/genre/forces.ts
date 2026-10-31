@@ -40,6 +40,8 @@ export interface GenreForceState {
 	leyBeast: number;
 	/** polity id → gene vat strain 0..1+ */
 	vats: Record<number, number>;
+	/** polity id → year its commons charter lapsed (no new charter for 20 years) */
+	lapsed?: Record<number, number>;
 	/** set after the first yearly pass, so the forces a world starts with are not announced */
 	seen?: boolean;
 }
@@ -106,7 +108,7 @@ function turnOver(sim: Simulation, gf: GenreForceState, act: ForceKey[]) {
 	for (const k of fell) {
 		if (k === 'armsrace') gf.races = [];
 		if (k === 'megacorps') for (const c of gf.corps) { c.alive = false; c.captured = 0; }
-		if (k === 'commons') gf.commons = {};
+		if (k === 'commons') { gf.commons = {}; gf.lapsed = {}; }
 		if (k === 'leylines') { gf.leys = []; gf.leyBuilt = -99; }
 		if (k === 'genevats') gf.vats = {};
 	}
@@ -137,7 +139,7 @@ function smog(sim: Simulation, s: number, rng: Rng) {
 		if (gf.smog.length > 300) gf.smog.shift();
 		const b = sim.w.burgs[pick];
 		const p = sim.polities[b.state];
-		if (rng.chance(0.5)) sim.log('eco_disaster', forceLine('smog', rng, { town: b.name, realm: alive(p) ? p.name : 'the free lands' }), b.cell, b.state || undefined);
+		if (rng.chance(0.35)) sim.log('eco_disaster', forceLine('smog', rng, { town: b.name, realm: alive(p) ? p.name : 'the free lands' }), b.cell, b.state || undefined);
 	}
 }
 
@@ -356,17 +358,18 @@ function commons(sim: Simulation, s: number, rng: Rng) {
 		if (since !== undefined) {
 			if (wars || p.stability < 35) {
 				delete gf.commons[p.id];
-				if (rng.chance(0.6)) sim.log('culture', forceLine('commons.lapse', rng, { realm: p.name }), sim.w.burgs[p.capital]?.cell, p.id);
+				(gf.lapsed ??= {})[p.id] = sim.year;
+				if (rng.chance(0.4)) sim.log('culture', forceLine('commons.lapse', rng, { realm: p.name }), sim.w.burgs[p.capital]?.cell, p.id);
 				continue;
 			}
 			if (p.stability < 88) p.stability = Math.min(88, p.stability + s);
 			for (const nb of sim.neighborsOf(p.id)) if (sim.rel(p.id, nb) < 40) sim.addRel(p.id, nb, s);
 			regrow.push(p);
-		} else if (!wars && p.stability >= 55 && p.cells > 0) {
+		} else if (!wars && p.stability >= 55 && p.cells > 0 && sim.year - (gf.lapsed?.[p.id] ?? -99) >= 20) {
 			const green = clamp((realmRel(sim, p.id, FARM) + realmRel(sim, p.id, 4)) / 2, 0.6, 1.6);
 			if (!rng.chance(0.05 * s * green)) continue;
 			gf.commons[p.id] = sim.year;
-			sim.log('culture', forceLine('commons.adopt', rng, { realm: p.name }), sim.w.burgs[p.capital]?.cell, p.id);
+			if (rng.chance(0.6)) sim.log('culture', forceLine('commons.adopt', rng, { realm: p.name }), sim.w.burgs[p.capital]?.cell, p.id);
 		}
 	}
 	if (!regrow.length) return;
@@ -446,7 +449,7 @@ function leylines(sim: Simulation, s: number, rng: Rng) {
 			told = true;
 			sim.log('luminary', forceLine('ley.bind', rng, { realm: pa.name, site: l.an, site2: l.bn }), l.a, sa);
 		}
-		if (l.draw < 1 || surged || !rng.chance(0.2)) continue;
+		if (l.draw < 1 || surged || !rng.chance(0.12)) continue;
 		// overdrawn: the line surges at one end
 		surged = true;
 		l.draw = 0.25;
