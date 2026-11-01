@@ -21,6 +21,7 @@ import { burgMix, SECTORS } from '../sim/sectors';
 import { getLeagueState } from '../sim/leagues';
 import type { MegastructureState } from '../sim/megastructures';
 import { orderInfo } from '../sim/society/socialorders';
+import { ORDER_FORMS } from '../sim/society/socialorderdata';
 import { prestigeMult } from '../sim/society/prestige';
 import { activeReforms } from '../sim/society/reforms';
 import { FAMINE_NAMES } from '../sim/society/famine';
@@ -291,11 +292,13 @@ function socialExport(sim: Simulation, pOfCell: (cell: number) => number) {
 		return out;
 	};
 
+	// a realm without a stored record (orderInfo derived it): find the form id by name
+	const orderFormId = (sim: Simulation, pol: Parameters<typeof orderInfo>[1]) => ORDER_FORMS.find((f) => f.name === orderInfo(sim, pol)?.form)?.id ?? '';
 	const state = (id: number) => {
 		const pol = sim.polities[id];
 		const o: Record<string, unknown> = {};
 		const oi = orderInfo(sim, pol);
-		if (oi) o.socialOrder = { kind: oi.kind, name: oi.name, form: oi.form, workers: oi.workers, construct: oi.construct, since: Math.round(oi.since), pressure: oi.pressure, movement: oi.movement, ...(oi.prev ? { prev: oi.prev } : {}) };
+		if (oi) o.socialOrder = { kind: oi.kind, name: oi.name, form: oi.form, formId: sim.so?.r[id]?.f ?? orderFormId(sim, pol), workers: oi.workers, construct: oi.construct, since: Math.round(oi.since), pressure: oi.pressure, movement: oi.movement, ...(oi.prev ? { prev: oi.prev } : {}) };
 		const fs = stateForces(id);
 		if (fs.length) o.forces = fs;
 		if (w3) {
