@@ -2,7 +2,7 @@
  * Genres re-skin the same simulation: vocabulary, polity forms, settlement kinds per layer,
  * and how exotic layers (deep / sky / sea) are populated.
  */
-export type Genre = 'fantasy' | 'mythic' | 'steampunk' | 'dieselpunk' | 'atompunk' | 'cyberpunk' | 'biopunk' | 'solarpunk';
+export type Genre = 'fantasy' | 'mythic' | 'steampunk' | 'dieselpunk' | 'atompunk' | 'cyberpunk' | 'biopunk' | 'solarpunk' | 'wasteland' | 'twilight';
 export type LayerKind = 'surface' | 'deep' | 'sky' | 'sea';
 
 export interface GenreDef {
@@ -95,5 +95,23 @@ export const GENRES: Record<Genre, GenreDef> = {
 		density: { deep: 0.5, sky: 0.8, sea: 0.8 },
 		terms: { army: 'Militia', gold: 'Credits', mana: 'Harmony', god: 'Gaia', road: 'Greenway', tunnel: 'Earthway', skylane: 'Kite route', rift: 'Gaia Fold', plague: 'Blight' },
 		accent: '#e2b93b', ink: '#13201a'
+	},
+	wasteland: {
+		id: 'wasteland', name: 'Wasteland', blurb: 'Irradiated ruins, vault-bunkers, scavenger towns and raider clans.',
+		forms: ['Scavenger Compact', 'Raider Clan', 'Vault Council', 'Trade Caravanserai', 'Warlord Holdfast'], formBias: 0.6,
+		kinds: { surface: ['Scrap Town', 'Ruin Hold', 'Caravan Post', 'Salvage Yard'], deep: ['Vault', 'Metro Station', 'Bunker Warren', 'Tunnel Market'], sky: ['Skyfall Wreck', 'Derelict Platform', 'Fallen Orbital'], sea: ['Drowned Quay', 'Rust Fleet', 'Tidal Salvage Camp'] },
+		layerNames: { surface: 'Wastes', deep: 'Metro & Vaults', sky: 'Skyfall', sea: 'Drowned Coast' },
+		density: { deep: 1, sky: 0.25, sea: 0.5 },
+		terms: { army: 'Warbands', gold: 'Caps', mana: 'Rads', god: 'Old Voice', road: 'Trade track', tunnel: 'Metro line', skylane: 'Wreck-glide', rift: 'Rad-Storm Gap', plague: 'Rad-sickness' },
+		accent: '#c58b3a', ink: '#1d1a12'
+	},
+	twilight: {
+		id: 'twilight', name: 'Twilight Realm', blurb: 'A golden age collapsed: demigod lords, plague cities, sunken utopias and cathedral wards.',
+		forms: ['Shattered Lordship', 'Demigod Throne', 'Hunters\' Covenant', 'Cathedral Ward', 'Ashen Court'], formBias: 0.55,
+		kinds: { surface: ['Gothic City', 'Plague Ward', 'Ruined Keep', 'Cathedral Town'], deep: ['Catacomb Ward', 'Undercity', 'Ossuary Hold', 'Hollow Cistern'], sky: ['Crown Spire', 'Gilded Terrace', 'Heights Sanctum'], sea: ['Sunken Gilded Hall', 'Drowned Arcology', 'Pearl Atrium'] },
+		layerNames: { surface: 'Fallen Realm', deep: 'Catacombs', sky: 'Crown Heights', sea: 'Drowned Aurelia' },
+		density: { deep: 0.9, sky: 0.5, sea: 0.7 },
+		terms: { army: 'Sworn Hosts', gold: 'Ichor-Marks', mana: 'Insight', god: 'Lost Sovereign', road: 'Pilgrim road', tunnel: 'Catacomb stair', skylane: 'Grace-bridge', rift: 'Veil Fracture', plague: 'Beast-blight' },
+		accent: '#b99a5a', ink: '#17141a'
 	}
 };

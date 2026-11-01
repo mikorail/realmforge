@@ -91,7 +91,9 @@ export const GENRE_AGE: Record<Genre, number> = {
 	atompunk: 4,
 	cyberpunk: 4,
 	biopunk: 4,
-	solarpunk: 4
+	solarpunk: 4,
+	wasteland: 4,
+	twilight: 1
 };
 
 /** The era a world is pinned to by `GenOptions.ageLock` (clamped to the ERAS range), or null when the age is free. */

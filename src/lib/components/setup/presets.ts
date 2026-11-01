@@ -58,6 +58,14 @@ export const PRESETS: Preset[] = [
 		options: { ...base, seed: 'solar-commons-2', genre: 'solarpunk', planet: 'verdant', template: 'inlandSea', sphereSet: 'Global South', states: 18, cultures: 16, religions: 6, sizeVariety: 2, growth: 1, seaLevel: 0, rivers: 1.6, depth: 0, sky: true, sea: true, density: { deep: 1, sky: 1.5, sea: 1.3 } }
 	},
 	{
+		id: 'ashen-vaults', name: 'Ashen Vaults', icon: '☢️', blurb: 'Scavenger towns and raider clans above, vault-bunkers and metro lines below.',
+		options: { ...base, seed: 'ashen-vaults-6', genre: 'wasteland', planet: 'terran', template: 'continents', sphereSet: 'Global South', states: 28, cultures: 14, religions: 4, sizeVariety: 6, growth: 0.7, seaLevel: 1, rivers: 0.6, depth: 3, sky: true, sea: true, density: { deep: 1.5, sky: 0.5, sea: 1 }, climate: { tEq: 33 } }
+	},
+	{
+		id: 'hollow-crown', name: 'Hollow Crown', icon: '🕯️', blurb: 'Demigod lords, plague wards and a sunken golden city after the fall.',
+		options: { ...base, seed: 'hollow-crown-8', genre: 'twilight', planet: 'terran', template: 'pangea', sphereSet: 'European', states: 22, cultures: 12, religions: 6, sizeVariety: 5, growth: 0.8, seaLevel: 0, rivers: 1, depth: 3, sky: true, sea: true, density: { deep: 1.5, sky: 1, sea: 1.2 } }
+	},
+	{
 		id: 'dwarf-holds', name: 'Dwarf-Holds of the Deep', icon: '⛏️', blurb: 'Stone halls under every mountain, six levels down.',
 		options: { ...base, seed: 'deep-holds-9', genre: 'fantasy', planet: 'terran', template: 'highIsland', sphereSet: 'European', states: 12, cultures: 10, religions: 5, sizeVariety: 4, growth: 0.8, seaLevel: -2, rivers: 1, depth: 6, sky: false, sea: false, density: { deep: 2.5, sky: 1, sea: 1 } }
 	},

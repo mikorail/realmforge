@@ -204,6 +204,76 @@ const SOLAR: GenrePack = {
 	lexicon: [[w('knight-errant'), 'wandering engineer'], [w('knights'), 'guardians'], [w('knight'), 'guardian'], [w('spearmen'), 'militia'], [w('pikes'), 'staves'], [w('bailiffs'), 'quota officers'], [w('tithes'), 'energy quotas'], [w('granaries'), 'seed banks'], [w('caravans'), 'cargo kites'], [w('ships'), 'sail-ships'], [w('nobles'), 'council delegates'], [w('peasants'), 'growers'], [W('the realm'), 'the bioregion'], [w('crown'), 'council'], [w('throne'), 'council seat']]
 };
 
+const WASTE: GenrePack = {
+	lines: {
+		'riot.bread_riot': ['The water cistern of {town} runs foul and the crowd storms the hoard-house of {realm}, demanding clean caps-worth of ration.', 'Scavengers of {town} overturn the cap-collectors’ carts when the canned stores run out.'],
+		'riot.tax_riot': ['{realm}’s toll-men are chased out of {town} with pipe-clubs after doubling the road-cap levy.', 'A scrap-tithe riot guts the tally-shack of {town}; the ledger burns in a barrel.'],
+		'riot.conscription_riot': ['Press-gangs of {realm} are driven from {town} by sling-fire; the warband marches out a third short.', 'Salvage crews of {town} sabotage the recruiters’ trucks rather than serve.'],
+		'riot.sectarian_riot': ['Rival congregations of the Old Voice brawl through the market tunnels of {town}.', 'Clean-air zealots and rad-eaters fight a bloody street war in {town}.'],
+		cult: ['The {cult} gathers around a still-humming reactor ruin near {town}, praying to the glow.', 'Pilgrims of the {cult} daub {town} in warning-sign sigils and drink only from irradiated springs.'],
+		prophet: ['{name}, bald and half-blind from the storms, preaches in {town} that the sky will clear for those who stop digging.', 'A scrap-prophet, {name}, wanders into {town} with a crackling radio and a message from the Old Voice.'],
+		hero: ['{name}, a lone courier, escorts a water convoy through the raider country to {town} and refuses payment.', 'The vault-born {name} clears the tunnels under {town} of mutant swarms; the people call them Warden.'],
+		mutiny: ['The garrison at {fort} seals the blast doors against {realm} and declares itself a free vault.'],
+		golden: ['Clean rain falls on {realm} for a full season: crops root, caravans multiply and the old reactors finally cool.'],
+		famine: ['Dust storms and blighted crops leave {realm} on half-rations; canned stores are guarded at gunpoint.']
+	},
+	cults: ['Children of the Glow', 'Order of the Last Vault', 'The Rust Chorus', 'Pilgrims of the Old Voice', 'Church of Clean Water', 'The Half-Lifed'],
+	encounters: [
+		{ id: 'wl_caravan', title: 'A stranded caravan', text: 'A brahmin-drawn wagon sits dead in the ash road, its drivers waving down passers-by.', options: [
+			{ label: 'Repair the axle', stat: 'stewardship', dc: 9, win: { text: 'They pay you in caps and a bag of preserved fruit.', gold: 45, renown: 4 }, lose: { text: 'A rusted jack snaps on your hand.', health: -15 } },
+			{ label: 'Take the cargo while they sleep', stat: 'intrigue', dc: 9, win: { text: 'Crates of salvage.', gold: 70, renown: -2 }, lose: { text: 'The guards were awake.', health: -20, renown: -5 } }
+		] },
+		{ id: 'wl_vault', title: 'A sealed vault door', text: 'A humming bunker hatch stands half-buried in the dunes, a dull light blinking beside it.', options: [
+			{ label: 'Hack the lock', stat: 'stewardship', dc: 11, win: { text: 'Shelves of pre-fall tech and sealed rations.', gold: 90, renown: 8, trait: 'Scholar' }, lose: { text: 'The door’s defences scorch you.', health: -25 } },
+			{ label: 'Leave it sealed', win: { text: 'Some doors are better left shut.', renown: 2 } }
+		] },
+		{ id: 'wl_raiders', title: 'Raider toll', text: 'Painted raiders block the pass and demand a toll in caps or blood.', options: [
+			{ label: 'Fight through', stat: 'martial', dc: 10, win: { text: 'The clan scatters; their loot is yours.', gold: 50, renown: 8 }, lose: { text: 'You limp away bleeding.', health: -30 } },
+			{ label: 'Parley', stat: 'diplomacy', dc: 9, win: { text: 'The chief offers you safe-passage tokens.', renown: 6 }, lose: { text: 'They take your caps anyway.', gold: -30 } }
+		] },
+		{ id: 'wl_storm', title: 'Rad-storm on the horizon', text: 'A green-lit wall of dust rolls toward you across the flats.', options: [
+			{ label: 'Dig in and wait', stat: 'martial', dc: 8, win: { text: 'You emerge dusty but whole.', health: 5 }, lose: { text: 'The storm burns your lungs.', health: -20 } },
+			{ label: 'Race to the metro entrance', stat: 'intrigue', dc: 10, win: { text: 'You find a stash in the tunnel mouth.', gold: 35, renown: 3 }, lose: { text: 'You never reach it in time.', health: -25 } }
+		] }
+	],
+	lexicon: [[w('knight-errant'), 'wasteland ranger'], [w('knights'), 'road wardens'], [w('knight'), 'road warden'], [w('spearmen'), 'scrap-gunners'], [w('bailiffs'), 'toll-men'], [w('tithes'), 'cap levies'], [w('granaries'), 'canned stores'], [w('caravans'), 'trade convoys'], [w('ships'), 'rust-boats'], [w('peasants'), 'scavengers'], [w('nobles'), 'vault-lords'], [w('harvests overflow and poets flourish'), 'the rain runs clean and the caravans multiply'], [W('the realm'), 'the holdfast']]
+};
+
+const TWILIGHT: GenrePack = {
+	lines: {
+		'riot.bread_riot': ['The pilgrim granaries of {town} stand empty while the lords of {realm} feast; the hungry batter at the chapter-house doors.', 'Starving wards of {town} drag the grain-wardens into the street.'],
+		'riot.tax_riot': ['{realm}’s ichor-tithe sparks a riot in {town}; collectors are hung from the lamp-gantries.', 'The guild-wards of {town} refuse the lord’s new mark-levy and bar the cathedral gates.'],
+		'riot.conscription_riot': ['Families in {town} hide their sons in the ossuaries rather than send them to {realm}’s sworn hosts.', 'The levy-bell of {town} tolls and no one comes.'],
+		'riot.sectarian_riot': ['Pale-hooded zealots and the Old Church brawl in the cathedral square of {town}, torches overturned among the pews.', 'A heresy trial in {town} spills into street fighting between rival wards.'],
+		cult: ['The {cult} gathers in the catacombs beneath {town}, whispering of the sight that lies past the veil.', 'The {cult} marks the doors of {town} with a cracked eye; those who see it do not sleep.'],
+		prophet: ['{name}, eyes sewn shut, preaches in {town} that the fallen sovereign will return to those who gaze inward.', 'A bone-masked seer, {name}, descends into {town} and speaks the names of those who will die before spring.'],
+		hero: ['{name}, a lone hunter, stalks the beast-infested wards of {town} through three nights of mist and ends it.', 'Wandering knight {name} breaks a demigod’s siege of {town}; the bells ring for a week.'],
+		mutiny: ['The sworn guard at {fort} cast off their sigils, renounce {realm}’s lord and bar the gates.'],
+		golden: ['A brief gilded dusk settles over {realm}: cathedral bells ring clear, the plague wanes and the old glory seems near.'],
+		famine: ['Blight and ash blacken the fields of {realm}; the wards go hollow-eyed and silent.']
+	},
+	cults: ['Choir of the Hollow Crown', 'Order of the Cracked Eye', 'Covenant of the Pale Vigil', 'Children of the Drowned Sovereign', 'The Ashen Chapter', 'Hunters of the Last Lantern'],
+	encounters: [
+		{ id: 'tw_hunter', title: 'The beast in the mist', text: 'Something huge and wet drags itself through the fog beyond the lamplight.', options: [
+			{ label: 'Stand and fight', stat: 'martial', dc: 11, win: { text: 'The beast falls. Its ichor sells dearly.', gold: 70, renown: 10 }, lose: { text: 'Claws find the gap in your armour.', health: -30 } },
+			{ label: 'Slip away through the ward', stat: 'intrigue', dc: 9, win: { text: 'You vanish into the alleys unseen.', renown: 3 }, lose: { text: 'It follows by scent.', health: -15 } }
+		] },
+		{ id: 'tw_cathedral', title: 'A shuttered cathedral', text: 'Candles still burn behind the stained glass of a long-silent cathedral.', options: [
+			{ label: 'Enter and pray', stat: 'diplomacy', dc: 10, win: { text: 'A strange insight settles in your mind.', renown: 6, trait: 'Scholar' }, lose: { text: 'Something looks back from the altar.', health: -15 } },
+			{ label: 'Loot the reliquary', stat: 'intrigue', dc: 10, win: { text: 'Gilt relics, heavy and cold.', gold: 85 }, lose: { text: 'The wardens of the chapel wake.', health: -20, renown: -5 } }
+		] },
+		{ id: 'tw_demigod', title: 'A broken demigod', text: 'A towering lord in rusted gold sits on a throne of rubble and bids you approach.', options: [
+			{ label: 'Kneel and serve', stat: 'diplomacy', dc: 11, win: { text: 'He grants you a shard of his old grace.', renown: 12, trait: 'Strong' }, lose: { text: 'His madness flares.', health: -30 } },
+			{ label: 'Challenge him', stat: 'martial', dc: 13, win: { text: 'The fallen lord yields his crown-shard.', gold: 120, renown: 15 }, lose: { text: 'You are thrown across the hall.', health: -35 } }
+		] },
+		{ id: 'tw_drowned', title: 'The drowned stair', text: 'A flooded staircase descends into a gilded hall, lamps still lit under the water.', options: [
+			{ label: 'Dive for the treasure', stat: 'martial', dc: 10, win: { text: 'You surface with a handful of ichor-marks.', gold: 60 }, lose: { text: 'The deep takes a bite.', health: -20 } },
+			{ label: 'Read the inscriptions', stat: 'stewardship', dc: 9, win: { text: 'The lost founders speak through the stone.', renown: 8, trait: 'Scholar' }, lose: { text: 'The words drive a cold nail into your skull.', health: -10 } }
+		] }
+	],
+	lexicon: [[w('knight-errant'), 'wandering hunter'], [w('knights'), 'sworn knights'], [w('bailiffs'), 'ward-wardens'], [w('tithes'), 'ichor-tithes'], [w('peasants'), 'ward-folk'], [w('caravans'), 'pilgrim trains'], [w('harvests overflow and poets flourish'), 'the bells ring clear and the old glory stirs'], [W('the realm'), 'the lordship']]
+};
+
 const MYTHIC: GenrePack = {
 	lines: {},
 	cults: ['Mysteries of the Underworld Queen', 'Maenads of the Wild God', 'Oracle-Cult of the Serpent', 'Daughters of the Sleeping Titan'],
@@ -223,6 +293,8 @@ export const PACKS: Partial<Record<Genre, GenrePack>> = {
 	cyberpunk: CYBER,
 	biopunk: BIO,
 	solarpunk: SOLAR,
+	wasteland: WASTE,
+	twilight: TWILIGHT,
 	mythic: MYTHIC
 };
 

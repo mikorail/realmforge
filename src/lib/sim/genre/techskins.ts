@@ -174,6 +174,31 @@ export const TECH_SKINS: Record<SkinGenre, Record<string, TechSkin>> = {
 		clean_power: { name: 'Solar Commons Grid', desc: 'Rooftop solar and shared batteries power the whole commons.' },
 		bio_harmony: { name: 'Rewilding Projects', desc: 'Community rewilding turns ruined basins back into forest and wetland.' },
 		orbital_transit: { name: 'Sun-Sail Orbital Ferries', desc: 'Light sails carry cargo between the surface and orbital gardens.' }
+	},
+	wasteland: {
+		bronze: { name: 'Scrap Smelting', desc: 'Furnaces made from car bodies cast crude tools and blades from salvage.' },
+		irrigation: { name: 'Purifier Rigs', desc: 'Hand-built filters and still-pumps turn foul water drinkable.' },
+		herbalism: { name: 'Rad-Weed Medicine', desc: 'Healers brew poultices from hardy mutant plants.' },
+		ironwork: { name: 'Plate-and-Pipe Armour', desc: 'Road-sign plate and pipe weld into raider armour.' },
+		rifling: { name: 'Pipe Rifles', desc: 'Hand-rifled barrels and reloaded casings give warbands a deadly reach.' },
+		steam_engine: { name: 'Scrap Boilers', desc: 'Salvaged boilers drive pumps, lifts and crude vehicles.' },
+		electrodynamics: { name: 'Salvaged Generators', desc: 'Jury-rigged generators light the vaults and market tunnels.' },
+		combustion: { name: 'Alcohol-Fuel Engines', desc: 'Still-brewed fuel runs convoy trucks and war-rigs.' },
+		synthetic_cure: { name: 'Pre-Fall Med-Banks', desc: 'Recovered drug stores and auto-docs cure what the wastes inflict.' },
+		clean_power: { name: 'Reactor Revival', desc: 'A rebuilt reactor brings clean power to the vault-cities.' },
+		bio_harmony: { name: 'Greening Rigs', desc: 'Soil-reclaimers and hardy cultivars turn dead ground to fields.' }
+	},
+	twilight: {
+		bronze: { name: 'Gilded Alloys', desc: 'Alloys of gold and bronze, forged in the last days of the old order, arm the sworn hosts.' },
+		runes: { name: 'Sigil-Scripts', desc: 'Sacred sigils record oaths and bind the faithful to their lords.' },
+		herbalism: { name: 'Ichor Apothecary', desc: 'Physicians distil ichor and blighted herbs into dangerous remedies.' },
+		ironwork: { name: 'Blackened Plate', desc: 'Ash-blackened plate armour, forged in cathedral smithies, turns aside beast-claws.' },
+		alchemy: { name: 'Blood Alchemy', desc: 'Forbidden arts distil ichor to heal, empower or curse.' },
+		rifling: { name: 'Hunter’s Arms', desc: 'Trick-weapons and blunderbusses are made for beasts, not wars.' },
+		spectroscopy: { name: 'Insight Lenses', desc: 'Strange lenses reveal what lies beyond the veil, at a cost to sanity.' },
+		pasteurization: { name: 'Plague-Ward Quarantine', desc: 'Sealed wards and burned bedding slow the beast-blight.' },
+		synthetic_cure: { name: 'Grace Draughts', desc: 'Draughts blessed by the old order mend wounds and bind the sick.' },
+		bio_harmony: { name: 'Gilded Boughs', desc: 'Surviving cathedral gardens feed the faithful from a few golden trees.' }
 	}
 };
 

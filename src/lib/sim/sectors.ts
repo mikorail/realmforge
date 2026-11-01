@@ -80,6 +80,7 @@ const DOCTRINE_AFF: Record<string, Aff> = {
 const GENRE_AFF: Record<string, Aff> = {
 	steampunk: { industry: 1.2, mining: 0.5 }, dieselpunk: { industry: 1.5, military: 0.5 }, atompunk: { industry: 1, scholarship: 0.8 },
 	cyberpunk: { trade: 1, industry: 0.8, scholarship: 0.4 }, biopunk: { scholarship: 0.8, farming: 0.6 }, solarpunk: { farming: 0.8, crafts: 0.6, scholarship: 0.5 },
+	wasteland: { military: 0.8, mining: 0.6, crafts: 0.4 }, twilight: { faith: 0.9, military: 0.5, scholarship: 0.3 },
 	mythic: { faith: 1, military: 0.3 }, fantasy: { crafts: 0.3, faith: 0.2 }
 };
 

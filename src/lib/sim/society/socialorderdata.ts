@@ -147,7 +147,7 @@ export const SECTOR_ORDER: Partial<Record<SectorKey, W>> = {
 };
 export const GENRE_ORDER: Partial<Record<Genre, W>> = {
 	solarpunk: { egalitarian: 1.5 }, cyberpunk: { caste: 0.6, slave: 0.2 }, biopunk: { caste: 0.5 }, steampunk: { feudal: 0.6, slave: 0.2 },
-	dieselpunk: { feudal: 0.6 }, atompunk: { free: 0.4, caste: 0.3 }, mythic: { slave: 0.2, caste: 0.2 }
+	dieselpunk: { feudal: 0.6 }, wasteland: { slave: 0.3, feudal: 0.4 }, twilight: { feudal: 0.8, caste: 0.4 }, atompunk: { free: 0.4, caste: 0.3 }, mythic: { slave: 0.2, caste: 0.2 }
 };
 export const ORIGIN_ORDER: Record<string, W> = { tribe: { egalitarian: 1.5 }, prophet: { caste: 0.5, egalitarian: 0.5 }, rebellion: { free: 0.8, egalitarian: 0.5 } };
 

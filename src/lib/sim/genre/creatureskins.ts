@@ -103,6 +103,36 @@ export const MONSTER_SKINS: Record<SkinGenre, Record<string, CreatureSkin>> = {
 		'Elder Frost Drake': { name: 'Winter Spirit Drake', icon: '❄️', lore: 'A winter spirit that brings hard frosts to test the commons\' resilience.' },
 		'Abyssal Kraken': { name: 'Tidal Kraken', icon: '🐙', lore: 'A slumbering sea-kraken of the tides, woken only by reckless fishing.' },
 		'Titan Boar Herd': { name: 'Commons Boar Herd', icon: '🐗', lore: 'Wild boar herds of the old forest that the villages now protect.' }
+	},
+	wasteland: {
+		Leviathan: { name: 'Rust Leviathan', icon: '🛳️', lore: 'A colossal mutated sea-beast wearing the hull-plates of a wrecked tanker, hunting the drowned coast.' },
+		Behemoth: { name: 'Mutant Behemoth', icon: '🦣', lore: 'A hulking, tumour-ridden beast that tramples scrap towns and shrugs off bullets.' },
+		Ziz: { name: 'Carrion Roc', icon: '🦅', lore: 'A huge irradiated vulture that circles caravans and drops on the stragglers.' },
+		'White Tiger': { name: 'Ash Stalker', icon: '🐅', lore: 'A pale, hairless cat-mutant that hunts the ruin streets at dusk.' },
+		'Golden Sun Lion': { name: 'Glow Lion', icon: '🦁', lore: 'A lion whose coat shimmers faintly green, king of the irradiated plains.' },
+		'Emerald Qilin': { name: 'Green Deer-Mutant', icon: '🦌', lore: 'A gentle many-antlered mutant seen only where the rain runs clean.' },
+		'Loch Monster': { name: 'Sump Serpent', icon: '🐍', lore: 'A blind serpent that coils in flooded metro tunnels and drags down scavengers.' },
+		'Storm Roc': { name: 'Dust-Storm Wyrm', icon: '🌪️', lore: 'A flying horror that rides rad-storms and picks over what they leave.' },
+		'Dread Wolf': { name: 'Feral Hound Pack', icon: '🐺', lore: 'Mange-ridden packs that haunt raider country and the tunnel mouths.' },
+		'Ancient Red Dragon': { name: 'Flame-Spewing Wreck-Drake', icon: '🔥', lore: 'A hulking fuel-drinking mutant that burns whole camps to cinders.' },
+		'Elder Frost Drake': { name: 'Cryo-Leak Drake', icon: '🧊', lore: 'A creature grown in a ruptured cold-store, freezing everything it breathes on.' },
+		'Abyssal Kraken': { name: 'Drowned Coast Kraken', icon: '🐙', lore: 'A many-armed mutant that crushes salvage rafts off the Drowned Coast.' },
+		'Titan Boar Herd': { name: 'Tusked Brahmin Stampede', icon: '🐗', lore: 'A herd of enormous mutated boar that flattens farmsteads.' }
+	},
+	twilight: {
+		Leviathan: { name: 'Drowned Warden', icon: '🌊', lore: 'A vast thing of coral and gilt that still guards the sunken city, long after its masters drowned.' },
+		Behemoth: { name: 'Fallen Giant', icon: '🗿', lore: 'A towering, half-mad guardian of a ruined bridge, its armour fused to its flesh.' },
+		Ziz: { name: 'Ashen Crown-Bird', icon: '🦅', lore: 'A great raven-winged horror from the Crown Heights, trailing burning feathers.' },
+		'White Tiger': { name: 'Pale Hunter-Beast', icon: '🐅', lore: 'A bloodied, spindly beast that stalks the plague wards under moonlight.' },
+		'Golden Sun Lion': { name: 'Gilded Lion of the Old Order', icon: '🦁', lore: 'A gold-armoured lion that still obeys the oaths of a dead sovereign.' },
+		'Emerald Qilin': { name: 'Grace-Touched Stag', icon: '🦌', lore: 'A shimmering stag seen where a trace of the old grace lingers.' },
+		'Loch Monster': { name: 'Cistern Horror', icon: '🐙', lore: 'A pale thing in the flooded catacombs that sings sailors to their deaths.' },
+		'Storm Roc': { name: 'Storm-Winged Seraph', icon: '⚡', lore: 'A broken celestial rider that descends on the cathedral spires in lightning.' },
+		'Dread Wolf': { name: 'Blighted Hound Pack', icon: '🐺', lore: 'Plague-maddened hounds that hunt in the fog between wards.' },
+		'Ancient Red Dragon': { name: 'Ancient Ember-Wyrm', icon: '🔥', lore: 'A scarred, ancient dragon enthroned in the ruins of a demigod’s hall.' },
+		'Elder Frost Drake': { name: 'Rimebound Drake', icon: '❄️', lore: 'A frozen wyrm whose breath turns the cloister gardens to glass.' },
+		'Abyssal Kraken': { name: 'Eldritch Deep-Kraken', icon: '🐙', lore: 'A tentacled thing from the drowned city’s lowest vaults, wearing a crown of pearls.' },
+		'Titan Boar Herd': { name: 'Gore-Tusk Herd', icon: '🐗', lore: 'A herd of corrupted boar that charge anything wearing an old sigil.' }
 	}
 };
 
@@ -178,7 +208,32 @@ export const WONDER_SKINS: Record<SkinGenre, Record<string, CreatureSkin>> = {
 		ancient_forge: { name: 'Community Smithy', icon: '⚒️', lore: 'A shared forge where villagers repair tools and build ploughs.' },
 		sunken_citadel: { name: 'Drowned Commons', icon: '🌊', lore: 'A village swallowed by the sea, now a reef sanctuary.' },
 		titan_shrine: { name: 'Memorial Grove', icon: '🕯️', lore: 'A memorial grove where the fallen are honoured with planted trees.' }
+	},
+	wasteland: {
+		world_tree: { name: 'Last Green Grove', icon: '🌳', lore: 'A walled grove of living trees tended by water-priests, the only green for a hundred miles.' },
+		tower_magic: { name: 'Old Broadcast Mast', icon: '📡', lore: 'A rusting radio mast that still whispers pre-fall voices into the storms.' },
+		tower_trials: { name: 'Arena of the Pits', icon: '🏟️', lore: 'A scrap arena where the strong are made and the weak are buried.' },
+		bridge: { name: 'Collapsed Overpass', icon: '🌉', lore: 'A tilted concrete span patched with scrap that carries convoys over the canyon.' },
+		university: { name: 'Archivists’ Bunker', icon: '📚', lore: 'A sealed archive of pre-fall data kept by a lineage of guardians.' },
+		giant_harbor: { name: 'Rust Fleet Anchorage', icon: '⚓', lore: 'A sprawl of hulks and docks where the drowned-coast clans trade.' },
+		metropolis: { name: 'Ruin Metropolis', icon: '🏙️', lore: 'A great skeleton-city where tens of thousands scratch out a living among the towers.' },
+		ancient_forge: { name: 'Reactor Foundry', icon: '🏭', lore: 'A half-working factory that still forges pre-fall alloys at terrible risk.' },
+		sunken_citadel: { name: 'Flooded Vault Complex', icon: '🌊', lore: 'A bunker town swallowed by rising water, its emergency lights still blinking.' },
+		titan_shrine: { name: 'Titan Engine Shrine', icon: '⚙️', lore: 'A shrine built around a collapsed war-machine, venerated by pilgrim clans.' }
+	},
+	twilight: {
+		world_tree: { name: 'Withered Crown-Tree', icon: '🌳', lore: 'A colossal golden tree on the Crown Heights, its light long dimmed.' },
+		tower_magic: { name: 'Lantern Spire', icon: '🗼', lore: 'A tower of lenses that once lit the old order and now draws strange attention.' },
+		tower_trials: { name: 'Hall of Sworn Trials', icon: '⚔️', lore: 'A sunken coliseum where lords and hunters test oaths in blood.' },
+		bridge: { name: 'Grace Bridge', icon: '🌉', lore: 'A gilded span between cathedral wards, patrolled by mournful sentinels.' },
+		university: { name: 'Hollow Library', icon: '📚', lore: 'A library whose scholars went mad with insight; the books whisper to those who open them.' },
+		giant_harbor: { name: 'Pilgrim Harbour', icon: '⚓', lore: 'A black-stone quay where fog-bound ships ferry the faithful to the Heights.' },
+		metropolis: { name: 'Gothic Metropolis', icon: '🏙️', lore: 'A towering, plague-haunted city of spires, hunters and bone-white bells.' },
+		ancient_forge: { name: 'Ichor Forge', icon: '🏭', lore: 'A smithy in the catacombs that works ichor-metal into sacred arms.' },
+		sunken_citadel: { name: 'Sunken Aurelia', icon: '🌊', lore: 'A drowned utopia-city of gilt halls and ghostly lights beneath the waves.' },
+		titan_shrine: { name: 'Demigod Tomb', icon: '🪦', lore: 'A vast sepulchre where a fallen demigod is mourned and feared.' }
 	}
+
 };
 
 const MONSTERS = MONSTER_SKINS as SkinTable;
