@@ -9,11 +9,9 @@
 	import type { Power } from '#lib/sim/engine';
 	import type { WandererDeed, WandererChronicle } from '#lib/adventure/chronicle';
 	import { onMount, untrack } from 'svelte';
-	import AvatarPanel from './AvatarPanel.svelte';
 	import ClimatePanel from './ClimatePanel.svelte';
 	import type { Climate } from '#lib/gen/types';
 	import EncounterModal from './EncounterModal.svelte';
-	import GodPanel from './GodPanel.svelte';
 	import HoverCard from './HoverCard.svelte';
 	import InfoPanel from './InfoPanel.svelte';
 	import MapLegend from './MapLegend.svelte';
@@ -36,7 +34,9 @@
 		apotheosis: () => import('./ApotheosisModal.svelte'),
 		crises: () => import('./CrisesModal.svelte'),
 		sagas: () => import('./SagasModal.svelte'),
-		congress: () => import('./CongressModal.svelte')
+		congress: () => import('./CongressModal.svelte'),
+		god: () => import('./GodPanel.svelte'),
+		avatar: () => import('./AvatarPanel.svelte')
 	};
 
 	let { cosmos, initialSlot = null, onquit, onload }: { cosmos: Cosmos; initialSlot?: string | null; onquit: () => void; onload: (c: Cosmos, slot: string | null) => void } = $props();
@@ -623,9 +623,17 @@
 				{#if tab === 'observe'}
 					<InfoPanel {sim} {v} {cell} {layer} terms={G.terms} onfocus={focus} onselect={(c) => (cell = c)} ondynasty={(id) => (dynastyRuler = id)} onburg={(bId) => (burgModalId = bId)} onleagues={() => (leaguesOpen = true)} ondelve={startDelve} onmegastructure={openMegastructure} onapotheosis={() => (showApotheosis = true)} oncrises={() => (showCrises = true)} onsagas={() => (showSagas = true)} oncongress={() => (showCongress = true)} />
 				{:else if tab === 'god'}
-					<GodPanel {sim} {v} {power} terms={G.terms} onpower={(p) => (power = p)} ontoggle={() => { sim.sandbox = !sim.sandbox; for (const s of cosmos.sims) s.sandbox = sim.sandbox; v++; }} oncastrandom={castRandom} />
+					{#await lazy.god()}
+						<p class="small muted">Loading…</p>
+					{:then { default: GodPanel }}
+						<GodPanel {sim} {v} {power} terms={G.terms} onpower={(p) => (power = p)} ontoggle={() => { sim.sandbox = !sim.sandbox; for (const s of cosmos.sims) s.sandbox = sim.sandbox; v++; }} oncastrandom={castRandom} />
+					{/await}
 				{:else}
-					<AvatarPanel {cosmos} {pi} {v} {cell} {layer} terms={G.terms} onsay={say} onchanged={() => { v++; needDraw = true; r?.invalidatePolitical(); }} onfocus={focus} onplanet={(p) => { pi = p; layer = 0; }} ondelve={startDelve} onmegastructure={openMegastructure} />
+					{#await lazy.avatar()}
+						<p class="small muted">Loading…</p>
+					{:then { default: AvatarPanel }}
+						<AvatarPanel {cosmos} {pi} {v} {cell} {layer} terms={G.terms} onsay={say} onchanged={() => { v++; needDraw = true; r?.invalidatePolitical(); }} onfocus={focus} onplanet={(p) => { pi = p; layer = 0; }} ondelve={startDelve} onmegastructure={openMegastructure} />
+					{/await}
 				{/if}
 			</div>
 		</aside>

@@ -51,6 +51,14 @@ export { POWERS, type Power } from './systems/godpowers';
  * the behaviour as free functions taking the Simulation, and this class keeps tick/yearly
  * orchestration plus thin delegating methods for the public API.
  */
+/** feature modules keep their state on the sim as `_<name>State` / `_<name>Data` (see leagues.ts getLeagueState); saved with dump() */
+const LAZY_STATE = /^_[A-Za-z]+(State|Data)$/;
+function lazyStates(sim: object): Record<string, unknown> {
+	const out: Record<string, unknown> = {};
+	for (const k of Object.keys(sim)) if (LAZY_STATE.test(k)) out[k] = (sim as Record<string, unknown>)[k];
+	return out;
+}
+
 export class Simulation {
 	w: World;
 	rng: Rng;
@@ -591,7 +599,12 @@ export class Simulation {
 			sectors: this.sectors,
 			w3: this.w3,
 			so: this.so,
-			gf: this.gf
+			gf: this.gf,
+			ext: lazyStates(this),
+			artifacts: this.artifacts, caravans: this.caravans, armyTokens: this.armyTokens, unrestUntil: this.unrestUntil,
+			ids: { artifact: this.nextArtifactId, quest: this.nextQuestId, mission: this.nextMissionId, wonder: this.nextWonderId, event: this.nextEventId },
+			// naming languages carry their rng and the names they minted (cultures born in play have their own seeds)
+			langs: this.langs.map((L) => L && { ...L, rng: L.rng.state() })
 		};
 	}
 
@@ -625,6 +638,21 @@ export class Simulation {
 		s.w3 = restoreW3((d as { w3?: Partial<W3State> }).w3);
 		s.so = restoreSocialOrders(s, d.so);
 		s.gf = restoreForces((d as { gf?: Partial<ReturnType<typeof newForces>> }).gf);
+		// lazily attached feature states (leagues, megastructures, congress, ...): their getters adopt sim._xState when present
+		Object.assign(s, (d as { ext?: Record<string, unknown> }).ext ?? {});
+		// older saves lack these: keep the constructor's defaults, but never reuse an id already in the save
+		const od = d as Partial<ReturnType<Simulation['dump']>>;
+		if (od.artifacts) s.artifacts = od.artifacts;
+		if (od.caravans) s.caravans = od.caravans;
+		if (od.armyTokens) s.armyTokens = od.armyTokens;
+		if (od.unrestUntil) s.unrestUntil = od.unrestUntil;
+		if (od.langs) s.langs = od.langs.map((L) => L && { ...L, rng: makeRng(L.rng as unknown as number) });
+		const top = (xs: { id?: number }[] | undefined) => (xs ?? []).reduce((m, x) => Math.max(m, (x?.id ?? 0) + 1), 1);
+		s.nextArtifactId = Math.max(od.ids?.artifact ?? 1, top(s.artifacts));
+		s.nextQuestId = Math.max(od.ids?.quest ?? 1, top(s.quests));
+		s.nextMissionId = Math.max(od.ids?.mission ?? 1, top(s.missions as { id?: number }[]));
+		s.nextWonderId = Math.max(od.ids?.wonder ?? 1, top(s.wonders));
+		s.nextEventId = Math.max(od.ids?.event ?? 1, top(s.allEvents as { id?: number }[]));
 		s.computeBorders();
 		s.updateVoice();
 		return s;
