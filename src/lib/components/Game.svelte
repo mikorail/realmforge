@@ -131,9 +131,9 @@
 
 	// world file for the separate Realmforge Wanderer roguelike (loaded on demand: the exporter is only needed here)
 	async function wandererWorld() {
-		const [{ exportAdventure }, { downloadFile }] = await Promise.all([import('#lib/adventure/export'), import('#lib/export')]);
+		const [{ exportAdventure, exportUniverse }, { downloadFile }] = await Promise.all([import('#lib/adventure/export'), import('#lib/export')]);
 		const s = cosmos.sims[pi];
-		downloadFile(exportAdventure(s), `${s.w.name.toLowerCase().replace(/\s+/g, '-')}-y${s.year}.wanderer.json`, 'application/json');
+		downloadFile(cosmos.sims.length > 1 ? exportUniverse(cosmos) : exportAdventure(s), `${s.w.name.toLowerCase().replace(/\s+/g, '-')}-y${s.year}.wanderer.json`, 'application/json');
 		say('Wanderer world saved: open it in Realmforge Wanderer → Your own world.');
 	}
 
@@ -184,8 +184,8 @@
 			const { wandererOriginOk } = await import('#lib/adventure/chronicle');
 			if (!wandererOriginOk(ev.origin) || ev.source !== wandererWin) return;
 			if (d.type === 'wanderer-ready') {
-				const { exportAdventure } = await import('#lib/adventure/export');
-				const json = exportAdventure(cosmos.sims[pi]);
+				const { exportAdventure, exportUniverse } = await import('#lib/adventure/export');
+				const json = cosmos.sims.length > 1 ? exportUniverse(cosmos) : exportAdventure(cosmos.sims[pi]);
 				(ev.source as Window).postMessage({ type: 'world', json }, ev.origin);
 				say('World handed to Wanderer.');
 			} else if (d.type === 'deeds' && Array.isArray(d.deeds) && typeof d.seed === 'string') {

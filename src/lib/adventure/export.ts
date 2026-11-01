@@ -5,6 +5,7 @@
  * Name pools come from fresh side languages so the sim's own name streams never advance.
  */
 import type { Simulation } from '../sim/engine';
+import type { Cosmos } from '../sim/cosmos';
 import { GENRES } from '../gen/genre';
 import { findCell } from '../gen/grid';
 import { SPECIES } from '../gen/species';
@@ -22,7 +23,7 @@ import type { MegastructureState } from '../sim/megastructures';
 
 const NOTABLE = new Set(['ruler', 'heir', 'general', 'hero', 'prophet', 'magician', 'thinker', 'priest', 'villain', 'artist', 'inventor', 'merchant']);
 
-export function exportAdventure(sim: Simulation): string {
+export function exportAdventureObject(sim: Simulation) {
 	const w = sim.w;
 	const c = w.cells;
 	const PW = 80;
@@ -168,11 +169,10 @@ export function exportAdventure(sim: Simulation): string {
 
 	const layerOf = (li: number) => w.layers[li] ?? w.layers[0];
 	const monsters = sim.monsters
-		.filter((m) => m.alive)
 		.map((m) => ({
 			id: m.id, name: m.name, species: m.species, tier: m.tier, cat: m.category, power: Math.round(m.power), hp: Math.round(m.maxHealth), armor: m.armor ?? 0.1,
 			lore: m.lore, trophy: m.trophy ?? '', p: pOfCell(m.lairCell >= 0 ? m.lairCell : m.cell), layer: layerOf(m.layer).kind, depth: layerOf(m.layer).depth,
-			lair: m.lairName, immortal: !!m.immortal
+			lair: m.lairName, immortal: !!m.immortal, slain: !m.alive, slainYear: m.slainYear ? Math.round(m.slainYear) : 0, slainBy: m.slayer ?? ''
 		}));
 
 	const artifacts = sim.artifacts.map((a) => {
@@ -229,5 +229,24 @@ export function exportAdventure(sim: Simulation): string {
 		cell: Array.from(cellOf), layers, burgs, states, cultures, religions, people, events, monsters, artifacts, wonders, species, outlaws, megastructures, sectorNames: SECTORS,
 		terms: G.terms, layerNames: G.layerNames
 	};
-	return JSON.stringify(out);
+	return out;
+}
+
+export function exportAdventure(sim: Simulation): string {
+	return JSON.stringify(exportAdventureObject(sim));
+}
+
+/** Every planet plus the rifts joining them, as one "wanderer-universe" file. Rift burg ids are sim burg ids, the same ids the planets' `burgs` carry. */
+export function exportUniverse(cos: Cosmos): string {
+	const planets = cos.sims.map((s) => exportAdventureObject(s));
+	const have = planets.map((pl) => new Set(pl.burgs.map((b) => b.id)));
+	const rifts = cos.u.rifts
+		.filter((r) => have[r.a.planet]?.has(r.a.burg) && have[r.b.planet]?.has(r.b.burg))
+		.map((r) => ({
+			id: r.id,
+			name: r.name || `The ${planets[r.a.planet].name} Rift`,
+			a: { planet: r.a.planet, burg: r.a.burg },
+			b: { planet: r.b.planet, burg: r.b.burg }
+		}));
+	return JSON.stringify({ kind: 'wanderer-universe', start: 0, planets, rifts });
 }
