@@ -10,6 +10,9 @@ import { Cosmos } from '../src/lib/sim/cosmos';
 import { snapshotData, encodeBase, decodeBase, encodeSave, decodeSave, cosmosFromData, pack, unpack } from '../src/lib/save';
 import { exportAdventureObject, exportUniverse } from '../src/lib/adventure/export';
 import type { Universe } from '../src/lib/gen/universe';
+import { tidyArticles, packLine, reskin } from '../src/lib/sim/genrepacks';
+import { narrateCult } from '../src/lib/sim/uprisings';
+import { makeRng } from '../src/lib/rng';
 
 const T0 = performance.now();
 const OPTS = { seed: 'selftest', template: 'continents' as const, cells: 3000, states: 10, width: 1600, height: 1000, genre: 'fantasy' as const, planet: 'terran' as const, spheres: null, depth: 2, sky: true, sea: true };
@@ -71,6 +74,14 @@ check(h50 === simHash(b), `50-year chronicle deterministic (${h50}, ${a.sims.map
 check(a.sims.every((s) => s.year >= 50 && s.allEvents.length > 20), 'sims advanced and wrote a chronicle');
 const articleBugs = a.sims.flatMap((s) => s.allEvents.filter((e) => /\b(the|The) the\b|\bThe The\b/.test(e.text)).map((e) => e.text));
 check(articleBugs.length === 0, `no doubled articles in the chronicle${articleBugs.length ? ': ' + articleBugs.slice(0, 3).join(' / ') : ''}`);
+
+{
+	const r = makeRng('articles');
+	const lines = [tidyArticles('preachers of the The Glow Fellowship. The the end'), reskin('atompunk', 'the The Vault Elect'), reskin('fantasy', 'Fanatics of the The Glow Fellowship')];
+	for (let i = 0; i < 40; i++) lines.push(packLine('atompunk', 'cult', r, { cult: 'The Glow Fellowship', town: 'Ashby', realm: 'Ashland' }) ?? '', narrateCult(r, 'doomsday', 'The Glow Fellowship', 'Ashby', 'Ashland'));
+	const bad = lines.filter((l) => /\bthe\s+the\b/i.test(l));
+	check(bad.length === 0 && lines[0] === 'preachers of the Glow Fellowship. The end', `article doubling tidied (${bad[0] ?? 'none left'})`);
+}
 
 // ── 2. save round trip ──
 t = performance.now();
