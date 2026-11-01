@@ -1,7 +1,7 @@
 import type { Rng } from '../rng';
 import type { Person, Polity, UprisingKind, UprisingRecord } from './types';
 import type { Simulation } from './engine';
-import { packCult, packLine } from './genrepacks';
+import { packCult, packLine, tidyArticles } from './genrepacks';
 import { cultureMod } from './culture';
 import { unrestFx } from './sentiment';
 import { orderUnrest } from './society/socialorders';
@@ -289,7 +289,7 @@ export function narrateCult(rng: Rng, subtype: string, cultName: string, townNam
 			`A doomsday panic takes root in ${townName} as preachers of the ${cultName} proclaim the collapse of the mortal realm! Crowds flock to torchlit vigil caves, repudiating the laws of ${polityName}.`,
 			`Fanatics of the ${cultName} march through the night in ${townName}, clad in mourning shrouds and wailing omens of doom. The sudden panic empties markets and roils civic stability.`
 		];
-		return rng.pick(templates);
+		return tidyArticles(rng.pick(templates));
 	}
 	if (subtype === 'eldritch_cult') {
 		const templates = [
@@ -297,7 +297,7 @@ export function narrateCult(rng: Rng, subtype: string, cultName: string, townNam
 			`Strange runes appear carved upon lintels across ${townName} as the ${cultName} expands its influence in secret. Several prominent citizens vanish, whispering of ancient powers beneath the stone.`,
 			`Rumors of midnight sacrifices in subterranean cisterns trouble ${townName}. The authorities of ${polityName} discover clandestine shrines erected by the shadowy ${cultName}.`
 		];
-		return rng.pick(templates);
+		return tidyArticles(rng.pick(templates));
 	}
 	if (subtype === 'blood_coven') {
 		const templates = [
@@ -305,7 +305,7 @@ export function narrateCult(rng: Rng, subtype: string, cultName: string, townNam
 			`Fear grips the outskirts of ${townName} as villagers uncover shrines belonging to the ${cultName}. The coven's clandestine activities provoke fervent investigations by the crown.`,
 			`Dark covens gather in the shadows of ${townName}. The ${cultName} conducts forbidden rituals, defying the orthodoxy of ${polityName} and spreading unease through the provinces.`
 		];
-		return rng.pick(templates);
+		return tidyArticles(rng.pick(templates));
 	}
 	// flagellant_order
 	const templates = [
@@ -313,7 +313,7 @@ export function narrateCult(rng: Rng, subtype: string, cultName: string, townNam
 		`The austere procession of the ${cultName} draws thousands into the public squares of ${townName}. Their fiery lamentations stir religious fervor and undermine traditional authority.`,
 		`Chanting somber litanies, the ${cultName} parades through ${townName}, rebuking high prelates and demanding immediate spiritual penance from the lords of ${polityName}.`
 	];
-	return rng.pick(templates);
+	return tidyArticles(rng.pick(templates));
 }
 
 export function narrateProphet(rng: Rng, subtype: string, prophetName: string, townName: string, polityName: string): string {

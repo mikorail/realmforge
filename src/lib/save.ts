@@ -275,7 +275,12 @@ export function cosmosFromData(data: SaveData): Cosmos {
 	cos.u = data.u;
 	cos.sims = data.u.planets.map((w, i) => Simulation.restore(w, data.sims[i]));
 	cos.avatarPlanet = data.avatarPlanet;
-	for (const s of cos.sims) s.skipper = (n) => cos.skip(n);
+	// same wiring as the Cosmos constructor: planetIndex seeds the story side rngs, cosmos backs rift powers
+	cos.sims.forEach((s, i) => {
+		s.cosmos = cos;
+		s.planetIndex = i;
+		s.skipper = (n) => cos.skip(n);
+	});
 	return cos;
 }
 

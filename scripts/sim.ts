@@ -5,13 +5,14 @@ import type { Genre } from '../src/lib/gen/types';
 const years = Number(process.argv[2] ?? 200);
 const genre = (process.argv[3] ?? 'fantasy') as Genre;
 const planets = Number(process.argv[4] ?? 2);
+const cells = Number(process.argv[5] ?? 6000);
 const t0 = performance.now();
-const u = generateUniverse({ seed: 'sim-test', template: 'continents', cells: 6000, states: 14, width: 1600, height: 1000, genre, planet: 'terran', spheres: null, depth: 2, sky: true, sea: true }, planets);
+const u = generateUniverse({ seed: 'sim-test', template: 'continents', cells, states: 14, width: 1600, height: 1000, genre, planet: 'terran', spheres: null, depth: 2, sky: true, sea: true }, planets);
 const t1 = performance.now();
 const cos = new Cosmos(u);
 for (let m = 0; m < years * 12; m++) cos.tick();
 const t2 = performance.now();
-console.log(`gen ${(t1 - t0).toFixed(0)}ms, sim ${years}y ${(t2 - t1).toFixed(0)}ms`);
+console.log(`gen ${(t1 - t0).toFixed(0)}ms, sim ${years}y ${(t2 - t1).toFixed(0)}ms (${((t2 - t1) / Math.max(1, years * 12)).toFixed(1)}ms/month, ${cells} cells)`);
 for (const s of cos.sims) {
 	const alive = s.polities.filter((p) => p.alive);
 	const kinds = new Map<string, number>();

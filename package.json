@@ -11,7 +11,8 @@
 		"check": "./scripts/run-with-nvm.sh svelte-kit sync && ./scripts/run-with-nvm.sh svelte-check --tsconfig ./tsconfig.json",
 		"test": "./scripts/run-with-nvm.sh vitest run",
 		"e2e": "./scripts/run-with-nvm.sh playwright test",
-		"sim": "./scripts/run-with-nvm.sh tsx scripts/sim.ts"
+		"sim": "./scripts/run-with-nvm.sh tsx scripts/sim.ts",
+		"selftest": "./scripts/run-with-nvm.sh tsx scripts/selftest.ts"
 	},
 	"imports": {
 		"#lib/components/*": "./src/lib/components/*",

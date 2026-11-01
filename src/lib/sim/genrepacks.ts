@@ -302,7 +302,12 @@ export const PACKS: Partial<Record<Genre, GenrePack>> = {
 export function packLine(genre: Genre, key: LineKey, rng: Rng, vars: Record<string, string>): string | null {
 	const list = PACKS[genre]?.lines[key];
 	if (!list?.length) return null;
-	return rng.pick(list).replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
+	return tidyArticles(rng.pick(list).replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? ''));
+}
+
+/** "the The Glow Fellowship" → "the Glow Fellowship": names that carry their own article dropped into "the {name}" templates */
+export function tidyArticles(text: string): string {
+	return text.replace(/\b(the|The|THE)\s+(?:the|The|THE)\b/g, '$1');
 }
 
 export function packCult(genre: Genre, rng: Rng): string | null {
@@ -317,8 +322,8 @@ export function packEncounters(genre: Genre): Encounter[] {
 /** re-skin medieval vocabulary into the genre's own (applied to every logged chronicle line) */
 export function reskin(genre: Genre, text: string): string {
 	const lex = PACKS[genre]?.lexicon;
-	if (!lex) return text;
-	let out = text;
+	if (!lex) return tidyArticles(text);
+	let out = tidyArticles(text);
 	for (const [re, rep] of lex) out = out.replace(re, (m) => (m[0] === m[0].toUpperCase() && m[0] !== m[0].toLowerCase() ? rep[0].toUpperCase() + rep.slice(1) : rep));
 	return out;
 }
