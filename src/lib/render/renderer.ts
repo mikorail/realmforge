@@ -8,6 +8,7 @@ import { drawArchGlyph } from './glyphs';
 import { drawCanvasBanners } from './canvas_heraldry';
 import { renderSeasonalOverlay } from './seasons';
 import { drawMegastructureMarkers } from './megastructures';
+import { drawProceduralEnvironment } from './proc_assets';
 import { dominantSector, SECTOR_INFO, SECTORS } from '../sim/sectors';
 
 export type MapMode = 'political' | 'biome' | 'height' | 'culture' | 'religion' | 'population' | 'economy';
@@ -920,6 +921,8 @@ export class MapRenderer {
 		// ── screen-space marks ──
 		ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
 		const S = (x: number, y: number): [number, number] => [x * k + this.tx, y * k + this.ty];
+		// procedural environmental landmarks & biome scatter when zoomed in
+		drawProceduralEnvironment(ctx, w, s, this.layer, k, S, this.w, this.h, th);
 		// realm labels
 		if (this.showLabels) {
 			ctx.textAlign = 'center';

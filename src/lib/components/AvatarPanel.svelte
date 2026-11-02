@@ -4,6 +4,8 @@
 	import type { Role } from '#lib/sim/types';
 	import { AMBITION_BY_ID, pickAmbition } from '#lib/sim/ambitions';
 	import { getMegastructureState } from '#lib/sim/megastructures';
+	import { describeProceduralAppearance, hashStr32 } from '#lib/render/proc_assets';
+	import CharacterPortrait from './CharacterPortrait.svelte';
 
 	let { cosmos, pi, v, cell, layer, terms, onsay, onchanged, onfocus, onplanet, ondelve, onmegastructure }: {
 		cosmos: Cosmos; pi: number; v: number; cell: number; layer: number; terms: GenreDef['terms'];
@@ -98,11 +100,16 @@
 		<ul class="people">
 			{#each candidates as p (p.id)}
 				{@const b = sim.w.burgs[p.burg]}
+				{@const look = describeProceduralAppearance(p, hashStr32(String(sim.w.opts.seed)))}
 				<li>
-					<div>
-						<strong>{p.name} {p.house}</strong> <span class="chip">{p.role}</span>
-						<div class="small muted">{sim.ageOf(p)} yrs · {b?.name}{p.state ? ` · ${sim.polities[p.state].name}` : ''} · renown {p.renown}</div>
-						<div class="small muted">⚔{p.martial} ✉{p.diplomacy} ⚖{p.stewardship} 🗝{p.intrigue} · {p.traits.join(', ')}</div>
+					<div class="person-lead">
+						<CharacterPortrait person={p} size={40} realmColor={p.state ? sim.polities[p.state]?.color : undefined} worldSeed={hashStr32(String(sim.w.opts.seed))} {v} />
+						<div>
+							<strong>{p.name} {p.house}</strong> <span class="chip">{p.role}</span>
+							<div class="small muted">{sim.ageOf(p)} yrs · {b?.name}{p.state ? ` · ${sim.polities[p.state].name}` : ''} · renown {p.renown}</div>
+							<div class="small muted">{look.build}, {look.eyes}, {look.trinket}</div>
+							<div class="small muted">⚔{p.martial} ✉{p.diplomacy} ⚖{p.stewardship} 🗝{p.intrigue} · {p.traits.join(', ')}</div>
+						</div>
 					</div>
 					<div class="col">
 						<button class="btn primary" onclick={() => { cosmos.choose(pi, p.id); onchanged(); onfocus(b?.cell); }}>Become</button>
@@ -117,8 +124,14 @@
 		<p class="note">You live on {cosmos.u.planets[cosmos.avatarPlanet].name}. <button class="btn" onclick={() => onplanet(cosmos.avatarPlanet)}>Go there</button></p>
 	{/if}
 	<section class="sheet">
-		<h3>{me.name} {me.house}</h3>
-		<div class="small muted">{me.role}{ctx.pol ? ` of ${ctx.pol.name}` : ''} · age {asim!.ageOf(me)} · {me.traits.join(', ')}</div>
+		<div class="person-lead">
+			<CharacterPortrait person={me} size={54} realmColor={ctx.pol?.color} worldSeed={hashStr32(String(asim!.w.opts.seed))} {v} />
+			<div>
+				<h3>{me.name} {me.house}</h3>
+				<div class="small muted">{me.role}{ctx.pol ? ` of ${ctx.pol.name}` : ''} · age {asim!.ageOf(me)} · {me.traits.join(', ')}</div>
+				<div class="small muted">{describeProceduralAppearance(me, hashStr32(String(asim!.w.opts.seed))).summary}</div>
+			</div>
+		</div>
 		<div class="grid4">
 			<span title="Martial">⚔ {me.martial}</span><span title="Diplomacy">✉ {me.diplomacy}</span><span title="Stewardship">⚖ {me.stewardship}</span><span title="Intrigue">🗝 {me.intrigue}</span>
 		</div>
@@ -313,6 +326,7 @@
 	.search { width: 100%; padding: 0.35rem 0.5rem; border: 1px solid var(--line); background: transparent; border-radius: 6px; margin-bottom: 0.4rem; }
 	.people { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
 	.people li { display: flex; justify-content: space-between; gap: 0.4rem; border-bottom: 1px dotted var(--line); padding-bottom: 0.35rem; }
+	.person-lead { display: flex; gap: 0.55rem; align-items: flex-start; }
 	.col { display: flex; flex-direction: column; gap: 0.2rem; }
 	.sheet { border: 1px solid var(--line); border-radius: 8px; padding: 0.6rem; }
 	.grid4 { display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; margin: 0.4rem 0; font-variant-numeric: tabular-nums; }

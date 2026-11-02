@@ -7,6 +7,8 @@
 		getPartyAggregateSkills,
 		type PartyRole
 	} from '#lib/sim/party';
+	import { hashStr32 } from '#lib/render/proc_assets';
+	import CharacterPortrait from './CharacterPortrait.svelte';
 
 	let {
 		sim,
@@ -223,27 +225,30 @@
 			<div class="roster-list">
 				{#if avatar}
 					<div class="member-card leader">
-						<div class="member-info">
-							<div class="name-row">
-								<strong>{avatar.name} {avatar.house}</strong>
-								<span class="chip leader-chip">Leader</span>
-								{#if avatar.partyRole}
-									<span class="chip role-chip">{avatar.partyRole}</span>
-								{/if}
-							</div>
-							<div class="hp-row">
-								<span class="small muted">Health:</span>
-								<div class="hp-bar" role="progressbar" aria-valuenow={avatar.health} aria-valuemin="0" aria-valuemax="100">
-									<div class="hp-fill" style="width: {Math.min(100, avatar.health)}%; background: {healthColor(avatar.health)}"></div>
+						<div class="member-lead">
+							<CharacterPortrait person={avatar} size={44} realmColor={avatar.state ? sim.polities[avatar.state]?.color : undefined} worldSeed={hashStr32(String(sim.w.opts.seed))} {v} />
+							<div class="member-info">
+								<div class="name-row">
+									<strong>{avatar.name} {avatar.house}</strong>
+									<span class="chip leader-chip">Leader</span>
+									{#if avatar.partyRole}
+										<span class="chip role-chip">{avatar.partyRole}</span>
+									{/if}
 								</div>
-								<span class="hp-val" style="color: {healthColor(avatar.health)}">♥ {avatar.health}</span>
-							</div>
-							<div class="stats-row small muted">
-								<span>⚔{avatar.martial}</span>
-								<span>✉{avatar.diplomacy}</span>
-								<span>⚖{avatar.stewardship}</span>
-								<span>🗝{avatar.intrigue}</span>
-								<span>💰{avatar.gold}g</span>
+								<div class="hp-row">
+									<span class="small muted">Health:</span>
+									<div class="hp-bar" role="progressbar" aria-valuenow={avatar.health} aria-valuemin="0" aria-valuemax="100">
+										<div class="hp-fill" style="width: {Math.min(100, avatar.health)}%; background: {healthColor(avatar.health)}"></div>
+									</div>
+									<span class="hp-val" style="color: {healthColor(avatar.health)}">♥ {avatar.health}</span>
+								</div>
+								<div class="stats-row small muted">
+									<span>⚔{avatar.martial}</span>
+									<span>✉{avatar.diplomacy}</span>
+									<span>⚖{avatar.stewardship}</span>
+									<span>🗝{avatar.intrigue}</span>
+									<span>💰{avatar.gold}g</span>
+								</div>
 							</div>
 						</div>
 						<div class="role-selector">
@@ -265,27 +270,30 @@
 
 				{#each companions as c (c.id)}
 					<div class="member-card">
-						<div class="member-info">
-							<div class="name-row">
-								<strong>{c.name} {c.house}</strong>
-								{#if c.partyRole}
-									<span class="chip role-chip">{c.partyRole}</span>
-								{:else}
-									<span class="chip unassigned">Unassigned</span>
-								{/if}
-							</div>
-							<div class="hp-row">
-								<span class="small muted">Health:</span>
-								<div class="hp-bar" role="progressbar" aria-valuenow={c.health} aria-valuemin="0" aria-valuemax="100">
-									<div class="hp-fill" style="width: {Math.min(100, c.health)}%; background: {healthColor(c.health)}"></div>
+						<div class="member-lead">
+							<CharacterPortrait person={c} size={40} realmColor={c.state ? sim.polities[c.state]?.color : undefined} worldSeed={hashStr32(String(sim.w.opts.seed))} {v} />
+							<div class="member-info">
+								<div class="name-row">
+									<strong>{c.name} {c.house}</strong>
+									{#if c.partyRole}
+										<span class="chip role-chip">{c.partyRole}</span>
+									{:else}
+										<span class="chip unassigned">Unassigned</span>
+									{/if}
 								</div>
-								<span class="hp-val" style="color: {healthColor(c.health)}">♥ {c.health}</span>
-							</div>
-							<div class="stats-row small muted">
-								<span>⚔{c.martial}</span>
-								<span>✉{c.diplomacy}</span>
-								<span>⚖{c.stewardship}</span>
-								<span>🗝{c.intrigue}</span>
+								<div class="hp-row">
+									<span class="small muted">Health:</span>
+									<div class="hp-bar" role="progressbar" aria-valuenow={c.health} aria-valuemin="0" aria-valuemax="100">
+										<div class="hp-fill" style="width: {Math.min(100, c.health)}%; background: {healthColor(c.health)}"></div>
+									</div>
+									<span class="hp-val" style="color: {healthColor(c.health)}">♥ {c.health}</span>
+								</div>
+								<div class="stats-row small muted">
+									<span>⚔{c.martial}</span>
+									<span>✉{c.diplomacy}</span>
+									<span>⚖{c.stewardship}</span>
+									<span>🗝{c.intrigue}</span>
+								</div>
 							</div>
 						</div>
 						<div class="role-selector">
@@ -593,6 +601,12 @@
 
 	.member-card.leader {
 		border-left: 3px solid var(--accent, #d4a359);
+	}
+
+	.member-lead {
+		display: flex;
+		align-items: center;
+		gap: 0.65rem;
 	}
 
 	.member-info {

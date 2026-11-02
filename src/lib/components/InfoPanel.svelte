@@ -19,9 +19,11 @@
 	import { realmPeoples, sentimentOn } from '#lib/sim/sentiment';
 	import { realmSociety } from '#lib/sim/society/index';
 	import HeraldryBadge from './HeraldryBadge.svelte';
+	import CharacterPortrait from './CharacterPortrait.svelte';
 	import SectorBars from './SectorBars.svelte';
 	import GenreForces from './GenreForces.svelte';
 	import { getRealmCoatOfArms, getBurgCoatOfArms } from '#lib/render/heraldry';
+	import { drawSettlementVignette, describeProceduralAppearance, hashStr32 } from '#lib/render/proc_assets';
 	import { getBurgDistricts } from '#lib/sim/burgs';
 	import { getMegastructureState } from '#lib/sim/megastructures';
 
@@ -112,6 +114,13 @@
 		return sim.quests ?? [];
 	});
 
+	const worldSeedNum = $derived.by(() => {
+		void v;
+		return hashStr32(String(sim.w.opts.seed));
+	});
+
+	let burgCanvas = $state<HTMLCanvasElement | null>(null);
+
 	const info = $derived.by(() => {
 		void v;
 		if (cell < 0) return null;
@@ -125,6 +134,22 @@
 		const cult = layer === 0 ? w.cultures[c.culture[cell]] : burg ? w.cultures[burg.culture] : null;
 		const rel = layer === 0 ? w.religions[c.religion[cell]] : pol ? w.religions[pol.religion] : null;
 		return { c, L, open, pol: pol?.alive && pol.id ? pol : null, burg, river, cult, rel };
+	});
+
+	$effect(() => {
+		void v;
+		const b = info?.burg;
+		if (!burgCanvas || !b) return;
+		const dpr = typeof window !== 'undefined' ? Math.min(2, window.devicePixelRatio || 1) : 1;
+		const w = 260;
+		const h = 64;
+		burgCanvas.width = Math.round(w * dpr);
+		burgCanvas.height = Math.round(h * dpr);
+		const ctx = burgCanvas.getContext('2d');
+		if (!ctx) return;
+		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+		ctx.clearRect(0, 0, w, h);
+		drawSettlementVignette(ctx, sim, b, w, h);
 	});
 
 	const realm = $derived.by(() => {
@@ -248,9 +273,22 @@
 						<button class="btn small" style="padding: 2px 8px;" onclick={() => onburg?.(info.burg!.id)} title="Manage Settlement Districts, Governor, and Garrison">🏛️ Manage</button>
 					{/if}
 				</div>
+				<canvas
+					bind:this={burgCanvas}
+					class="settlement-banner"
+					style="width: 100%; height: 64px; border-radius: 6px; display: block; margin-bottom: 0.4rem;"
+					aria-label={`Skyline of ${info.burg.name}`}
+				></canvas>
 				<div class="stat"><span>Population</span><span>{(info.burg.pop * 1000).toFixed(0)}</span></div>
 				{#if info.burg.governor && sim.people[info.burg.governor]?.alive}
-					<div class="stat"><span>Governor</span><span>{sim.people[info.burg.governor].name}</span></div>
+					{@const gov = sim.people[info.burg.governor]}
+					<div class="stat" style="align-items: center;">
+						<span>Governor</span>
+						<span class="row" style="gap: 6px; align-items: center;">
+							<CharacterPortrait person={gov} size={24} realmColor={info.pol?.color} worldSeed={worldSeedNum} {v} />
+							<span>{gov.name}</span>
+						</span>
+					</div>
 				{/if}
 				{#if (info.burg.garrison ?? 0) > 0}
 					<div class="stat"><span>Garrison</span><span>🛡️ {info.burg.garrison} points</span></div>
@@ -340,16 +378,23 @@
 			</p>
 			{#if realm.ruler?.alive}
 				{@const rulerSp = SPECIES_BY_ID[realm.ruler.species ?? 'human'] ?? realm.speciesDef}
-				<div class="stat">
-					<span>Ruler</span>
-					<span>{rulerName(realm.ruler)} {realm.ruler.house}, {sim.ageOf(realm.ruler)} <span class="muted small">({rulerSp.icon} {rulerSp.name})</span></span>
+				{@const rulerLook = describeProceduralAppearance(realm.ruler, worldSeedNum)}
+				<div class="row" style="gap: 10px; align-items: center; margin: 0.35rem 0;">
+					<CharacterPortrait person={realm.ruler} size={42} realmColor={p.color} worldSeed={worldSeedNum} {v} />
+					<div style="flex: 1; min-width: 0;">
+						<div class="stat">
+							<span>Ruler</span>
+							<span>{rulerName(realm.ruler)} {realm.ruler.house}, {sim.ageOf(realm.ruler)} <span class="muted small">({rulerSp.icon} {rulerSp.name})</span></span>
+						</div>
+						<div class="small muted">{realm.ruler.traits.join(' · ')} · ⚔{realm.ruler.martial} ✉{realm.ruler.diplomacy} ⚖{realm.ruler.stewardship} 🗝{realm.ruler.intrigue}</div>
+						<div class="small muted" style="font-style: italic; font-size: 0.76rem;">{rulerLook.summary}</div>
+					</div>
 				</div>
 				{@const mot = motiveInfo(sim, realm.ruler)}
 				{#if mot}
 					<div class="stat small" title={mot.blurb}><span>Motive</span><span>{mot.icon} {mot.detail}</span></div>
 					<div class="small muted">{mot.blurb}</div>
 				{/if}
-				<div class="small muted">{realm.ruler.traits.join(' · ')} · ⚔{realm.ruler.martial} ✉{realm.ruler.diplomacy} ⚖{realm.ruler.stewardship} 🗝{realm.ruler.intrigue}</div>
 			{/if}
 			{#if sim.so}
 				{@const so = orderInfo(sim, p)}
@@ -370,7 +415,15 @@
 					</ul>
 				</details>
 			{/if}
-			{#if realm.heir}<div class="stat"><span>Heir</span><span>{realm.heir.name}, {sim.ageOf(realm.heir)}</span></div>{/if}
+			{#if realm.heir}
+				<div class="stat" style="align-items: center;">
+					<span>Heir</span>
+					<span class="row" style="gap: 6px; align-items: center;">
+						<CharacterPortrait person={realm.heir} size={24} realmColor={p.color} worldSeed={worldSeedNum} {v} />
+						<span>{realm.heir.name}, {sim.ageOf(realm.heir)}</span>
+					</span>
+				</div>
+			{/if}
 			<div class="grid2 nums">
 				<div class="stat"><span>Land</span><span>{p.cells}</span></div>
 				<div class="stat"><span>People</span><span>{(p.pop * 1000).toFixed(0)}</span></div>
@@ -840,15 +893,23 @@
 				{#each luminariesList as lum (lum.id)}
 					{@const b = sim.w.burgs[lum.burg]}
 					{@const sp = SPECIES_BY_ID[lum.species ?? 'human'] ?? SPECIES_BY_ID['human']}
+					{@const lumPol = lum.state ? sim.polities[lum.state] : null}
+					{@const lumLook = describeProceduralAppearance(lum, worldSeedNum)}
 					<article class="card item-card luminary-card">
-						<div class="row between">
-							<h4>
-								<span class="ico">{lum.role === 'magician' ? '🔮' : lum.role === 'thinker' ? '📜' : lum.role === 'artist' ? '🎨' : lum.role === 'athlete' ? '🏆' : '⚙️'}</span>
-								{lum.name}
-							</h4>
-							<span class="chip on">{lum.role}</span>
+						<div class="row" style="gap: 10px; align-items: center; margin-bottom: 0.25rem;">
+							<CharacterPortrait person={lum} size={42} realmColor={lumPol?.color} worldSeed={worldSeedNum} {v} />
+							<div style="flex: 1; min-width: 0;">
+								<div class="row between">
+									<h4>
+										<span class="ico">{lum.role === 'magician' ? '🔮' : lum.role === 'thinker' ? '📜' : lum.role === 'artist' ? '🎨' : lum.role === 'athlete' ? '🏆' : '⚙️'}</span>
+										{lum.name}
+									</h4>
+									<span class="chip on">{lum.role}</span>
+								</div>
+								<p class="small muted" style="margin: 2px 0 0;">{sp.icon} {sp.name} · {sim.ageOf(lum)} years · Renown {lum.renown}</p>
+							</div>
 						</div>
-						<p class="small muted">{sp.icon} {sp.name} · {sim.ageOf(lum)} years · Renown {lum.renown}</p>
+						<p class="small muted" style="font-style: italic; font-size: 0.76rem; margin-bottom: 0.25rem;">{lumLook.summary}</p>
 						{#if lum.magnumOpus}
 							<div class="magnum-box small">
 								<strong>Magnum Opus:</strong> "{lum.magnumOpus}"

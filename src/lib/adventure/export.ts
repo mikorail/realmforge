@@ -30,6 +30,7 @@ import { PERSECUTION_DEF, REFORM_DEF } from '../sim/society/data';
 import { w3On } from '../sim/society/state';
 import { activeForces } from '../sim/genre/forces';
 import { FORCES } from '../sim/genre/forcelines';
+import { describeProceduralAppearance, hashStr32 } from '../render/proc_assets';
 
 const NOTABLE = new Set(['ruler', 'heir', 'general', 'hero', 'prophet', 'magician', 'thinker', 'priest', 'villain', 'artist', 'inventor', 'merchant']);
 
@@ -170,12 +171,15 @@ export function exportAdventureObject(sim: Simulation) {
 	};
 	const living = sim.people.filter((p) => p.alive && p.id && NOTABLE.has(p.role)).sort((a, b) => b.renown - a.renown).slice(0, 900);
 	const deadRulers = sim.people.filter((p) => !p.alive && p.id && (p.role === 'ruler' || p.role === 'hero')).slice(-500);
+	const wSeedNum = hashStr32(String(w.opts.seed));
 	const people = [...living, ...deadRulers].map((p) => {
 		const b = w.burgs[p.burg];
+		const look = describeProceduralAppearance(p, wSeedNum);
 		return {
 			id: p.id, name: p.name, role: p.role, burg: p.burg, state: p.state, culture: p.culture, religion: p.religion, species: p.species ?? '',
 			martial: Math.round(p.martial), diplomacy: Math.round(p.diplomacy), stewardship: Math.round(p.stewardship), intrigue: Math.round(p.intrigue), born: Math.round(p.born), died: Math.round(p.died ?? 0),
 			cause: p.cause ?? '', alive: p.alive, traits: p.traits, renown: Math.round(p.renown), p: b ? pOf(b.x, b.y) : -1, title: titleOf(p.role, p.state, p.culture),
+			look: look.summary,
 			...(p.mixed ? { mixed: { culture: p.mixed.culture, ...(p.mixed.species ? { species: p.mixed.species } : {}) } } : {})
 		};
 	});
