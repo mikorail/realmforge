@@ -338,6 +338,7 @@ export class MapRenderer {
 	constructor(canvas: HTMLCanvasElement) {
 		this.canvas = canvas;
 		this.ctx = canvas.getContext('2d')!;
+		this.simLayers.labels.onReady = () => this.draw();
 	}
 
 	setWorld(world: World, sim: Simulation, theme: MapTheme) {

@@ -233,6 +233,8 @@
 		r.mode = mode;
 		r.showGhost = peeking;
 		for (const k of overlays) r.simLayers.toggle(k, true);
+		// `?probe` exposes the renderer for scripts/smoke.mjs frame timing (never in normal use)
+		if (location.search.includes('probe')) (window as unknown as { __rfRenderer?: MapRenderer }).__rfRenderer = rr;
 		r.setWorld(world, cosmos.sims[pi], theme);
 		fit();
 		needDraw = true;

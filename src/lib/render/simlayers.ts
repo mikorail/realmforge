@@ -177,14 +177,15 @@ export class SimLayers {
 			ctx.fill(C.fallout);
 			ctx.fillStyle = 'rgba(90,100,40,0.45)';
 			ctx.fill(C.falloutCore);
-			ctx.save();
-			ctx.strokeStyle = 'rgba(150,110,255,0.75)';
-			ctx.shadowColor = '#a78bfa';
-			ctx.shadowBlur = 8;
+			// soft glow as a wide translucent stroke (shadowBlur is slow on big paths)
+			ctx.strokeStyle = 'rgba(167,139,250,0.22)';
+			ctx.lineWidth = px(6);
+			ctx.stroke(C.leys);
+			ctx.strokeStyle = 'rgba(150,110,255,0.8)';
 			ctx.lineWidth = px(1.6);
 			ctx.setLineDash([px(1), px(3)]);
 			ctx.stroke(C.leys);
-			ctx.restore();
+			ctx.setLineDash([]);
 		}
 		if (this.on.has('faults')) {
 			ctx.strokeStyle = 'rgba(160,40,20,0.7)';
@@ -197,7 +198,7 @@ export class SimLayers {
 				ctx.lineWidth = px(2.6);
 				ctx.setLineDash(cut ? [px(5), px(4)] : []);
 				ctx.stroke(p);
-				if (!cut) {
+				if (!cut && R.k >= 1.5) {
 					// sleepers: a light dashed core over the dark line
 					ctx.strokeStyle = 'rgba(255,250,235,0.8)';
 					ctx.lineWidth = px(1);
@@ -205,8 +206,8 @@ export class SimLayers {
 					ctx.stroke(p);
 				}
 			}
-			ctx.setLineDash([px(2), px(5)]);
-			ctx.strokeStyle = 'rgba(80,140,210,0.55)';
+			ctx.setLineDash([]);
+			ctx.strokeStyle = 'rgba(80,140,210,0.4)';
 			ctx.lineWidth = px(1.2);
 			ctx.stroke(C.air);
 			ctx.setLineDash([]);
@@ -237,14 +238,21 @@ export class SimLayers {
 						ctx.fillRect(x - 3 * z, y + 4, 6 * z, 4 * z);
 						ctx.strokeRect(x - 3 * z, y + 4, 6 * z, 4 * z);
 					}
-			ctx.font = `${Math.round(10 * z)}px sans-serif`;
 			for (const id of rs.docks) {
 				const b = w.burgs[id];
 				if (!b?.alive || sim.burgLayer(b) !== layer) continue;
 				const [x, y] = S(b.x, b.y);
 				if (!vis(x, y)) continue;
-				ctx.fillStyle = 'rgba(80,140,210,0.95)';
-				ctx.fillText('⚓', x + 9 * z, y - 7 * z);
+				// air dock: a small mast with a pennant (drawn, not a symbol glyph: font fallback is slow)
+				const dx = x + 8 * z, dy = y - 4 * z;
+				ctx.beginPath();
+				ctx.moveTo(dx, dy);
+				ctx.lineTo(dx, dy - 9 * z);
+				ctx.lineTo(dx + 5 * z, dy - 7 * z);
+				ctx.lineTo(dx, dy - 5 * z);
+				ctx.strokeStyle = 'rgba(40,90,150,0.95)';
+				ctx.lineWidth = 1.4;
+				ctx.stroke();
 			}
 		}
 		const hs = hzOf(sim);

@@ -40,15 +40,28 @@ export class MapLabels {
 	/** ms the last compute took (perf probe) */
 	lastMs = 0;
 
-	/** recompute when world, voice or decade changes */
+	/** called after a deferred recompute finished (the renderer redraws) */
+	onReady: (() => void) | null = null;
+	private pending = 0;
+
+	/** recompute when world, voice or decade changes: at once the first time, later on an idle callback (≈50-90 ms at 40k cells) */
 	ensure(sim: Simulation, w: World) {
 		const key = `${w.name}|${w.opts.seed}|${sim.voice}|${Math.floor(sim.year / 10)}`;
 		if (key === this.key) return;
 		this.key = key;
-		const t0 = performance.now();
-		this.list = computeLabels(sim, w);
-		this.lastMs = performance.now() - t0;
+		const run = () => {
+			this.pending = 0;
+			const t0 = performance.now();
+			this.list = computeLabels(sim, w);
+			this.lastMs = performance.now() - t0;
+		};
+		const sameWorld = this.world === w;
+		this.world = w;
+		if (!sameWorld || !this.list.length || typeof window === 'undefined') return run();
+		if (this.pending) clearTimeout(this.pending);
+		this.pending = window.setTimeout(() => { run(); this.onReady?.(); }, 30);
 	}
+	private world: World | null = null;
 
 	get labels(): readonly GeoLabel[] {
 		return this.list;
