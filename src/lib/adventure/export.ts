@@ -31,6 +31,7 @@ import { w3On } from '../sim/society/state';
 import { activeForces } from '../sim/genre/forces';
 import { FORCES } from '../sim/genre/forcelines';
 import { describeProceduralAppearance, hashStr32 } from '../render/proc_assets';
+import { transportExport } from './transport';
 
 const NOTABLE = new Set(['ruler', 'heir', 'general', 'hero', 'prophet', 'magician', 'thinker', 'priest', 'villain', 'artist', 'inventor', 'merchant']);
 
@@ -248,7 +249,8 @@ export function exportAdventureObject(sim: Simulation) {
 		year: sim.year, era: ERAS[sim.era]?.name ?? '', w: PW, h: PH, biome, height, temp, river, road, state, culture, religion, burg: burgAt,
 		cell: Array.from(cellOf), layers, burgs, states, cultures, religions, people, events, monsters, artifacts, wonders, species, outlaws, megastructures, sectorNames: SECTORS,
 		terms: G.terms, layerNames: G.layerNames,
-		...(soc.forces ? { forces: soc.forces } : {})
+		...(soc.forces ? { forces: soc.forces } : {}),
+		...transportExport(sim, pOfCell)
 	};
 	return out;
 }

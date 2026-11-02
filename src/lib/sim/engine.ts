@@ -42,6 +42,7 @@ import { initSocialOrders, restoreSocialOrders, yearlySocialOrders, type SocialO
 import { initSectors, restoreSectors, sectorNaval, yearlySectors, type SectorState } from './sectors';
 import { newW3, restoreW3, yearlySociety, type W3State } from './society';
 import { newForces, restoreForces, yearlyGenreForces } from './genre/forces';
+import { yearlyRail } from './rail';
 
 export { POWERS, type Power } from './systems/godpowers';
 
@@ -427,6 +428,7 @@ export class Simulation {
 		yearly.yearlyMonsterHunts(this);
 		yearly.yearlyBeastWrath(this);
 		yearly.yearlyRoadConstruction(this);
+		yearlyRail(this);
 		yearly.yearlyPantheon(this);
 		yearly.yearlyUprisings(this);
 		yearly.yearlyBurgs(this);

@@ -1,5 +1,6 @@
 /** Monthly war fronts (cell-by-cell on every layer + shaft raids), conquest, capital relocation, realm falls, army tokens. */
 import { noteCapitalSack } from '../motives';
+import { railOnTake } from '../rail';
 import type { Simulation } from '../engine';
 import { clamp } from '../../rng';
 import { narrateFall, narrateRelicLoot, narrateSiege } from '../chronicle';
@@ -113,6 +114,7 @@ export function takeCell(sim: Simulation, cell: number, taker: number, war?: War
 	st[cell] = taker;
 	if (layer === 0) { noteConquest(sim, cell, taker); onConquest(sim, cell, taker); }
 	sim.fronts.rekey(sim.w, cell, layer);
+	if (layer === 0) railOnTake(sim, cell, old, taker, !!war);
 	if (layer === 0) c.pop[cell] *= 0.93;
 	const bid = sim.lb[layer][cell];
 	if (!bid) return;
