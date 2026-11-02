@@ -15,6 +15,7 @@ import { SPHERE_CULTURE, FALLBACK_CULTURE, FEAST_MONTH, FEAST_TEXT } from '../si
 import { cultureProfile, monthName, realmFeasts } from '../sim/culture/profile';
 import { SPHERE_LORE } from '../sim/spherelore';
 import { PLANETS } from '../gen/physical';
+import { kmPerPx } from '../gen/options';
 import { ERAS } from '../sim/tech';
 import type { ChronEvent } from '../sim/types';
 import { burgMix, SECTORS } from '../sim/sectors';
@@ -239,7 +240,7 @@ export function exportAdventureObject(sim: Simulation) {
 
 	const G = GENRES[sim.voice] ?? GENRES[w.opts.genre];
 	const out = {
-		seed: `${w.opts.seed}:${w.planet}`, name: w.name, genre: sim.voice, planet: PLANETS[w.opts.planet]?.name ?? '', planetKind: w.opts.planet,
+		seed: `${w.opts.seed}:${w.planet}`, name: w.name, genre: sim.voice, planet: PLANETS[w.opts.planet]?.name ?? '', planetKind: w.opts.planet, kmPer: Math.round(kmPerPx(w.opts.climate, w.opts.height) * sx),
 		year: sim.year, era: ERAS[sim.era]?.name ?? '', w: PW, h: PH, biome, height, temp, river, road, state, culture, religion, burg: burgAt,
 		cell: Array.from(cellOf), layers, burgs, states, cultures, religions, people, events, monsters, artifacts, wonders, species, outlaws, megastructures, sectorNames: SECTORS,
 		terms: G.terms, layerNames: G.layerNames,
