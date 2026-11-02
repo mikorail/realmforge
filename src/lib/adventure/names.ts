@@ -338,6 +338,7 @@ export function exportNames(sim: Simulation, g: NamesGrid, pOfCell: (cell: numbe
 	const roadWords = ROAD_WORDS[genre] ?? ROAD_WORDS.fantasy;
 	const modern = MODERN.has(genre);
 	const routes: NamesExport['routes'] = [];
+	const endNames = new Set<string>();
 	w.routes.forEach((rt, id) => {
 		if (rt.kind === 'shaft') return;
 		const a = w.burgs[rt.a], b = w.burgs[rt.b];
@@ -345,6 +346,9 @@ export function exportNames(sim: Simulation, g: NamesGrid, pOfCell: (cell: numbe
 		const ps = trace(rt.cells);
 		if (ps.length < 2) return;
 		let name = rt.name ?? '';
+		// the sim names the roads it builds "A-B Royal Road" (roads.ts): keep the kind, name it for its far end in the genre's word
+		const sim = /^.+-.+ (Royal Road|Silk Highway|Maritime Lane)$/.exec(name);
+		if (sim) name = sim[1] === 'Maritime Lane' ? `the ${b.name} Lane` : `the ${b.name} ${sim[1] === 'Royal Road' ? 'Royal' : 'Silk'} ${hpick(`${seed}:nm:rs:${id}`, roadWords)}`;
 		if (!name) {
 			const k = `${seed}:nm:rt:${id}`;
 			const r: Rng = makeRng(k);
@@ -360,11 +364,15 @@ export function exportNames(sim: Simulation, g: NamesGrid, pOfCell: (cell: numbe
 				const word = r.pick(roadWords);
 				const roll = r();
 				if (roll < 0.3) name = `the ${b.name} ${word}`;
-				else if (roll < 0.6) name = `${nativeWord(cu, 'pass')} ${word}`;
-				else if (roll < 0.8) name = `the ${TRADE[cellCommodity(c.biome[b.cell], c.h[b.cell])]} ${word}`;
+				else if (roll < 0.62) name = `${nativeWord(cu, 'pass')} ${word}`;
+				else if (roll < 0.76) name = `the ${TRADE[cellCommodity(c.biome[b.cell], c.h[b.cell])]} ${word}`;
 				else name = `the ${r.pick(modern ? EPITHETS_MODERN : EPITHETS)} ${word}`;
 			}
 		}
+		// two routes out of the same town never share a name: the later one is named for where it goes
+		const ka = `${rt.a}:${name}`, kb = `${rt.b}:${name}`;
+		if (!rt.name && (endNames.has(ka) || endNames.has(kb))) name = `the ${b.name} ${rt.kind === 'sea' ? hpick(`${seed}:nm:sw:${id}`, SEA_WORDS) : rt.kind === 'road' ? hpick(`${seed}:nm:rw:${id}`, roadWords) : name.split(' ').pop()}`;
+		endNames.add(`${rt.a}:${name}`).add(`${rt.b}:${name}`);
 		routes.push({ id, kind: rt.kind, name, a: rt.a, b: rt.b, parasangs: ps });
 	});
 
