@@ -6,6 +6,7 @@
 	import { motiveInfo } from '#lib/sim/motives';
 	import { orderInfo } from '#lib/sim/society/socialorders';
 	import HeraldryBadge from './HeraldryBadge.svelte';
+	import { simLayerInfo } from '#lib/render/simlayers';
 	import { getRealmCoatOfArms, getBurgCoatOfArms } from '#lib/render/heraldry';
 
 	let { sim, world, layer, cell, x, y, v }: { sim: Simulation; world: World; layer: number; cell: number; x: number; y: number; v: number } = $props();
@@ -36,7 +37,9 @@
 			faith: open && c.religion[cell] ? world.religions[c.religion[cell]] : null,
 			water,
 			rock: !open && L.kind !== 'surface',
-			terrain: !water && open ? BIOMES[c.biome[cell]]?.name ?? '' : ''
+			terrain: !water && open ? BIOMES[c.biome[cell]]?.name ?? '' : '',
+			// rail, faults, volcanoes, outbreaks, fallout, leylines under the cursor
+			extra: simLayerInfo(sim, cell, layer)
 		};
 	});
 
@@ -69,6 +72,9 @@
 			{#if info.burg}<dt>Place</dt><dd style="display: flex; align-items: center; gap: 4px;"><HeraldryBadge coa={getBurgCoatOfArms(sim.w.opts.seed, info.burg, info.realm ?? undefined)} size={16} showBlazonTooltip={false} /> {info.burg.name}, {info.burg.capital ? 'capital ' : ''}{info.burg.kind}</dd>{/if}
 			{#if info.terrain}<dt>Terrain</dt><dd>{info.terrain}</dd>{/if}
 		</dl>
+		{#if info.extra.length}
+			<ul class="extra">{#each info.extra as e, i (i)}<li><span aria-hidden="true">{e.icon}</span> {e.text}</li>{/each}</ul>
+		{/if}
 	{/key}
 </div>
 
@@ -81,4 +87,5 @@
 	dt { color: var(--muted); font-size: 0.8rem; }
 	dd { margin: 0; overflow-wrap: anywhere; }
 	.war { color: var(--danger); }
+	.extra { list-style: none; margin: 0.25rem 0 0; padding: 0.2rem 0 0; border-top: 1px dotted var(--line); font-size: 0.8rem; }
 </style>

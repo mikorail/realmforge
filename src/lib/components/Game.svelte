@@ -2,6 +2,7 @@
 	import { GENRES } from '#lib/gen/genre';
 	import { PLANETS } from '#lib/gen/physical';
 	import type { MapMode, MapRenderer } from '#lib/render/renderer';
+	import { SIM_LAYERS, type SimLayerKey } from '#lib/render/simlayers';
 	import { THEMES } from '#lib/render/theme';
 	import { AUTO_SLOTS, listSaves, loadGame, lowStorageWarning, nextAutoSlot, nextSlotId, parseSlot, saveGame, slotId } from '#lib/save';
 	import { calendarCulture, monthName } from '#lib/sim/culture/index';
@@ -53,6 +54,15 @@
 	let pi = $state(0); // planet being viewed
 	let layer = $state(0);
 	let mode = $state<MapMode>('political');
+	// optional sim layers (rail, hazards, disease, forces, names), remembered per browser
+	const OVKEY = 'realmforge:overlays';
+	let overlays = $state<SimLayerKey[]>([]);
+	try { overlays = JSON.parse(localStorage.getItem(OVKEY) ?? '[]').filter((k: string) => SIM_LAYERS.some((l) => l.key === k)); } catch { /* storage unavailable */ }
+	function toggleOverlay(k: SimLayerKey) {
+		overlays = overlays.includes(k) ? overlays.filter((x) => x !== k) : [...overlays, k];
+		try { localStorage.setItem(OVKEY, JSON.stringify(overlays)); } catch { /* ignore */ }
+		if (r) { r.simLayers.toggle(k, overlays.includes(k)); needDraw = true; }
+	}
 	let tab = $state<'observe' | 'god' | 'avatar'>('observe');
 	let speed = $state(0);
 	let cell = $state(-1);
@@ -222,6 +232,7 @@
 		r.layer = layer;
 		r.mode = mode;
 		r.showGhost = peeking;
+		for (const k of overlays) r.simLayers.toggle(k, true);
 		r.setWorld(world, cosmos.sims[pi], theme);
 		fit();
 		needDraw = true;
@@ -587,6 +598,10 @@
 			{#each modes as [m, label] (m)}
 				<button class="btn" class:on={mode === m} onclick={() => (mode = m)}>{label}</button>
 			{/each}
+			<span class="ovsep" aria-hidden="true"></span>
+			{#each SIM_LAYERS as o (o.key)}
+				<button class="btn ov" class:on={overlays.includes(o.key)} aria-pressed={overlays.includes(o.key)} data-overlay={o.key} title={o.title} onclick={() => toggleOverlay(o.key)}><span aria-hidden="true">{o.icon}</span> {o.label}</button>
+			{/each}
 		</div>
 
 		{#if scrubberOpen}
@@ -601,7 +616,7 @@
 			</div>
 		{/if}
 
-		<MapLegend {sim} {world} {layer} {mode} {v} year={date.year} />
+		<MapLegend {sim} {world} {layer} {mode} {v} {overlays} year={date.year} />
 
 		<Minimap {sim} {world} {layer} renderer={r} {v} onpan={(x, y) => { if (r) { r.tx = r.w * 0.5 - x * r.k; r.ty = r.h * 0.5 - y * r.k; r.draw(); } }} />
 
@@ -857,6 +872,8 @@
 	.lay.on { background: var(--accent); color: var(--ink); }
 	.modebar { position: absolute; left: 50%; transform: translateX(-50%); bottom: 0.7rem; display: flex; gap: 0.25rem; z-index: 2; background: var(--panel); padding: 0.3rem; border-radius: 10px; border: 1px solid var(--line); flex-wrap: wrap; justify-content: center; max-width: calc(100% - 1.2rem); }
 	.modebar .btn { font-size: 0.85rem; padding: 0.25rem 0.55rem; }
+	.modebar .ovsep { width: 1px; align-self: stretch; background: var(--line); margin: 0 0.15rem; }
+	.modebar .ov { font-size: 0.78rem; }
 	.timeline-bar { position: absolute; left: 50%; transform: translateX(-50%); bottom: 3.8rem; width: min(520px, calc(100% - 1.2rem)); z-index: 2; }
 	.panel {
 		position: absolute; right: 0; top: 0; bottom: 0; width: min(380px, 100%); z-index: 2;
