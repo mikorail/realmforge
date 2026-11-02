@@ -3,14 +3,15 @@ import { describeProceduralAppearance, hash32, hashStr32 } from './proc_assets';
 import type { Person } from '../sim/types';
 
 describe('procedural character & environment assets', () => {
-	const samplePerson: Person = {
+	// loose fixture: only the fields the appearance code reads matter
+	const samplePerson = {
 		id: 42,
 		name: 'Kaelen',
 		house: 'Vane',
 		role: 'hero',
 		state: 1,
 		burg: 1,
-		birth: 120,
+		born: 120,
 		traits: ['Brave', 'Pious'],
 		martial: 8,
 		diplomacy: 5,
@@ -23,7 +24,7 @@ describe('procedural character & environment assets', () => {
 		rivals: [],
 		species: 'elf',
 		epithet: 'the Silver',
-	};
+	} as unknown as Person;
 
 	it('produces deterministic hashes and appearance descriptions', () => {
 		expect(hash32(12345)).toBe(hash32(12345));
