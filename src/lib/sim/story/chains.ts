@@ -16,10 +16,13 @@ interface Rule {
 	global?: boolean;
 }
 
+/** natural disasters (sim/hazards) that can explain unrest */
+const HZ_TAGS = ['quake', 'tsunami', 'eruption', 'locust'];
+
 const RULES: Record<string, Rule> = {
 	famine: { from: ['epoch'], window: 60, global: true },
-	riot: { from: ['famine', 'plague', 'capital'], window: 3 },
-	revolt: { from: ['riot', 'famine', 'plague', 'capital'], window: 6 },
+	riot: { from: ['famine', 'plague', 'capital', ...HZ_TAGS], window: 3 },
+	revolt: { from: ['riot', 'famine', 'plague', 'capital', 'quake', 'eruption'], window: 6 },
 	coup: { from: ['riot', 'revolt', 'famine', 'plague', 'capital'], window: 8 },
 	reign: { from: ['coup', 'revolt'], window: 1 },
 	fall: { from: ['capital'], window: 6 },
@@ -81,7 +84,17 @@ const PHRASES: Record<string, string[]> = {
 	war: ['in the aftermath of the war of Y{y}', 'after the war declared in Y{y}', 'in the wake of the war of Y{y}'],
 	epoch: ['in the wake of the {label} of Y{y}', 'after the {label} began in Y{y}'],
 	crusade: ['in the wake of the crusade of Y{y}'],
-	council: ['after the council of Y{y}']
+	council: ['after the council of Y{y}'],
+	quake: ['in the wake of the earthquake of Y{y}', 'while the rubble of the quake of Y{y} still lay in the streets'],
+	tsunami: ['after the great wave of Y{y}'],
+	eruption: ['in the wake of the eruption of Y{y}', 'under the ash of Y{y}'],
+	storm: ['after the great storm of Y{y}'],
+	tornado: ['after the whirlwind of Y{y}'],
+	flood: ['in the wake of the flood of Y{y}', 'as the waters of Y{y} receded'],
+	landslide: ['after the landslide of Y{y}'],
+	avalanche: ['after the avalanche of Y{y}'],
+	locust: ['in the wake of the locust swarm of Y{y}', 'after the locusts of Y{y}'],
+	wildfire: ['after the wildfire of Y{y}']
 };
 
 /** "in the wake of the famine of Y112" for an event whose cause is `cause` */

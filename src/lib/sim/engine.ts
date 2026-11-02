@@ -42,6 +42,7 @@ import { initSocialOrders, restoreSocialOrders, yearlySocialOrders, type SocialO
 import { initSectors, restoreSectors, sectorNaval, yearlySectors, type SectorState } from './sectors';
 import { newW3, restoreW3, yearlySociety, type W3State } from './society';
 import { newForces, restoreForces, yearlyGenreForces } from './genre/forces';
+import { yearlyHazards } from './hazards';
 
 export { POWERS, type Power } from './systems/godpowers';
 
@@ -447,6 +448,7 @@ export class Simulation {
 		yearlyConsolidation(this);
 		yearlyCrossLayer(this);
 		yearlyPlanetRules(this);
+		yearlyHazards(this);
 		yearlyStory(this);
 		lifecycle.pruneMinorPeople(this);
 		history.compactArchive(this);

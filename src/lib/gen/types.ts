@@ -77,6 +77,8 @@ export interface GenOptions {
 	socialLife?: boolean;
 	/** genre forces strength (sim/genre/forces.ts): 0 off, 1 default (unset), up to 2 */
 	genreForces?: number;
+	/** natural disasters (quakes, eruptions, storms, floods, locusts, wildfires) and named diseases (sim/hazards); unset = on, false = off */
+	hazards?: boolean;
 }
 
 /** what callers pass in; missing fields are filled by withDefaults() */

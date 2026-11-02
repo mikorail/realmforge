@@ -411,6 +411,11 @@
 	</label>
 
 	<label class="evolve mt-md">
+		<input type="checkbox" checked={store.s.hazards !== false} onchange={(e) => (store.s.hazards = (e.currentTarget as HTMLInputElement).checked)} />
+		<span><strong>Natural hazards</strong> <span class="muted">Earthquakes along named faults and tsunamis, volcanic eruptions with ash and cold years, hurricanes, tornadoes, river floods, landslides, locusts and wildfires. Named diseases (plague, flux, pox, fevers, consumption, blight and genre strains) spread by their own vectors; realms answer with quarantine, physicians, vaccines, processions or witch hunts.</span></span>
+	</label>
+
+	<label class="evolve mt-md">
 		<input type="checkbox" checked={store.s.motives !== false} onchange={(e) => (store.s.motives = (e.currentTarget as HTMLInputElement).checked)} />
 		<span><strong>Ruler motives</strong> <span class="muted">Each ruler is driven by an aim: vengeance, faith, glory, gold, legacy, survival, knowledge or dynasty. It shapes their wars, peace, treaties and monuments, and may pass to an heir.</span></span>
 	</label>
