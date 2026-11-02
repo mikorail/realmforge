@@ -4,8 +4,41 @@
 	import { HYPSO, type MapMode } from '#lib/render/renderer';
 	import type { Simulation } from '#lib/sim/engine';
 	import { dominantSector, SECTOR_INFO, SECTORS } from '#lib/sim/sectors';
+	import { RAIL_COLORS, diseaseColor, type SimLayerKey } from '#lib/render/simlayers';
 
-	let { sim, world, layer, mode, v, year }: { sim: Simulation; world: World; layer: number; mode: MapMode; v: number; year: number } = $props();
+	let { sim, world, layer, mode, v, year, overlays = [] }: { sim: Simulation; world: World; layer: number; mode: MapMode; v: number; year: number; overlays?: SimLayerKey[] } = $props();
+
+	/** legend rows for the optional sim layers (read-only views of the sim state) */
+	const overlayRows = $derived.by<{ key: string; color: string; label: string; dash?: boolean; glyph?: string }[]>(() => {
+		void v;
+		const out: { key: string; color: string; label: string; dash?: boolean; glyph?: string }[] = [];
+		const S = sim as unknown as { _railState?: { lines: { kind: string; cut?: number }[]; docks: number[] }; _hazardsState?: { outbreaks: { disease: string; name: string; ended?: number }[] } };
+		if (overlays.includes('rail')) {
+			const kinds = [...new Set((S._railState?.lines ?? []).map((l) => l.kind))];
+			for (const k of kinds) out.push({ key: 'r' + k, color: RAIL_COLORS[k] ?? '#444', label: k });
+			if (S._railState?.lines.some((l) => l.cut)) out.push({ key: 'rcut', color: '#666', label: 'cut line', dash: true });
+			if (S._railState?.docks.length) out.push({ key: 'dock', color: '#5090d2', label: 'air dock / route', glyph: '⚓' });
+			if (!out.length) out.push({ key: 'r0', color: '#999', label: 'no rail yet', dash: true });
+		}
+		if (overlays.includes('faults')) {
+			out.push({ key: 'fault', color: '#a02814', label: 'fault line' });
+			out.push({ key: 'volc', color: '#c0392b', label: 'volcano (glow = active)', glyph: '▲' });
+			out.push({ key: 'recent', color: '#7a4a1f', label: 'recent disaster (fades)', glyph: '≋' });
+		}
+		if (overlays.includes('disease')) {
+			const live = (S._hazardsState?.outbreaks ?? []).filter((o) => !o.ended).slice(0, 5);
+			for (const o of live) out.push({ key: 'ob' + o.name, color: diseaseColor(o.disease), label: o.name });
+			out.push({ key: 'q', color: '#888', label: 'quarantined town', dash: true });
+		}
+		if (overlays.includes('forces')) {
+			out.push({ key: 'smog', color: '#5a5550', label: 'smog town', glyph: '☁' });
+			out.push({ key: 'fall', color: '#96aa3c', label: 'fallout' });
+			out.push({ key: 'corp', color: '#d63384', label: 'megacorp HQ', glyph: '◆' });
+			out.push({ key: 'ley', color: '#a78bfa', label: 'leyline', glyph: '✦' });
+		}
+		if (overlays.includes('names')) out.push({ key: 'nm', color: '#5b3f22', label: 'place names (zoom in for more)', glyph: '✎' });
+		return out;
+	});
 
 	const KEY = 'realmforge:legend';
 	let open = $state(typeof window === 'undefined' || window.innerWidth >= 760);
@@ -95,6 +128,13 @@
 					{#if mode === 'political'}<span><i class="mk war"></i>War front</span>{/if}
 				</div>
 			{/if}
+			{#if overlayRows.length}
+				<ul class="ovl" aria-label="Map layers">
+					{#each overlayRows as o (o.key)}
+						<li>{#if o.glyph}<span class="gl" style="color:{o.color}">{o.glyph}</span>{:else}<i class="mk" class:dash={o.dash} style="color:{o.color}"></i>{/if}<span class="lab">{o.label}</span></li>
+					{/each}
+				</ul>
+			{/if}
 		</div>
 	{/if}
 </div>
@@ -113,6 +153,9 @@
 	.marks { display: flex; gap: 0.8rem; margin-top: 0.4rem; padding-top: 0.35rem; border-top: 1px dotted var(--line); font-size: 0.78rem; color: var(--muted); }
 	.mk { display: inline-block; width: 1.1rem; height: 0; margin-right: 0.3rem; vertical-align: middle; border-top: 2px solid currentColor; }
 	.mk.war { border-top: 2px dashed var(--danger); }
+	.mk.dash { border-top-style: dashed; }
+	.ovl { margin-top: 0.4rem; padding-top: 0.35rem; border-top: 1px dotted var(--line); }
+	.gl { display: inline-block; width: 1.1rem; text-align: center; margin-right: 0.3rem; }
 	@media (max-width: 760px) {
 		.legend { bottom: 6.6rem; max-width: calc(100% - 1.2rem); }
 		.lbody { max-height: 30dvh; }

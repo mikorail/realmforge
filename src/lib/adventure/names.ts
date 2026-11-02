@@ -16,6 +16,7 @@ import { langSeed } from '../gen/society';
 import { makeRng, hashSeed, type Rng } from '../rng';
 import { cellCommodity, type Commodity } from '../sim/trade';
 import { GENRES } from '../gen/genre';
+import { findCell } from '../gen/grid';
 
 export interface NamesGrid {
 	PW: number;
@@ -33,6 +34,51 @@ export interface NamesExport {
 	routes: { id: number; kind: string; name: string; a: number; b: number; parasangs: number[] }[];
 	features: { kind: string; name: string; parasangs: number[]; peak?: number }[];
 	burgs: Record<number, { tier: string; harbor?: string; airdock?: string }>;
+}
+
+/**
+ * The parasang grid `exportNames` reads, built exactly as `exportAdventureObject` builds it (80 columns, a town's
+ * parasang takes the town's own cell), so the live map can name features from the running sim with the same
+ * names the Wanderer export gets. Pure: reads the world only.
+ */
+export function namesGrid(sim: Simulation): { grid: NamesGrid; pOfCell: (cell: number) => number; sx: number; sy: number } {
+	const w = sim.w, c = w.cells;
+	const PW = 80;
+	const PH = Math.max(20, Math.round((PW * w.opts.height) / w.opts.width));
+	const n = PW * PH;
+	const sx = w.opts.width / PW, sy = w.opts.height / PH;
+	const pOf = (x: number, y: number) => Math.min(PH - 1, Math.max(0, Math.floor(y / sy))) * PW + Math.min(PW - 1, Math.max(0, Math.floor(x / sx)));
+	const pOfCell = (cell: number) => pOf(c.x[cell], c.y[cell]);
+	const cellOf = new Int32Array(n);
+	const height: number[] = [], biome: number[] = [], culture: number[] = [], road: number[] = [];
+	let last = 0;
+	for (let py = 0; py < PH; py++)
+		for (let px = 0; px < PW; px++) {
+			const cell = findCell(c, (px + 0.5) * sx, (py + 0.5) * sy, last);
+			last = cell;
+			cellOf[py * PW + px] = cell;
+			height.push(c.h[cell]);
+			biome.push(c.biome[cell]);
+			culture.push(c.culture[cell]);
+			road.push(c.road[cell]);
+		}
+	const burgAt: number[] = new Array(n).fill(0);
+	for (const b of w.burgs) {
+		if (!b.id || (sim.bl[b.id] ?? 0) !== 0) continue;
+		const p = pOf(b.x, b.y);
+		const pb = burgAt[p] ? w.burgs[burgAt[p]] : null;
+		if (!pb || (b.alive && !pb.alive) || (b.alive === pb.alive && b.pop > pb.pop)) burgAt[p] = b.id;
+	}
+	for (let p = 0; p < n; p++) {
+		const b = burgAt[p] ? w.burgs[burgAt[p]] : null;
+		if (!b) continue;
+		cellOf[p] = b.cell;
+		biome[p] = c.biome[b.cell];
+		height[p] = c.h[b.cell];
+		road[p] = Math.max(1, c.road[b.cell]);
+		culture[p] = c.culture[b.cell];
+	}
+	return { grid: { PW, PH, cellOf, height, biome, culture, road, burgAt }, pOfCell, sx, sy };
 }
 
 /** road head words per genre (first = the genre's own term) */

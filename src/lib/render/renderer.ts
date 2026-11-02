@@ -10,6 +10,7 @@ import { renderSeasonalOverlay } from './seasons';
 import { drawMegastructureMarkers } from './megastructures';
 import { drawProceduralEnvironment } from './proc_assets';
 import { dominantSector, SECTOR_INFO, SECTORS } from '../sim/sectors';
+import { SimLayers } from './simlayers';
 
 export type MapMode = 'political' | 'biome' | 'height' | 'culture' | 'religion' | 'population' | 'economy';
 
@@ -248,6 +249,8 @@ export class MapRenderer {
 	overlay: Overlay = { rifts: new Set(), avatarBurg: 0, travel: null, selectedState: 0, selectedBurg: 0, selectedCell: -1 };
 	showLabels = true;
 	showGhost = true;
+	/** optional sim layers (rail, hazards, disease, forces, names): simlayers.ts */
+	simLayers = new SimLayers();
 	previewHistoryStates: Uint16Array | null = null;
 	private terrainKey = '';
 	private politicalKey = '';
@@ -335,6 +338,7 @@ export class MapRenderer {
 	constructor(canvas: HTMLCanvasElement) {
 		this.canvas = canvas;
 		this.ctx = canvas.getContext('2d')!;
+		this.simLayers.labels.onReady = () => this.draw();
 	}
 
 	setWorld(world: World, sim: Simulation, theme: MapTheme) {
@@ -917,13 +921,15 @@ export class MapRenderer {
 
 		// ── routes ──
 		this.drawRoutes(px);
+		this.simLayers.drawWorld(ctx, this);
 
 		// ── screen-space marks ──
 		ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
 		const S = (x: number, y: number): [number, number] => [x * k + this.tx, y * k + this.ty];
 		// procedural environmental landmarks & biome scatter when zoomed in
 		drawProceduralEnvironment(ctx, w, s, this.layer, k, S, this.w, this.h, th);
-		// realm labels
+		// realm labels (their boxes go into `placed` so name labels avoid them)
+		const placed: number[][] = [];
 		if (this.showLabels) {
 			ctx.textAlign = 'center';
 			ctx.textBaseline = 'middle';
@@ -935,6 +941,7 @@ export class MapRenderer {
 				ctx.font = `600 ${size.toFixed(1)}px ${th.font}`;
 				const text = lb.text.toUpperCase().split('').join(size > 16 ? ' ' : '');
 				ctx.lineWidth = Math.max(2, size / 6);
+				if (this.simLayers.on.size) { const hw = ctx.measureText(text).width / 2; placed.push([x - hw, y - size / 2, x + hw, y + size / 2]); }
 				ctx.strokeStyle = th.labelHalo;
 				ctx.strokeText(text, x, y);
 				ctx.fillStyle = this.mode === 'political' && this.sim!.polities[lb.id] && !th.glow ? shade(this.sim!.polities[lb.id].color, -0.55) : th.label;
@@ -997,6 +1004,7 @@ export class MapRenderer {
 				}
 			}
 		}
+		this.simLayers.drawScreen(ctx, this, S, this.showLabels ? placed : []);
 		this.snapStale = true;
 		this.drawOverlays();
 	}

@@ -12,7 +12,8 @@
 		"test": "./scripts/run-with-nvm.sh vitest run",
 		"e2e": "./scripts/run-with-nvm.sh playwright test",
 		"sim": "./scripts/run-with-nvm.sh tsx scripts/sim.ts",
-		"selftest": "./scripts/run-with-nvm.sh tsx scripts/selftest.ts"
+		"selftest": "./scripts/run-with-nvm.sh tsx scripts/selftest.ts",
+		"smoke": "./scripts/run-with-nvm.sh node scripts/smoke.mjs"
 	},
 	"imports": {
 		"#lib/components/*": "./src/lib/components/*",
