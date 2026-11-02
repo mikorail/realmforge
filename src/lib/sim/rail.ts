@@ -158,17 +158,17 @@ export function yearlyRail(sim: Simulation) {
 			if (!surface(b) || !b.state) continue;
 			const p = sim.polities[b.state];
 			if (!p?.alive) continue;
-			p.treasury += 0.4;
+			p.treasury += 0.25;
 			railed.add(p.id);
 		}
 	}
 	for (const id of railed) {
 		const p = sim.polities[id];
-		if (p.army > 0 && sim.warsOf(id).length) p.army *= 1.01;
+		if (p.army > 0 && sim.warsOf(id).length) p.army *= 1.005;
 	}
 	for (const r of S.air) {
 		const b = w.burgs[r.a];
-		if (b?.alive && b.state && sim.polities[b.state]?.alive) sim.polities[b.state].treasury += 0.3;
+		if (b?.alive && b.state && sim.polities[b.state]?.alive) sim.polities[b.state].treasury += 0.2;
 	}
 }
 
@@ -322,6 +322,9 @@ function buildDocks(sim: Simulation, S: RailState, kind: string, rng: ReturnType
 	const w = sim.w;
 	const docks = new Set(S.docks);
 	const spacing = Math.sqrt((w.opts.width * w.opts.height) / w.opts.cells);
+	// at most one surface town in six keeps a dock
+	const land = w.burgs.filter(surface);
+	if (land.filter((b) => docks.has(b.id)).length >= Math.max(6, land.length / 6)) return;
 	const cands = sim.polities.filter((p) => p.id && p.alive && p.treasury >= 80 && p.stability >= 40);
 	let built = 0;
 	for (const pol of rng.shuffle(cands)) {
