@@ -13,6 +13,7 @@ import type { Universe } from '../src/lib/gen/universe';
 import { tidyArticles, packLine, reskin } from '../src/lib/sim/genrepacks';
 import { narrateCult } from '../src/lib/sim/uprisings';
 import { makeRng } from '../src/lib/rng';
+import { hz } from '../src/lib/sim/hazards';
 
 const T0 = performance.now();
 const OPTS = { seed: 'selftest', template: 'continents' as const, cells: 3000, states: 10, width: 1600, height: 1000, genre: 'fantasy' as const, planet: 'terran' as const, spheres: null, depth: 2, sky: true, sea: true };
@@ -94,6 +95,12 @@ check(loaded.sims.every((s, i) => s.planetIndex === i && s.cosmos === loaded), '
 run(a, 10);
 run(loaded, 10);
 check(simHash(loaded) === simHash(a), `restore + 10 years == original + 10 years (${ms(t)})`);
+{
+	// hazards state (sim._hazardsState via ext): geology, recent disasters, outbreaks and immunity survive the round trip
+	const hzKey = (s: Cosmos['sims'][number]) => { const h = hz(s); return JSON.stringify([h.faults.map((f) => [f.name, f.cells.length, f.last]), h.volcanoes.map((v) => [v.name, v.active, v.last]), h.recent.length, h.counts, h.outbreaks.map((o) => [o.id, o.name, o.ended ?? -1, o.months]), Array.from(h.imm).reduce((x, y) => x + y, 0), Array.from(h.ob).reduce((x, y) => x + y, 0)]); };
+	const hs = a.sims.map(hzKey);
+	check(a.sims.every((s) => (s as unknown as { _hazardsState?: unknown })._hazardsState) && hs.join() === loaded.sims.map(hzKey).join(), `hazards state round trip (${a.sims.map((s) => `${hz(s).faults.length} faults, ${hz(s).volcanoes.length} volcanoes, ${hz(s).recent.length} disasters`).join(' / ')})`);
+}
 // pack/unpack keeps shared refs, Map/Set and odd numbers
 const shared = { k: 1 };
 const odd = unpack(pack({ m: new Map([[1, 'a']]), s: new Set([2]), n: [NaN, Infinity, -Infinity, undefined], x: shared, y: shared, f: new Float32Array([1.5, 2]) })) as any;
@@ -111,6 +118,14 @@ try {
 	check(oc.sims.every((s) => s.year >= 65), `old save keeps simulating (${ms(t)})`);
 	const again = cosmosFromData(decodeSave(encodeSave(snapshotData(oc), pristine), pristine));
 	check(simHash(again) === simHash(oc), 'old save re-saves cleanly');
+	check(oc.sims.every((s) => hz(s).faults.length + hz(s).volcanoes.length > 0 && hz(s).ob.length === s.c.n), 'old save without hazards state rebuilds geology and disease fields');
+	const s0 = oc.sims[0];
+	const town = s0.w.burgs.find((b) => b.id && b.alive && s0.burgLayer(b) === 0)!;
+	s0.seedPlague(town.cell, 1);
+	const ob = hz(s0).outbreaks.at(-1)!;
+	check(ob.disease === 'pestilence' && hz(s0).ob[town.cell] === ob.id && s0.plague[town.cell] >= 1, `seedPlague maps the god power to a disease profile (${ob.name})`);
+	run(oc, 2);
+	check(s0.year >= 67, 'outbreak spreads without errors');
 } catch (e) {
 	oldOk = false;
 	console.error(e);
@@ -129,6 +144,11 @@ try {
 	check(w.burgs.length > 0 && w.states.length > 0 && w.cultures.length > 0 && w.events.length > 0, `export lists ${w.burgs.length} burgs, ${w.states.length} states, ${w.cultures.length} cultures, ${w.events.length} events`);
 	check(w.cultures.every((c: any) => Array.isArray(c.months) && c.months.length === 12 && Array.isArray(c.feasts)), 'cultures carry 12 months and feasts');
 	check(w.burgs.every((b: any) => typeof b.id === 'number' && typeof b.name === 'string' && b.p !== undefined), 'burgs have id/name/position');
+	check(w.names && w.names.routes.length > 0 && w.names.features.length > 0 && w.names.routes.every((r: any) => r.name && r.parasangs.every((p: number) => p >= 0 && p < n)) && w.burgs.every((b: any) => w.names.burgs[b.id]?.tier), `names: ${w.names?.rivers.length} rivers, ${w.names?.routes.length} routes, ${w.names?.features.length} features, burg tiers`);
+	const twice = exportAdventureObject(a.sims[0]) as Record<string, any>;
+	check(JSON.stringify(twice.names) === JSON.stringify(w.names), 'names export is deterministic');
+	const H = w.hazards;
+	check(H && Array.isArray(H.faults) && H.faults.every((f: any) => f.name && f.parasangs.length) && Array.isArray(H.volcanoes) && Array.isArray(H.recent) && Array.isArray(H.outbreaks) && H.diseases.length >= 8, `export carries hazards (${H?.faults.length} faults, ${H?.volcanoes.length} volcanoes, ${H?.recent.length} recent, ${H?.outbreaks.length} outbreaks)`);
 	const uni = JSON.parse(exportUniverse(a));
 	check(uni.kind === 'wanderer-universe' && uni.planets.length === PLANETS && Array.isArray(uni.rifts), `universe export: ${uni.planets.length} planets, ${uni.rifts.length} rifts (${ms(t)})`);
 } catch (e) {

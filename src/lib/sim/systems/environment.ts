@@ -6,8 +6,10 @@ import { assignBiomes, assignPopulation, biomeOf, BIOMES, climate, markFeatures,
 import { withDefaults } from '../../gen/options';
 import type { Climate, World } from '../../gen/types';
 import { narrateDisaster } from '../chronicle';
+import { hazardsPlague, hazardsSpread } from '../hazards';
 
 export function seedPlague(sim: Simulation, cell: number, v = 1) {
+	if (hazardsPlague(sim, cell, v)) return; // named diseases (sim/hazards)
 	sim.plagueActive = true;
 	sim.plague[cell] = Math.max(sim.plague[cell], v);
 	const b = sim.c.burg[cell] ? sim.w.burgs[sim.c.burg[cell]] : null;
@@ -16,7 +18,7 @@ export function seedPlague(sim: Simulation, cell: number, v = 1) {
 }
 
 export function spreadPlague(sim: Simulation) {
-	if (!sim.plagueActive) return;
+	if (!sim.plagueActive || hazardsSpread(sim)) return;
 	const c = sim.c, pl = sim.plague;
 	let any = false;
 	const next = pl.slice();

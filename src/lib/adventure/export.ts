@@ -4,6 +4,7 @@
  * The Voronoi map is rasterised into parasangs (W×H grid); everything else is plain records.
  * Name pools come from fresh side languages so the sim's own name streams never advance.
  */
+import { hazardsExport } from './hazards';
 import type { Simulation } from '../sim/engine';
 import type { Cosmos } from '../sim/cosmos';
 import { GENRES } from '../gen/genre';
@@ -31,6 +32,8 @@ import { w3On } from '../sim/society/state';
 import { activeForces } from '../sim/genre/forces';
 import { FORCES } from '../sim/genre/forcelines';
 import { describeProceduralAppearance, hashStr32 } from '../render/proc_assets';
+import { exportNames } from './names';
+import { transportExport } from './transport';
 
 const NOTABLE = new Set(['ruler', 'heir', 'general', 'hero', 'prophet', 'magician', 'thinker', 'priest', 'villain', 'artist', 'inventor', 'merchant']);
 
@@ -248,7 +251,10 @@ export function exportAdventureObject(sim: Simulation) {
 		year: sim.year, era: ERAS[sim.era]?.name ?? '', w: PW, h: PH, biome, height, temp, river, road, state, culture, religion, burg: burgAt,
 		cell: Array.from(cellOf), layers, burgs, states, cultures, religions, people, events, monsters, artifacts, wonders, species, outlaws, megastructures, sectorNames: SECTORS,
 		terms: G.terms, layerNames: G.layerNames,
-		...(soc.forces ? { forces: soc.forces } : {})
+		names: exportNames(sim, { PW, PH, cellOf, height, biome, culture, road, burgAt }, pOfCell),
+		...(soc.forces ? { forces: soc.forces } : {}),
+		...transportExport(sim, pOfCell),
+		...hazardsExport(sim, pOfCell)
 	};
 	return out;
 }
