@@ -4,7 +4,8 @@
  * `playwright`, never `playwright install`). Setup → forge a small world → run years → every map mode and
  * sim layer → info-panel tabs, God and Avatar panels → Export dialog → save, reload, resume.
  * Fails on page errors, console errors, failed requests or a blank map canvas.
- * Flags: --no-build, --port N, --headed, --cells N (default 4000), --years N (default 15), --perf (time r.draw()).
+ * Flags: --no-build, --port N, --headed, --cells N (default 4000), --years N (default 15), --perf (time r.draw()),
+ *        --shot DIR (screenshots of the map with every sim layer on, fitted and zoomed).
  */
 import { spawn, execSync } from 'node:child_process';
 import { createRequire } from 'node:module';
@@ -100,6 +101,16 @@ await step('sim layers on', async () => {
 	await page.mouse.wheel(0, 0);
 	for (let i = 0; i < 4; i++) { await page.mouse.move(box.x + box.width * (0.3 + i * 0.1), box.y + box.height * 0.5); await page.waitForTimeout(80); }
 	if (await blank()) throw new Error('map canvas is blank with layers on');
+	const shot = opt('--shot', '');
+	if (shot) {
+		await page.screenshot({ path: path.join(shot, 'layers-fit.png') });
+		await page.mouse.move(box.x + box.width * 0.45, box.y + box.height * 0.5);
+		for (let i = 0; i < 6; i++) { await page.mouse.wheel(0, -300); await page.waitForTimeout(120); }
+		await page.waitForTimeout(800);
+		await page.screenshot({ path: path.join(shot, 'layers-zoom.png') });
+		await page.keyboard.press('f');
+		await page.waitForTimeout(300);
+	}
 });
 if (flag('--perf')) await step('frame timing', async () => {
 	const t = await page.evaluate(() => {

@@ -115,12 +115,21 @@ export class SimLayers {
 		const hs = hzOf(sim);
 		if (this.on.has('faults') && hs && layer === 0)
 			for (const f of hs.faults) {
+				// a breadth-first spanning tree of the fault's cells: a branching crack, not a mesh of every edge
 				const set = new Set(f.cells);
-				for (const i of f.cells)
+				const seen = new Set([f.cells[0]]);
+				const q = [f.cells[0]];
+				for (let h = 0; h < q.length; h++) {
+					const i = q[h];
 					for (let k = c.nStart[i]; k < c.nStart[i + 1]; k++) {
 						const j = c.nList[k];
-						if (j > i && set.has(j)) { C.faults.moveTo(c.x[i], c.y[i]); C.faults.lineTo(c.x[j], c.y[j]); }
+						if (!set.has(j) || seen.has(j)) continue;
+						seen.add(j);
+						q.push(j);
+						C.faults.moveTo(c.x[i], c.y[i]);
+						C.faults.lineTo(c.x[j], c.y[j]);
 					}
+				}
 			}
 		if (this.on.has('disease') && hs && layer === 0) {
 			const dz = new Map<number, string>();
