@@ -4,6 +4,7 @@
  * The Voronoi map is rasterised into parasangs (W×H grid); everything else is plain records.
  * Name pools come from fresh side languages so the sim's own name streams never advance.
  */
+import { hazardsExport } from './hazards';
 import type { Simulation } from '../sim/engine';
 import type { Cosmos } from '../sim/cosmos';
 import { GENRES } from '../gen/genre';
@@ -252,7 +253,8 @@ export function exportAdventureObject(sim: Simulation) {
 		terms: G.terms, layerNames: G.layerNames,
 		names: exportNames(sim, { PW, PH, cellOf, height, biome, culture, road, burgAt }, pOfCell),
 		...(soc.forces ? { forces: soc.forces } : {}),
-		...transportExport(sim, pOfCell)
+		...transportExport(sim, pOfCell),
+		...hazardsExport(sim, pOfCell)
 	};
 	return out;
 }
