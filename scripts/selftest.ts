@@ -129,6 +129,9 @@ try {
 	check(w.burgs.length > 0 && w.states.length > 0 && w.cultures.length > 0 && w.events.length > 0, `export lists ${w.burgs.length} burgs, ${w.states.length} states, ${w.cultures.length} cultures, ${w.events.length} events`);
 	check(w.cultures.every((c: any) => Array.isArray(c.months) && c.months.length === 12 && Array.isArray(c.feasts)), 'cultures carry 12 months and feasts');
 	check(w.burgs.every((b: any) => typeof b.id === 'number' && typeof b.name === 'string' && b.p !== undefined), 'burgs have id/name/position');
+	check(w.names && w.names.routes.length > 0 && w.names.features.length > 0 && w.names.routes.every((r: any) => r.name && r.parasangs.every((p: number) => p >= 0 && p < n)) && w.burgs.every((b: any) => w.names.burgs[b.id]?.tier), `names: ${w.names?.rivers.length} rivers, ${w.names?.routes.length} routes, ${w.names?.features.length} features, burg tiers`);
+	const twice = exportAdventureObject(a.sims[0]) as Record<string, any>;
+	check(JSON.stringify(twice.names) === JSON.stringify(w.names), 'names export is deterministic');
 	const uni = JSON.parse(exportUniverse(a));
 	check(uni.kind === 'wanderer-universe' && uni.planets.length === PLANETS && Array.isArray(uni.rifts), `universe export: ${uni.planets.length} planets, ${uni.rifts.length} rifts (${ms(t)})`);
 } catch (e) {
