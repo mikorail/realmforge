@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { settlementArchitecture } from '#lib/sim/systems/settlement_arch';
 	import { BIOMES } from '#lib/gen/physical';
 	import { SPHERE_BY_ID } from '#lib/gen/spheres';
 	import type { GenreDef } from '#lib/gen/genre';
@@ -280,6 +281,15 @@
 					aria-label={`Skyline of ${info.burg.name}`}
 				></canvas>
 				<div class="stat"><span>Population</span><span>{(info.burg.pop * 1000).toFixed(0)}</span></div>
+				{@const bArch = settlementArchitecture(sim, info.burg)}
+				<div class="stat small" style="margin-top: 2px;">
+					<span>Architecture</span>
+					<span title="${bArch.wallMaterial} · ${bArch.gateType}">🏛️ ${bArch.wallMaterial}</span>
+				</div>
+				<div class="stat small">
+					<span>Silhouette · Gate</span>
+					<span class="muted small">${bArch.silhouette} (${bArch.gateType})</span>
+				</div>
 				{#if info.burg.governor && sim.people[info.burg.governor]?.alive}
 					{@const gov = sim.people[info.burg.governor]}
 					<div class="stat" style="align-items: center;">

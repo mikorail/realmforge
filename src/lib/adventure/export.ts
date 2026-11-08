@@ -20,6 +20,7 @@ import { kmPerPx } from '../gen/options';
 import { ERAS } from '../sim/tech';
 import type { ChronEvent } from '../sim/types';
 import { burgMix, SECTORS } from '../sim/sectors';
+import { settlementArchitecture } from '../sim/systems/settlement_arch';
 import { getLeagueState } from '../sim/leagues';
 import type { MegastructureState } from '../sim/megastructures';
 import { orderInfo } from '../sim/society/socialorders';

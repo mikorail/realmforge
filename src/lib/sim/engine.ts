@@ -1,3 +1,4 @@
+import { livingWorldTick } from "./systems/living_world";
 import { clamp, makeRng, type Rng } from '../rng';
 import { makeLang, type Lang } from '../gen/names';
 import type { Climate } from '../gen/types';
@@ -418,6 +419,7 @@ export class Simulation {
 		realms.rebellions(this);
 		realms.tribes(this);
 		realms.randomEvents(this);
+		livingWorldTick(this);
 		economy.innovate(this);
 		economy.updateWonders(this);
 		lifecycle.updateLuminaries(this);

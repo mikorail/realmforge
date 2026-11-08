@@ -127,7 +127,7 @@ Each item is optional per world (Society tab toggle), uses side rngs where possi
 
 
 ## Brainstormed Future Ideas & Expansions
-- **Dynamic Settlement Architecture**: Cultural building silhouettes, monumental gates, and wall materials (ashlar stone, timber, kiln brick, marble, adobe, bone-and-hide) reflected on settlement cards and world exports.
-- **Living Simulation Spectacles**: Executions, honor duels, bustling market days, and trade festivals simulated as live chronicle events.
-- **Urban Labor & Economy Dynamics**: Explicit seasonal labor cycles for farming, timber felling, mining, and guard patrols feeding realm prosperity.
-- **Nomadic Migrations**: Mobile pastoral tribes that migrate their settlement centers between winter and summer pastures.
+- [x] **Dynamic Settlement Architecture** (done: `sim/systems/settlement_arch.ts`, InfoPanel, export.ts): Cultural building silhouettes, monumental gates, and wall materials (ashlar stone, timber, kiln brick, marble, adobe, bone-and-hide) reflected on settlement cards and world exports.
+- [x] **Living Simulation Spectacles** (done: `sim/systems/living_world.ts`): Executions, honor duels, bustling market days, and trade festivals simulated as live chronicle events.
+- [x] **Urban Labor & Economy Dynamics** (done: `sim/systems/living_world.ts`): Explicit seasonal labor cycles for farming, timber felling, mining, and guard patrols feeding realm prosperity.
+- [x] **Nomadic Migrations** (done: `sim/systems/living_world.ts`): Mobile pastoral tribes that migrate their settlement centers between winter and summer pastures.
