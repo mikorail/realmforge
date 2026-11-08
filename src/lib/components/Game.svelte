@@ -35,6 +35,8 @@
 		crises: () => import('./CrisesModal.svelte'),
 		sagas: () => import('./SagasModal.svelte'),
 		congress: () => import('./CongressModal.svelte'),
+		battle: () => import('./BattleModal.svelte'),
+		astral: () => import('./AstralModal.svelte'),
 		god: () => import('./GodPanel.svelte'),
 		avatar: () => import('./AvatarPanel.svelte')
 	};
@@ -73,6 +75,8 @@
 	let showCrises = $state(false);
 	let showSagas = $state(false);
 	let showCongress = $state(false);
+	let showAstral = $state(false);
+	let activeBattle = $state<{ warId?: number; burgId?: number } | null>(null);
 	let activeMegastructure = $state<any | null>(null);
 	let activeDungeon = $state<DelveDungeon | null>(null);
 	function startDelve(c: number) {
@@ -621,7 +625,7 @@
 			</div>
 			<div class="body scroll">
 				{#if tab === 'observe'}
-					<InfoPanel {sim} {v} {cell} {layer} terms={G.terms} onfocus={focus} onselect={(c) => (cell = c)} ondynasty={(id) => (dynastyRuler = id)} onburg={(bId) => (burgModalId = bId)} onleagues={() => (leaguesOpen = true)} ondelve={startDelve} onmegastructure={openMegastructure} onapotheosis={() => (showApotheosis = true)} oncrises={() => (showCrises = true)} onsagas={() => (showSagas = true)} oncongress={() => (showCongress = true)} />
+					<InfoPanel {sim} {v} {cell} {layer} terms={G.terms} onfocus={focus} onselect={(c) => (cell = c)} ondynasty={(id) => (dynastyRuler = id)} onburg={(bId) => (burgModalId = bId)} onleagues={() => (leaguesOpen = true)} ondelve={startDelve} onmegastructure={openMegastructure} onapotheosis={() => (showApotheosis = true)} oncrises={() => (showCrises = true)} onsagas={() => (showSagas = true)} oncongress={() => (showCongress = true)} onbattle={(wId, bId) => (activeBattle = { warId: wId, burgId: bId })} onastral={() => (showAstral = true)} />
 				{:else if tab === 'god'}
 					{#await lazy.god()}
 						<p class="small muted">Loading…</p>
@@ -829,6 +833,30 @@
 					if (p) focus(sim.w.burgs[p.capital]?.cell);
 					showCongress = false;
 				}}
+			/>
+		{/await}
+	{/if}
+
+	{#if activeBattle !== null}
+		{#await lazy.battle() then { default: BattleModal }}
+			<BattleModal
+				sim={cosmos.sims[pi]}
+				{v}
+				warId={activeBattle.warId}
+				burgId={activeBattle.burgId}
+				onclose={() => (activeBattle = null)}
+				onrefresh={() => { v++; needDraw = true; }}
+			/>
+		{/await}
+	{/if}
+
+	{#if showAstral}
+		{#await lazy.astral() then { default: AstralModal }}
+			<AstralModal
+				sim={cosmos.sims[pi]}
+				{v}
+				onclose={() => (showAstral = false)}
+				onrefresh={() => { v++; needDraw = true; }}
 			/>
 		{/await}
 	{/if}

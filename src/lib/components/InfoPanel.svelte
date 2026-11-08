@@ -28,7 +28,7 @@
 	import { getBurgDistricts } from '#lib/sim/burgs';
 	import { getMegastructureState } from '#lib/sim/megastructures';
 
-	let { sim, v, cell, layer, terms, onfocus, onselect, ondynasty, onburg, onleagues, ondelve, onmegastructure, onapotheosis, oncrises, onsagas, oncongress }: {
+	let { sim, v, cell, layer, terms, onfocus, onselect, ondynasty, onburg, onleagues, ondelve, onmegastructure, onapotheosis, oncrises, onsagas, oncongress, onbattle, onastral }: {
 		sim: Simulation; v: number; cell: number; layer: number; terms: GenreDef['terms'];
 		onfocus: (c: number | undefined) => void; onselect: (c: number) => void;
 		ondynasty?: (rulerId: number) => void;
@@ -40,6 +40,8 @@
 		oncrises?: () => void;
 		onsagas?: () => void;
 		oncongress?: () => void;
+		onbattle?: (warId?: number, burgId?: number) => void;
+		onastral?: () => void;
 	} = $props();
 
 	type MainTab = 'overview' | 'quests' | 'wonders' | 'monsters' | 'luminaries' | 'tech';
@@ -272,6 +274,9 @@
 					</div>
 					{#if onburg}
 						<button class="btn small" style="padding: 2px 8px;" onclick={() => onburg?.(info.burg!.id)} title="Manage Settlement Districts, Governor, and Garrison">🏛️ Manage</button>
+					{/if}
+					{#if onbattle}
+						<button class="btn small" style="padding: 2px 8px;" onclick={() => onbattle(undefined, info.burg!.id)} title="Simulate Citadel Siege Operations">🏰 Siege</button>
 					{/if}
 				</div>
 				<canvas
@@ -604,7 +609,12 @@
 			<ul class="list">
 				{#each wars as w (w.id)}
 					<li>
-						<strong>{w.name}</strong>
+						<div class="row between" style="align-items: center;">
+							<strong>{w.name}</strong>
+							{#if onbattle}
+								<button class="chip on small" onclick={() => onbattle(w.id)} title="Command Tactical Battlefield Engagement">⚔️ Engage</button>
+							{/if}
+						</div>
 						<span class="small muted">since {w.start} · score {w.score > 0 ? '+' : ''}{w.score}</span>
 						<div class="small">{w.attackers.map((x) => sim.polities[x].name).join(', ')} <span class="bad">vs</span> {w.defenders.map((x) => sim.polities[x].name).join(', ')}</div>
 					</li>
@@ -662,6 +672,12 @@
 				{/if}
 				{#if oncongress}
 					<button class="chip on" onclick={oncongress} title="Grand World Congress and Planetary Megaprojects">🌐 Congress</button>
+				{/if}
+				{#if onbattle}
+					<button class="chip on" onclick={() => onbattle()} title="Tactical Field Battle & Citadel Siege Operations">⚔️ Battle</button>
+				{/if}
+				{#if onastral}
+					<button class="chip on" onclick={onastral} title="Celestial Zodiac & The Astral Sea">✨ Astral</button>
 				{/if}
 			</div>
 		</div>
