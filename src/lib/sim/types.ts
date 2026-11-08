@@ -83,6 +83,9 @@ export interface Person {
 	mixed?: { culture: number; species?: string };
 	/** role in avatar adventuring warband / company */
 	partyRole?: 'champion' | 'spymaster' | 'quartermaster' | 'lorekeeper';
+	/** optional colored subrace or tribal lineage identifier */
+	subrace?: string;
+	totem?: string;
 }
 
 export interface Polity {

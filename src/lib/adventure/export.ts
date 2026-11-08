@@ -9,7 +9,7 @@ import type { Simulation } from '../sim/engine';
 import type { Cosmos } from '../sim/cosmos';
 import { GENRES } from '../gen/genre';
 import { findCell } from '../gen/grid';
-import { SPECIES } from '../gen/species';
+import { getCultureVariant, SPECIES, SPECIES_VARIANTS } from '../gen/species';
 import { SPHERE_BY_ID } from '../gen/spheres';
 import { makeLang, fullPersonName, makeName } from '../gen/names';
 import { SPHERE_CULTURE, FALLBACK_CULTURE, FEAST_MONTH, FEAST_TEXT } from '../sim/culture/data';
@@ -156,8 +156,11 @@ export function exportAdventureObject(sim: Simulation) {
 		const months: string[] = [];
 		for (let m = 0; m < 12; m++) months.push(monthName(w, cu.id, m));
 		const feasts = prof.feasts.map(([name, kind]) => ({ name, kind, month: FEAST_MONTH[kind], text: FEAST_TEXT[kind] }));
+		const cBiome = cu.center >= 0 ? (w.cells.biome[cu.center] ?? 4) : 4;
+		const cVar = getCultureVariant(cu.species ?? 'human', cBiome, cu.id || 1);
 		return {
-			id: cu.id, name: cu.name, sphere: cu.sphere, species: cu.species ?? 'human', layer: cu.layer, given, houses: [], places, food: sc.food, dress: sc.dress,
+			id: cu.id, name: cu.name, sphere: cu.sphere, species: cu.species ?? 'human', subrace: cu.subrace || cVar.name, totem: cu.totem || cVar.totem,
+			colorHex: cVar.colorHex, paintHex: cVar.paintHex, layer: cu.layer, given, houses: [], places, food: sc.food, dress: sc.dress,
 			months, feasts, festivals: SPHERE_LORE[cu.sphere]?.festivals ?? [], music: sc.music, architecture: sc.architecture, values: sc.values,
 			...soc.culture(cu.id)
 		};
@@ -242,7 +245,8 @@ export function exportAdventureObject(sim: Simulation) {
 	for (const cu of w.cultures) speciesCount.set(cu.species ?? 'human', (speciesCount.get(cu.species ?? 'human') ?? 0) + 1);
 	const species = SPECIES.map((s) => ({
 		id: s.id, name: s.name, plural: s.plural, adjective: s.adjective, desc: s.desc, martial: s.mods.martial, diplomacy: s.mods.diplomacy,
-		stewardship: s.mods.stewardship, intrigue: s.mods.intrigue, health: s.mods.health, traits: s.traits, layers: s.layers, common: speciesCount.get(s.id) ?? 0
+		stewardship: s.mods.stewardship, intrigue: s.mods.intrigue, health: s.mods.health, traits: s.traits, layers: s.layers, common: speciesCount.get(s.id) ?? 0,
+		variants: (SPECIES_VARIANTS[s.id] ?? []).map((v) => ({ id: v.id, name: v.name, colorHex: v.colorHex, paintHex: v.paintHex, totem: v.totem, trait: v.trait, biomes: v.biomes }))
 	}));
 
 	const G = GENRES[sim.voice] ?? GENRES[w.opts.genre];

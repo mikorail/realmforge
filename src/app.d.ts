@@ -8,7 +8,7 @@ declare global {
 		// interface PageState {}
 		// interface Platform {}
 	}
-	const process: { env: Record<string, string | undefined>; argv: string[] };
+	const process: { env: Record<string, string | undefined>; argv: string[]; exit: (code?: number) => never };
 }
 
 export {};

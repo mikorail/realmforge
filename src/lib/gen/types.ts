@@ -167,6 +167,9 @@ export interface Culture {
 	sphere: string;
 	layer: LayerKind;
 	species?: string;
+	variant?: string;
+	subrace?: string;
+	totem?: string;
 }
 
 export type TheologyKind =

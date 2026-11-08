@@ -23,12 +23,14 @@
 			<header class="mhead">
 				<div>
 					<h2 id="culture-title"><span class="swatch" style="background:{color}"></span>{card.name}</h2>
+					<p class="muted small">{card.speciesIcon} {card.lineageLabel}</p>
 					<p class="muted small">Sphere of {card.sphere} · {card.type} people{card.realms.length ? ` · ${card.realms.join(', ')}` : ''}</p>
 				</div>
 				<button class="btn icon" onclick={onclose} aria-label="Close culture card">✕</button>
 			</header>
 
 			<dl class="facts">
+				<dt>Lineage</dt><dd><span class="swatch" style="background:{card.subraceColor}; border: 1.5px solid {card.paintColor};"></span>{card.subrace} {card.species} <span class="muted small">· Totem: {card.totem}</span></dd>
 				{#if card.origin}<dt>Origin</dt><dd>{card.origin}</dd>{/if}
 				{#if card.prestige}<dt>Prestige</dt><dd>{card.prestige.score} <span class="muted small">· rank {card.prestige.rank} of {card.prestige.of}{card.prestige.sources ? ` · from ${card.prestige.sources}` : ''}{card.prestige.mult >= 1.1 ? ' · its tongue and ways spread' : ''}</span></dd>{/if}
 				<dt>Food</dt><dd>{card.food}</dd>

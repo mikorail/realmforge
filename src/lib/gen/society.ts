@@ -3,7 +3,7 @@ import { Heap, neighbors } from './grid';
 import { GENRES, type Genre } from './genre';
 import { makeLang, makeName, religionName, type Lang } from './names';
 import { pickSphere, SPHERE_BY_ID } from './spheres';
-import { pickSpeciesForCulture } from './species';
+import { getCultureVariant, pickSpeciesForCulture } from './species';
 import { assignReligionIdentity } from './religions';
 import { BIOMES } from './physical';
 import { SEA, type Burg, type Cells, type Culture, type Feature, type Religion, type Route, type StateDef } from './types';
@@ -92,7 +92,8 @@ export function generateCultures(c: Cells, rng: Rng, seed: string, features: Fea
 			type = lake ? 'Lake' : 'Naval';
 		} else if (c.river[center] && c.flux[center] > 40) type = 'River';
 		const species = pickSpeciesForCulture(rng, c.biome[center], 'surface', sphere.id);
-		cultures.push({ id, name: makeName(L, 'people'), color: colors[k], center, type, lang: id, sphere: sphere.id, layer: 'surface', species: species.id });
+		const variant = getCultureVariant(species.id, c.biome[center], id);
+		cultures.push({ id, name: makeName(L, 'people'), color: colors[k], center, type, lang: id, sphere: sphere.id, layer: 'surface', species: species.id, variant: variant.id, subrace: variant.name, totem: variant.totem });
 	});
 	expand(
 		c,

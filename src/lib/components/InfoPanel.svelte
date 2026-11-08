@@ -4,7 +4,7 @@
 	import type { GenreDef } from '#lib/gen/genre';
 	import type { Simulation } from '#lib/sim/engine';
 	import type { EventKind } from '#lib/sim/types';
-	import { SPECIES_BY_ID } from '#lib/gen/species';
+	import { getCultureVariant, SPECIES_BY_ID } from '#lib/gen/species';
 	import { ERAS, DISCOVERIES, TECH_BRANCHES, type TechBranch } from '#lib/sim/tech';
 	import { synthesizeAnnualAnnals, compileAnnalsBookMarkdown } from '#lib/sim/chronicle';
 	import { motiveInfo } from '#lib/sim/motives';
@@ -320,9 +320,15 @@
 			{/if}
 			{#if info.cult && info.cult.id}
 				{@const sp = SPECIES_BY_ID[info.cult.species ?? 'human'] ?? SPECIES_BY_ID['human']}
+				{@const cBiome = info.cult.center >= 0 ? (sim.w.cells.biome[info.cult.center] ?? 4) : 4}
+				{@const cVar = getCultureVariant(sp.id, cBiome, info.cult.id)}
 				<div class="stat">
 					<span>Culture</span>
-					<span><span class="swatch" style="background:{info.cult.color}"></span><button class="link" onclick={() => (cultureCardId = info.cult?.id ?? null)} title="Open culture card">{info.cult.name}</button> <span class="muted">({sp.icon} {sp.name})</span></span>
+					<span><span class="swatch" style="background:{info.cult.color}"></span><button class="link" onclick={() => (cultureCardId = info.cult?.id ?? null)} title="Open culture card">{info.cult.name}</button> <span class="muted">({sp.icon} {cVar.name} {sp.plural})</span></span>
+				</div>
+				<div class="stat small">
+					<span>Subrace · Totem</span>
+					<span><span class="swatch" style="background:{cVar.colorHex}; border: 1.5px solid {cVar.paintHex};"></span>{cVar.name} · 🐾 {cVar.totem}</span>
 				</div>
 			{/if}
 			{#if info.rel && info.rel.id}

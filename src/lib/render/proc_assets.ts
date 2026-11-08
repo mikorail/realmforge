@@ -1,5 +1,6 @@
 import type { Burg, Cells, World } from '../gen/types';
 import { archStyleOf } from '../gen/spheres';
+import { getCultureVariant } from '../gen/species';
 import { getBurgDistricts } from '../sim/burgs';
 import type { Simulation } from '../sim/engine';
 import type { Person, Role } from '../sim/types';
@@ -42,6 +43,10 @@ export interface ProceduralAppearance {
 	attireDetail: string;
 	trinket: string;
 	demeanour: string;
+	subrace: string;
+	totem: string;
+	colorHex: string;
+	paintHex: string;
 	summary: string;
 }
 
@@ -127,10 +132,13 @@ const DEMEANOURS = [
 	'moves with a quiet, cat-like economy'
 ] as const;
 
-export function describeProceduralAppearance(p: Person, worldSeed: number | string = 1): ProceduralAppearance {
+export function describeProceduralAppearance(p: Person, worldSeed: number | string = 1, biome?: number): ProceduralAppearance {
 	const seedNum = typeof worldSeed === 'string' ? hashStr32(worldSeed) : worldSeed;
 	const h = hash32(seedNum, p.id, hashStr32(p.name));
 	const sp = p.species || 'human';
+	const cultSeed = p.culture || p.id || 1;
+	const effBiome = biome ?? (cultSeed % 17);
+	const variant = getCultureVariant(sp, effBiome, cultSeed);
 	const build = pickH(BUILDS, h, 0);
 	const feature = pickH(FEATURES, h, 4);
 	const eyes = `${pickH(EYES, h, 8)} eyes`;
@@ -155,7 +163,11 @@ export function describeProceduralAppearance(p: Person, worldSeed: number | stri
 		attireDetail,
 		trinket,
 		demeanour,
-		summary: `A ${build} figure with ${eyes}, ${hairOrHead}, and ${feature}. Carries ${trinket} and ${demeanour}.`
+		subrace: p.subrace || variant.name,
+		totem: p.totem || variant.totem,
+		colorHex: variant.colorHex,
+		paintHex: variant.paintHex,
+		summary: `A ${build} ${p.subrace || variant.name} figure with ${eyes}, ${hairOrHead}, and ${feature}. Carries ${trinket} and ${demeanour}.`
 	};
 }
 
@@ -189,6 +201,19 @@ const SKIN_PALETTES: Record<string, readonly [string, string][]> = {
 const HAIR_COLORS = ['#1e1b18', '#3d2817', '#6e4726', '#b58143', '#8c3322', '#d9c29c', '#7a8288', '#e6e8ea'];
 const CLOTHS = ['#8c2d2d', '#2d5a8c', '#2d7348', '#6e3d82', '#8c6928', '#2b5e66', '#5c3c28', '#3a4659'];
 
+function mixHex(a: string, b: string, t: number): string {
+	const parse = (hex: string): [number, number, number] => {
+		const c = hex.replace('#', '');
+		if (c.length !== 6) return [180, 140, 110];
+		const n = parseInt(c, 16);
+		return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+	};
+	const [r1, g1, b1] = parse(a);
+	const [r2, g2, b2] = parse(b);
+	const toH = (v: number) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0');
+	return `#${toH(r1 + (r2 - r1) * t)}${toH(g1 + (g2 - g1) * t)}${toH(b1 + (b2 - b1) * t)}`;
+}
+
 /**
  * Draw a crisp procedural character portrait onto any Canvas2D context inside [x, y, size, size].
  */
@@ -199,13 +224,18 @@ export function drawCharacterPortrait(
 	y: number,
 	size: number,
 	realmColor?: string,
-	worldSeed: number | string = 1
+	worldSeed: number | string = 1,
+	biome?: number
 ) {
 	const seedNum = typeof worldSeed === 'string' ? hashStr32(worldSeed) : worldSeed;
 	const h = hash32(seedNum, p.id, hashStr32(p.name));
 	const sp = p.species || 'human';
+	const cultSeed = p.culture || p.id || 1;
+	const variant = getCultureVariant(sp, biome ?? (cultSeed % 17), cultSeed);
 	const skinList = SKIN_PALETTES[sp] ?? SKIN_PALETTES.human;
-	const [skin, skinShadow] = pickH(skinList, h, 0);
+	const [baseSkin, baseShadow] = pickH(skinList, h, 0);
+	const skin = mixHex(baseSkin, variant.colorHex, 0.55);
+	const skinShadow = mixHex(baseShadow, variant.colorHex, 0.45);
 	const hairCol = pickH(HAIR_COLORS, h, 3);
 	const clothCol = realmColor || pickH(CLOTHS, h, 6);
 	const accentCol = '#e6c15a';
@@ -361,7 +391,48 @@ export function drawCharacterPortrait(
 	ctx.lineTo(cx + eyeDX + r * 0.2, eyeY - r * 0.2 - browTilt);
 	ctx.stroke();
 
-	// 8. Scar (if battle-hardened or by hash)
+	// 8. Tribal War-Paint / Clan Markings & Scar
+	const hasWarPaint =
+		p.role === 'general' ||
+		p.role === 'hero' ||
+		p.role === 'ruler' ||
+		p.role === 'wanderer' ||
+		p.martial >= 10 ||
+		p.traits?.includes('Fierce') ||
+		p.traits?.includes('Brave') ||
+		(h & 3) === 0;
+	if (hasWarPaint && variant.paintHex) {
+		ctx.save();
+		ctx.strokeStyle = variant.paintHex;
+		ctx.fillStyle = variant.paintHex;
+		ctx.globalAlpha = 0.78;
+		ctx.lineWidth = Math.max(1.2, size * 0.036);
+		const paintStyle = (h >>> 6) % 3;
+		if (paintStyle === 0) {
+			// Twin cheek war-stripes
+			ctx.beginPath();
+			ctx.moveTo(cx - jawW * 0.82, cy + r * 0.12);
+			ctx.lineTo(cx - r * 0.25, cy + r * 0.22);
+			ctx.moveTo(cx + jawW * 0.82, cy + r * 0.12);
+			ctx.lineTo(cx + r * 0.25, cy + r * 0.22);
+			ctx.stroke();
+		} else if (paintStyle === 1) {
+			// Vertical eye-slash clan mark
+			ctx.beginPath();
+			ctx.moveTo(cx - eyeDX, eyeY - r * 0.36);
+			ctx.lineTo(cx - eyeDX, eyeY + r * 0.42);
+			ctx.stroke();
+		} else {
+			// Brow chevron totem mark
+			ctx.beginPath();
+			ctx.moveTo(cx - r * 0.24, eyeY - r * 0.34);
+			ctx.lineTo(cx, eyeY - r * 0.18);
+			ctx.lineTo(cx + r * 0.24, eyeY - r * 0.34);
+			ctx.stroke();
+		}
+		ctx.restore();
+	}
+
 	if ((h & 7) === 0 || p.martial >= 13 || p.role === 'hero' || p.role === 'villain') {
 		ctx.strokeStyle = 'rgba(160, 45, 45, 0.65)';
 		ctx.lineWidth = Math.max(1, size * 0.025);

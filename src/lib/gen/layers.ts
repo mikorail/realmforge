@@ -5,7 +5,7 @@ import { neighbors } from './grid';
 import { makeLang, makeName, religionName, type Lang } from './names';
 import { expand, langSeed, palette, polityForm, spacedPicks } from './society';
 import { pickSphere, SPHERES } from './spheres';
-import { pickSpeciesForCulture } from './species';
+import { getCultureVariant, pickSpeciesForCulture } from './species';
 import { assignReligionIdentity } from './religions';
 import { SEA, type Burg, type Cells, type Culture, type GenOptions, type Layer, type Religion, type Route, type StateDef } from './types';
 
@@ -104,7 +104,8 @@ function populateLayer(
 		parts.langs[id] = L;
 		const type = layer.kind === 'deep' ? 'Deep' : layer.kind === 'sky' ? 'Sky' : 'Sea';
 		const species = pickSpeciesForCulture(rng, c.biome[sites[k]], layer.kind, sphere.id);
-		parts.cultures.push({ id, name: makeName(L, 'people'), color: palette(rng, 1, 40, 60)[0], center: sites[k], type, lang: id, sphere: sphere.id, layer: layer.kind, species: species.id });
+		const variant = getCultureVariant(species.id, c.biome[sites[k]], id);
+		parts.cultures.push({ id, name: makeName(L, 'people'), color: palette(rng, 1, 40, 60)[0], center: sites[k], type, lang: id, sphere: sphere.id, layer: layer.kind, species: species.id, variant: variant.id, subrace: variant.name, totem: variant.totem });
 		cultIds.push(id);
 		const { name, deity } = religionName(L, rng, true, parts.cultures[id].name);
 		const ident = assignReligionIdentity(rng, 'Folk', sphere.id || 'Generic');

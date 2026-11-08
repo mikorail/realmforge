@@ -1,6 +1,7 @@
 /** Culture card data (shared by CultureCard.svelte and the Markdown dossier export). */
 import type { Simulation } from '../engine';
 import { archStyleOf } from '../../gen/spheres';
+import { getCultureVariant, SPECIES_BY_ID } from '../../gen/species';
 import { FEAST_MONTH } from './data';
 import { TRAITS, cultureProfile, monthName } from './profile';
 import { mixedOrigin, prestigeView } from '../society';
@@ -10,6 +11,13 @@ export interface CultureCardData {
 	name: string;
 	sphere: string;
 	type: string;
+	species: string;
+	speciesIcon: string;
+	subrace: string;
+	subraceColor: string;
+	paintColor: string;
+	totem: string;
+	lineageLabel: string;
 	food: string;
 	dress: string;
 	architecture: string;
@@ -32,11 +40,23 @@ export function cultureCard(sim: Simulation, id: number): CultureCardData | null
 	const cu = sim.w.cultures[id];
 	if (!cu || !cu.id) return null;
 	const p = cultureProfile(sim.w, id);
+	const sp = SPECIES_BY_ID[cu.species ?? 'human'] ?? SPECIES_BY_ID['human'];
+	const biome = cu.center >= 0 ? (sim.w.cells.biome[cu.center] ?? 4) : 4;
+	const variant = getCultureVariant(sp.id, biome, cu.id);
+	const subrace = cu.subrace || variant.name;
+	const totem = cu.totem || variant.totem;
 	return {
 		id,
 		name: cu.name,
 		sphere: cu.sphere || 'unclassed',
 		type: cu.type,
+		species: sp.plural,
+		speciesIcon: sp.icon,
+		subrace,
+		subraceColor: variant.colorHex,
+		paintColor: variant.paintHex,
+		totem,
+		lineageLabel: `${subrace} ${sp.plural} · Totem: ${totem}`,
 		food: p.food,
 		dress: p.dress,
 		architecture: p.architecture,
@@ -64,6 +84,7 @@ function prestigeCard(sim: Simulation, id: number): CultureCardData['prestige'] 
 export function cultureCardMarkdown(card: CultureCardData): string[] {
 	const out = [
 		`#### ${card.name}`,
+		`- **Lineage**: ${card.lineageLabel}`,
 		`- **Sphere**: ${card.sphere} (${card.type})`,
 		`- **Food**: ${card.food}`,
 		`- **Dress**: ${card.dress}`,
