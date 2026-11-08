@@ -124,3 +124,10 @@ Each item is optional per world (Society tab toggle), uses side rngs where possi
 - [x] **W1 · Genre forces**: factory unrest and smog (steam), fallout and arms race (atom), green commons (solar), megacorps (cyber), leyline magic (high fantasy); pairs with age lock. _(done: `sim/genre/forces.ts` + `forcelines.ts`; active while `sim.voice` matches; plus war economy (diesel) and gene vats (bio); Society tab strength select, realm card chips)_
 - [x] **W2 · Social orders**: free / caste / feudal / slave / egalitarian per realm (needs sectors); slavery output vs unrest and revolts, abolition movements, caste stability vs stagnation, fantasy forms (thralls, bound spirits, golems). In-world pressures, not endorsement; toggle off by default-safe. _(done 2026-10-31: `sim/society/socialorders.ts` + 29 genre forms, output/unrest/stagnation, risings, reform movements, abolition civil wars, vassal and conquest imposition, Emancipate god power, Society tab toggle, realm card + hover)_
 - [x] **W3 · Smaller**: intermarriage and mixed peoples, pogroms/expulsions/refugees, reform movements, cultural prestige, famine ethics. _(done: `sim/society/` mixing, persecution, reforms, prestige, famine; Society tab "Social life" toggle)_
+
+
+## Brainstormed Future Ideas & Expansions
+- **Dynamic Settlement Architecture**: Cultural building silhouettes, monumental gates, and wall materials (ashlar stone, timber, kiln brick, marble, adobe, bone-and-hide) reflected on settlement cards and world exports.
+- **Living Simulation Spectacles**: Executions, honor duels, bustling market days, and trade festivals simulated as live chronicle events.
+- **Urban Labor & Economy Dynamics**: Explicit seasonal labor cycles for farming, timber felling, mining, and guard patrols feeding realm prosperity.
+- **Nomadic Migrations**: Mobile pastoral tribes that migrate their settlement centers between winter and summer pastures.
