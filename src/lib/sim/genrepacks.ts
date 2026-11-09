@@ -305,9 +305,18 @@ export function packLine(genre: Genre, key: LineKey, rng: Rng, vars: Record<stri
 	return tidyArticles(rng.pick(list).replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? ''));
 }
 
-/** "the The Glow Fellowship" → "the Glow Fellowship": names that carry their own article dropped into "the {name}" templates */
+/** Cleans up double articles, article mismatches, punctuation spacing, and redundant spaces */
 export function tidyArticles(text: string): string {
-	return text.replace(/\b(the|The|THE)\s+(?:the|The|THE)\b/g, '$1');
+	if (!text) return '';
+	return text
+		.replace(/\b(the|The|THE)\s+(?:the|The|THE)\b/g, '$1')
+		.replace(/\b(a|A)\s+(?:a|A)\b/g, '$1')
+		.replace(/\b(a|A)\s+(?:an|An)\b/g, '$1')
+		.replace(/\b(the|The)\s+(?:a|an)\b/g, '$1')
+		.replace(/\b(a|an)\s+(?:the|The)\b/g, '$1')
+		.replace(/\s+([.,!?:;])/g, '$1')
+		.replace(/[ \t]{2,}/g, ' ')
+		.trim();
 }
 
 export function packCult(genre: Genre, rng: Rng): string | null {

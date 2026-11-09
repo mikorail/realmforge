@@ -45,6 +45,12 @@ import { newW3, restoreW3, yearlySociety, type W3State } from './society';
 import { newForces, restoreForces, yearlyGenreForces } from './genre/forces';
 import { yearlyRail } from './rail';
 import { yearlyHazards } from './hazards';
+import { yearlyNavalWar } from './naval_war';
+import { yearlyDynastiesDeep } from './dynasties_deep';
+import { yearlySubterranean } from './subterranean';
+import { yearlyThaumaturgy } from './thaumaturgy';
+import { yearlySaintsInquisition } from './saints_inquisition';
+import { yearlyBanking } from './banking';
 
 export { POWERS, type Power } from './systems/godpowers';
 
@@ -453,6 +459,12 @@ export class Simulation {
 		yearlyCrossLayer(this);
 		yearlyPlanetRules(this);
 		yearlyHazards(this);
+		yearlyNavalWar(this);
+		yearlyDynastiesDeep(this);
+		yearlySubterranean(this);
+		yearlyThaumaturgy(this);
+		yearlySaintsInquisition(this);
+		yearlyBanking(this);
 		yearlyStory(this);
 		lifecycle.pruneMinorPeople(this);
 		history.compactArchive(this);
