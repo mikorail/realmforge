@@ -147,6 +147,12 @@ try {
 	check(w.names && w.names.routes.length > 0 && w.names.features.length > 0 && w.names.routes.every((r: any) => r.name && r.parasangs.every((p: number) => p >= 0 && p < n)) && w.burgs.every((b: any) => w.names.burgs[b.id]?.tier), `names: ${w.names?.rivers.length} rivers, ${w.names?.routes.length} routes, ${w.names?.features.length} features, burg tiers`);
 	const twice = exportAdventureObject(a.sims[0]) as Record<string, any>;
 	check(JSON.stringify(twice.names) === JSON.stringify(w.names), 'names export is deterministic');
+	// culture pack (adventure/culturepack.ts): every culture has customs, voice, literature, material life and language; deterministic; no em dashes
+	const packs = w.cultures.map((c: any) => c.pack);
+	check(packs.every((p: any) => p && p.v === 1 && p.customs?.taboos?.length && p.voice?.greet?.length && p.literature?.works?.length && p.material?.cuisine?.dishes?.length && p.lang?.lexicon?.length), `culture packs: ${packs.length} cultures, ${Math.round(JSON.stringify(packs).length / 1024)} KB`);
+	check(JSON.stringify(twice.cultures.map((c: any) => c.pack)) === JSON.stringify(packs) && JSON.stringify(twice.religions) === JSON.stringify(w.religions), 'culture pack export is deterministic');
+	check(!/\u2014/.test(JSON.stringify([packs, w.religions.map((r: any) => r.lore)])), 'culture pack text has no em dashes');
+	check(w.religions.every((r: any) => r.lore?.prayers?.length) && w.people.some((p: any) => p.voice?.tics?.length), 'faith lore on every religion, voices on notables');
 	const H = w.hazards;
 	check(H && Array.isArray(H.faults) && H.faults.every((f: any) => f.name && f.parasangs.length) && Array.isArray(H.volcanoes) && Array.isArray(H.recent) && Array.isArray(H.outbreaks) && H.diseases.length >= 8, `export carries hazards (${H?.faults.length} faults, ${H?.volcanoes.length} volcanoes, ${H?.recent.length} recent, ${H?.outbreaks.length} outbreaks)`);
 	const uni = JSON.parse(exportUniverse(a));

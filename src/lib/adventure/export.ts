@@ -35,6 +35,7 @@ import { FORCES } from '../sim/genre/forcelines';
 import { describeProceduralAppearance, hashStr32 } from '../render/proc_assets';
 import { exportNames } from './names';
 import { transportExport } from './transport';
+import { culturePackOf, faithLoreOf, personVoiceOf } from './culturepack_gen';
 
 const NOTABLE = new Set(['ruler', 'heir', 'general', 'hero', 'prophet', 'magician', 'thinker', 'priest', 'villain', 'artist', 'inventor', 'merchant']);
 
@@ -144,6 +145,8 @@ export function exportAdventureObject(sim: Simulation) {
 		};
 	});
 
+	// the export ships the last 4000 chronicle events; works in the culture pack point into that list
+	const eventOffset = Math.max(0, sim.allEvents.length - 4000);
 	const cultures = w.cultures.map((cu) => {
 		const L = makeLang(`${w.opts.seed}:adv:${cu.id}`, cu.sphere || undefined);
 		const given: string[] = [];
@@ -163,11 +166,19 @@ export function exportAdventureObject(sim: Simulation) {
 			id: cu.id, name: cu.name, sphere: cu.sphere, species: cu.species ?? 'human', subrace: cu.subrace || cVar.name, totem: cu.totem || cVar.totem,
 			colorHex: cVar.colorHex, paintHex: cVar.paintHex, layer: cu.layer, given, houses: [], places, food: sc.food, dress: sc.dress,
 			months, feasts, festivals: SPHERE_LORE[cu.sphere]?.festivals ?? [], music: sc.music, architecture: sc.architecture, values: sc.values,
-			...soc.culture(cu.id)
+			...soc.culture(cu.id),
+			// customs, voice, literature, material life and language (culturepack.ts); omitted when empty
+			...(() => {
+				const pack = culturePackOf(sim, cu.id, eventOffset);
+				return pack ? { pack } : {};
+			})()
 		};
 	});
 
-	const religions = w.religions.map((r) => ({ id: r.id, name: r.name, deity: r.deity, theology: r.theology ?? '', doctrine: r.doctrine ?? '', type: r.type }));
+	const religions = w.religions.map((r) => {
+		const lore = faithLoreOf(sim, r.id);
+		return { id: r.id, name: r.name, deity: r.deity, theology: r.theology ?? '', doctrine: r.doctrine ?? '', type: r.type, ...(lore ? { lore } : {}) };
+	});
 
 	const titleOf = (role: string, st: number, cu: number) => {
 		const pol = sim.polities[st];
@@ -187,7 +198,11 @@ export function exportAdventureObject(sim: Simulation) {
 			martial: Math.round(p.martial), diplomacy: Math.round(p.diplomacy), stewardship: Math.round(p.stewardship), intrigue: Math.round(p.intrigue), born: Math.round(p.born), died: Math.round(p.died ?? 0),
 			cause: p.cause ?? '', alive: p.alive, traits: p.traits, renown: Math.round(p.renown), p: b ? pOf(b.x, b.y) : -1, title: titleOf(p.role, p.state, p.culture),
 			look: look.summary,
-			...(p.mixed ? { mixed: { culture: p.mixed.culture, ...(p.mixed.species ? { species: p.mixed.species } : {}) } } : {})
+			...(p.mixed ? { mixed: { culture: p.mixed.culture, ...(p.mixed.species ? { species: p.mixed.species } : {}) } } : {}),
+			...(() => {
+				const voice = p.alive ? personVoiceOf(sim, p) : undefined;
+				return voice ? { voice } : {};
+			})()
 		};
 	});
 
