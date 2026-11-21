@@ -153,3 +153,14 @@ Culture here is thin: `src/lib/sim/culture/` holds names, a few feasts and trait
 - [x] **People depth** (M): per-person speech tics, beliefs, quirks and relationship histories for notables. _(done: `genPersonVoice` in `voice.ts` (exported as `people[].voice`, notables only))_
 - [x] **Language** (M): fuller lexicon and phonology beyond name-derived roots, so Wanderer's pseudo-languages feel real. _(done: `sim/culture/pack/language.ts`, `genLanguage`: lexicon, phrases, numerals, phonology)_
 - [ ] **Atlas and exports** (S): show the new material on the culture card, Markdown dossier and Cartographer Studio.
+
+
+## More culture depth (agreed 2026-11-21)
+Follow-ups to the culture pack (see "Culture depth for Wanderer" above):
+- [ ] **Show the pack in the atlas** (S): culture card, Markdown dossier and Cartographer Studio list customs, voice samples, literature, cuisine and the language.
+- [ ] **Fuller statutes per realm** (M): a real legal code per realm (not only per culture), changing with ideology, reforms and conquest, exported for Wanderer's law scenes.
+- [ ] **Dialect drift** (M): a culture's language and speech shift over centuries (words change, loan words after conquest and trade), so old works read archaic and rival cultures borrow.
+- [ ] **Recipes and craft lore** (S): named recipes with histories (who invented them, when), spreading along trade routes like the lingua franca.
+- [ ] **Culture ethics for quest choices** (M): what each culture counts as just, shameful or heroic, exported so Wanderer's dilemmas and quest outcomes read differently per culture.
+- [ ] **Text polish** (S): fix awkward generated lines (subject-verb agreement in oaths, repeated nouns in taboos, a religion named "No faith"), and widen phrase banks where cultures of the same register read alike.
+- [ ] **Pack size budget** (S): about 35 KB per culture today; add a `culturePack` detail option (off, light, full) in Setup.
