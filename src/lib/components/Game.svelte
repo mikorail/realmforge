@@ -597,6 +597,7 @@
 			<div class="timeline-bar">
 				{#await lazy.scrubber() then { default: TimelineScrubber }}
 					<TimelineScrubber
+						{sim}
 						snapshots={sim.historySnapshots}
 						currentYear={sim.year}
 						onpreview={handleTimelinePreview}

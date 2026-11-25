@@ -51,6 +51,8 @@ import { yearlySubterranean } from './subterranean';
 import { yearlyThaumaturgy } from './thaumaturgy';
 import { yearlySaintsInquisition } from './saints_inquisition';
 import { yearlyBanking } from './banking';
+import { yearlyMigrationWaves } from './migrations_waves';
+import { yearlyMedicinePlagues } from './medicine_plagues';
 
 export { POWERS, type Power } from './systems/godpowers';
 
@@ -465,6 +467,8 @@ export class Simulation {
 		yearlyThaumaturgy(this);
 		yearlySaintsInquisition(this);
 		yearlyBanking(this);
+		yearlyMigrationWaves(this);
+		yearlyMedicinePlagues(this);
 		yearlyStory(this);
 		lifecycle.pruneMinorPeople(this);
 		history.compactArchive(this);
