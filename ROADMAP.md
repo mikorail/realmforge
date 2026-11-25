@@ -162,5 +162,5 @@ Follow-ups to the culture pack (see "Culture depth for Wanderer" above):
 - [ ] **Dialect drift** (M): a culture's language and speech shift over centuries (words change, loan words after conquest and trade), so old works read archaic and rival cultures borrow.
 - [ ] **Recipes and craft lore** (S): named recipes with histories (who invented them, when), spreading along trade routes like the lingua franca.
 - [ ] **Culture ethics for quest choices** (M): what each culture counts as just, shameful or heroic, exported so Wanderer's dilemmas and quest outcomes read differently per culture.
-- [ ] **Text polish** (S): fix awkward generated lines (subject-verb agreement in oaths, repeated nouns in taboos, a religion named "No faith"), and widen phrase banks where cultures of the same register read alike.
+- [x] **Text polish** (S): fix awkward generated lines (subject-verb agreement in oaths, repeated nouns in taboos, a religion named "No faith"), and widen phrase banks where cultures of the same register read alike.
 - [ ] **Pack size budget** (S): about 35 KB per culture today; add a `culturePack` detail option (off, light, full) in Setup.

@@ -179,43 +179,88 @@ export function renderSeasonalOverlay(
 		ctx.fillRect(0, 0, viewportW, viewportH);
 	}
 
-	// 2. Dynamic Snowlines & Snow Caps
+	// Hoist latitude & affine screen transform constants outside per-cell loops
 	const n = cells.n ?? 0;
+	const cxArr = cells.x;
+	const cyArr = cells.y;
+	const chArr = cells.h;
+	const cbiomeArr = cells.biome;
+	const latArr = cells.lat ?? cells.latitude ?? null;
+	const H = world.opts?.height ?? 1000;
+	const invH = 1 / H;
+	const latTop = world.opts?.climate ? latRange(world.opts.climate).top : 90;
+	const latSpan = world.opts?.climate ? latRange(world.opts.climate).span : 180;
+	const snowLat = season.snowlineLat;
+	const snowElev = season.snowlineElev;
+	const [ox, oy] = S(0, 0);
+	const [ux, uy] = S(1, 1);
+	const sxMul = ux - ox;
+	const syMul = uy - oy;
+	const minX = -pad, maxX = viewportW + pad;
+	const minY = -pad, maxY = viewportH + pad;
+	const TAU = Math.PI * 2;
+
+	const cellIsSnow = (i: number): boolean => {
+		const elev = chArr ? (chArr[i] ?? 0) : 0;
+		if (elev >= snowElev) return true;
+		const lat = latArr && typeof latArr[i] === 'number'
+			? latArr[i]
+			: latTop - ((cyArr ? (cyArr[i] ?? H * 0.5) : H * 0.5) * invH) * latSpan;
+		return lat >= snowLat;
+	};
+
+	// 2. Dynamic Snowlines & Snow Caps (batched into 2 fills instead of thousands)
 	const dotR = Math.max(1.8, Math.min(6.5, 2.2 * Math.sqrt(k)));
+	const peakR = dotR * 1.4;
+	const peakPts: number[] = [];
+	const snowPts: number[] = [];
 
 	for (let i = 0; i < n; i += 3) {
-		if (isCellSnowbound(world, i, season)) {
-			const [sx, sy] = S(cells.x[i], cells.y[i]);
-			if (sx < -pad || sy < -pad || sx > viewportW + pad || sy > viewportH + pad) continue;
-
-			const elev = cells.h ? cells.h[i] : 0;
-			const isPeak = elev >= 75;
-
-			ctx.fillStyle = isPeak
-				? 'rgba(255, 255, 255, 0.75)'
-				: 'rgba(224, 242, 254, 0.45)';
-
-			ctx.beginPath();
-			ctx.arc(sx, sy, isPeak ? dotR * 1.4 : dotR, 0, Math.PI * 2);
-			ctx.fill();
+		if (!cellIsSnow(i)) continue;
+		const sx = cxArr[i] * sxMul + ox;
+		const sy = cyArr[i] * syMul + oy;
+		if (sx < minX || sy < minY || sx > maxX || sy > maxY) continue;
+		const elev = chArr ? chArr[i] : 0;
+		if (elev >= 75) peakPts.push(sx, sy);
+		else snowPts.push(sx, sy);
+	}
+	if (snowPts.length) {
+		ctx.fillStyle = 'rgba(224, 242, 254, 0.45)';
+		ctx.beginPath();
+		for (let j = 0; j < snowPts.length; j += 2) {
+			const sx = snowPts[j], sy = snowPts[j + 1];
+			ctx.moveTo(sx + dotR, sy);
+			ctx.arc(sx, sy, dotR, 0, TAU);
 		}
+		ctx.fill();
+	}
+	if (peakPts.length) {
+		ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+		ctx.beginPath();
+		for (let j = 0; j < peakPts.length; j += 2) {
+			const sx = peakPts[j], sy = peakPts[j + 1];
+			ctx.moveTo(sx + peakR, sy);
+			ctx.arc(sx, sy, peakR, 0, TAU);
+		}
+		ctx.fill();
 	}
 
 	// 3. Frozen Rivers (in Winter over snowbound cells)
 	if (season.season === 'winter' && world.rivers) {
 		ctx.strokeStyle = '#e0f2fe';
 		ctx.lineWidth = Math.max(1.5, Math.min(4.5, 1.8 * Math.sqrt(k)));
+		ctx.beginPath();
 
 		for (let r = 0; r < world.rivers.length; r++) {
 			const river = world.rivers[r];
 			if (!river || !river.cells || river.cells.length < 2) continue;
 
-			ctx.beginPath();
 			let hasDrawn = false;
 			for (let idx = 0; idx < river.cells.length; idx++) {
 				const cIdx = river.cells[idx];
-				if (isCellSnowbound(world, cIdx, season)) {
-					const [sx, sy] = S(cells.x[cIdx], cells.y[cIdx]);
+				if (cellIsSnow(cIdx)) {
+					const sx = cxArr[cIdx] * sxMul + ox;
+					const sy = cyArr[cIdx] * syMul + oy;
 					if (!hasDrawn) {
 						ctx.moveTo(sx, sy);
 						hasDrawn = true;
@@ -226,35 +271,38 @@ export function renderSeasonalOverlay(
 					hasDrawn = false;
 				}
 			}
-			ctx.stroke();
 		}
+		ctx.stroke();
 	}
 
-	// 4. Seasonal Deciduous Foliage (Autumn Amber/Gold & Spring Blossoms)
-	if (season.season === 'autumn' || season.season === 'spring') {
+	// 4. Seasonal Deciduous Foliage (Autumn Amber/Gold & Spring Blossoms, batched by color)
+	if ((season.season === 'autumn' || season.season === 'spring') && cbiomeArr) {
 		const foliageR = Math.max(2, Math.min(5.5, 2.4 * Math.sqrt(k)));
+		const buckets: number[][] = season.season === 'autumn' ? [[], [], []] : [[], []];
+		const colors = season.season === 'autumn'
+			? ['rgba(180, 83, 9, 0.45)', 'rgba(234, 88, 12, 0.42)', 'rgba(234, 179, 8, 0.38)']
+			: ['rgba(134, 239, 172, 0.38)', 'rgba(244, 114, 182, 0.32)'];
+		const mod = buckets.length;
 
 		for (let i = 0; i < n; i += 4) {
-			if (isTemperateForest(world, i)) {
-				const [sx, sy] = S(cells.x[i], cells.y[i]);
-				if (sx < -pad || sy < -pad || sx > viewportW + pad || sy > viewportH + pad) continue;
-
-				if (season.season === 'autumn') {
-					ctx.fillStyle = i % 3 === 0
-						? 'rgba(180, 83, 9, 0.45)' // russet
-						: i % 3 === 1
-							? 'rgba(234, 88, 12, 0.42)' // amber
-							: 'rgba(234, 179, 8, 0.38)'; // goldenrod
-				} else {
-					ctx.fillStyle = i % 2 === 0
-						? 'rgba(134, 239, 172, 0.38)' // lime
-						: 'rgba(244, 114, 182, 0.32)'; // cherry blossom
-				}
-
-				ctx.beginPath();
-				ctx.arc(sx, sy, foliageR, 0, Math.PI * 2);
-				ctx.fill();
+			const bIdx = cbiomeArr[i];
+			if (bIdx !== 6 && bIdx !== 8) continue;
+			const sx = cxArr[i] * sxMul + ox;
+			const sy = cyArr[i] * syMul + oy;
+			if (sx < minX || sy < minY || sx > maxX || sy > maxY) continue;
+			buckets[i % mod].push(sx, sy);
+		}
+		for (let b = 0; b < mod; b++) {
+			const pts = buckets[b];
+			if (!pts.length) continue;
+			ctx.fillStyle = colors[b];
+			ctx.beginPath();
+			for (let j = 0; j < pts.length; j += 2) {
+				const sx = pts[j], sy = pts[j + 1];
+				ctx.moveTo(sx + foliageR, sy);
+				ctx.arc(sx, sy, foliageR, 0, TAU);
 			}
+			ctx.fill();
 		}
 	}
 

@@ -161,8 +161,11 @@ export const TRAIT_MAT: Record<TraitKey, TraitMat> = {
 
 // ---------------- generic ----------------
 
-export const GENERIC_FORMS = ['work songs', 'ballads', 'lullabies', 'dance tunes', 'mourning songs', 'wedding songs', 'marching songs', 'drinking songs'];
-export const GENERIC_SCALES = ['a plain seven-step scale', 'a five-step scale', 'a drone with a modal melody', 'a scale of whole tones'];
+export const GENERIC_FORMS = [
+	'work songs', 'ballads', 'lullabies', 'dance tunes', 'mourning songs', 'wedding songs', 'marching songs', 'drinking songs',
+	'harvest rounds', 'travel chants', 'loom songs', 'watchmen’s calls'
+];
+export const GENERIC_SCALES = ['a plain seven-step scale', 'a five-step scale', 'a drone with a modal melody', 'a scale of whole tones', 'a bright pentatonic tuning'];
 
 export const GENERIC_GAMES: GameT[] = [
 	['Stones', 'Players take turns placing stones on a board of nine points; the first to make a line of three wins.'],
@@ -174,7 +177,9 @@ export const GENERIC_GAMES: GameT[] = [
 	['Card Tricks', 'Players take a card each, and the highest of a hidden suit wins the pot.'],
 	['Word Chain', 'Each player must say a word starting with the last sound of the one before.'],
 	['Shell Game', 'Players hide a shell in a fist; opponents guess by asking three yes-or-no questions.'],
-	['Blind Walk', 'A blindfolded player must follow a rope while others call false directions.']
+	['Blind Walk', 'A blindfolded player must follow a rope while others call false directions.'],
+	['Chalk Squares', 'Players flick flat stones into numbered chalk squares; the highest safe square takes the round.'],
+	['Nine Dice', 'Players roll three dice and claim a score; the next player must beat it or call a bluff.']
 ];
 
 // ---------------- dishes ----------------
@@ -185,10 +190,14 @@ export const DISH_FORMS: [string, string, 'grain' | 'meat' | 'fish' | 'veg' | 'a
 	['roast', 'ember', 'meat'], ['broth', 'mending', 'any'], ['pie', 'hearty', 'meat'], ['skewers', 'ember', 'meat'],
 	['fish soup', 'keen', 'fish'], ['pickle plate', 'rime', 'veg'], ['hardtack', 'lasting', 'grain'], ['salted strips', 'lasting', 'meat'],
 	['greens and cheese', 'spry', 'veg'], ['cold plate', 'rime', 'any'], ['spiced fry', 'keen', 'any'], ['stuffed loaf', 'thick', 'grain'],
-	['bitter salad', 'venom', 'veg'], ['smoked platter', 'ember', 'fish']
+	['bitter salad', 'venom', 'veg'], ['smoked platter', 'ember', 'fish'],
+	['baked pot', 'hearty', 'any'], ['herb cakes', 'spry', 'grain'], ['braised bowl', 'mending', 'meat'], ['charred greens', 'ember', 'veg']
 ];
 
-export const DISH_ADJ = ['river', 'hearth', 'market', 'harvest', 'shepherd’s', 'miner’s', 'traveller’s', 'old-style', 'house', 'sour', 'smoked', 'spiced', 'salted', 'sweet', 'night', 'festival'];
+export const DISH_ADJ = [
+	'river', 'hearth', 'market', 'harvest', 'shepherd’s', 'miner’s', 'traveller’s', 'old-style', 'house', 'sour', 'smoked', 'spiced',
+	'salted', 'sweet', 'night', 'festival', 'winter', 'roadside', 'abbey', 'harbour'
+];
 
 export const FEAST_DISH: Record<string, [string, string, string][]> = {
 	spring: [['first-greens cakes', 'spry', 'grain'], ['egg and herb loaf', 'thick', 'grain']],

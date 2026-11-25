@@ -18,6 +18,15 @@ export function buildRealmRoads(sim: Simulation) {
 	if (!alivePolities.length) return;
 
 	let builtCount = 0;
+	// Pre-index existing route pairs for O(1) connection lookups instead of O(routes) scans
+	const routeKey = (a: number, b: number) => (a < b ? a * 65536 + b : b * 65536 + a);
+	const connected = new Set<number>();
+	for (let i = 0; i < w.routes.length; i++) {
+		const r = w.routes[i];
+		connected.add(routeKey(r.a, r.b));
+	}
+	const isConnected = (a: number, b: number) => connected.has(routeKey(a, b));
+
 	// Shuffle polities to give different realms a fair opportunity
 	const shuffled = rng.shuffle(alivePolities);
 
@@ -32,9 +41,6 @@ export function buildRealmRoads(sim: Simulation) {
 
 		const myBurgs = sim.idx.burgsIn(w.burgs, pol.id).filter((b) => b.alive);
 		if (!myBurgs.length) continue;
-
-		const isConnected = (a: number, b: number) =>
-			w.routes.some((r) => (r.a === a && r.b === b) || (r.a === b && r.b === a));
 
 		let burgA = myBurgs[0];
 		let burgB: typeof burgA | null = null;
@@ -130,6 +136,7 @@ export function buildRealmRoads(sim: Simulation) {
 			: `${burgA.name}-${burgB.name} Royal Road`;
 
 		w.routes.push({ kind, cells: path, a: burgA.id, b: burgB.id, name });
+		connected.add(routeKey(burgA.id, burgB.id));
 
 		// Add travel link for avatar Dijkstra routing & caravans
 		const travelDays = Math.max(1, Math.round((path.length / spacing) * (isSeaLane ? 0.7 : 1.4)));

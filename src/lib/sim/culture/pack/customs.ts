@@ -23,13 +23,24 @@ import {
 type Ctx = Record<string, string>;
 
 const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+const A_EXCEPT = /^(?:uni[a-z]|use[a-z]*|usu[a-z]*|one\b|once\b|eu[a-z]|ewe\b|ura[a-z]|ute[a-z])/i;
+function fixArticles(s: string): string {
+	return s
+		.replace(/\b(the)\s+the\b/gi, '$1')
+		.replace(/\b(a|an)\s+\1\b/gi, '$1')
+		.replace(/\b(a)\s+([aeiou][a-z-]*)/gi, (m, art: string, word: string) =>
+			A_EXCEPT.test(word) ? m : `${art === 'A' ? 'An' : 'an'} ${word}`
+		);
+}
 
 /** fill our own <token> placeholders; {schema} placeholders are left for the engine */
 function fill(s: string, ctx: Ctx): string {
-	return s.replace(/<(\w+)>/g, (_, k: string) => {
-		const v = ctx[k.toLowerCase()] ?? '';
-		return k[0] !== k[0].toLowerCase() ? cap(v) : v;
-	});
+	return fixArticles(
+		s.replace(/<(\w+)>/g, (_, k: string) => {
+			const v = ctx[k.toLowerCase()] ?? '';
+			return k[0] !== k[0].toLowerCase() ? cap(v) : v;
+		})
+	);
 }
 
 /** weight of a tagged item for this culture: untagged 1, matching tags raise it, a miss is rare */
@@ -79,7 +90,9 @@ function build(sim: Simulation, cu: number): Base | null {
 	let realm = undefined as (typeof sim.polities)[number] | undefined;
 	for (const p of sim.polities) if (p.alive && p.id && p.culture === cu && (!realm || p.cells > realm.cells)) realm = p;
 	if (!realm && cult.center >= 0) realm = sim.polities[w.cells.state[cult.center]];
-	const faith = w.religions.find((r) => r.culture === cu && r.type !== 'Cult') ?? w.religions.find((r) => r.id === realm?.religion);
+	const faith =
+		w.religions.find((r) => r.id && r.name !== 'No faith' && r.culture === cu && r.type !== 'Cult') ??
+		w.religions.find((r) => r.id && r.name !== 'No faith' && r.id === realm?.religion);
 	const ideology = realm?.ideology ?? IDEOLOGY_BY_TRAIT[traits.find((t) => IDEOLOGY_BY_TRAIT[t]) ?? ''] ?? 'monarchy';
 	const doctrine = faith?.doctrine ?? (traits.includes('ancestral') ? 'ancestral' : traits.includes('martial') ? 'militant' : 'caste');
 	const biome = cult.center >= 0 && cult.layer === 'surface' ? w.cells.biome[cult.center] : 4;

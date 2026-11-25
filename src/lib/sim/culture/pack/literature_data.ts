@@ -29,7 +29,7 @@ export const BANKS: Record<Family, Banks> = {
 		sky: ['pale morning mist', 'low plum-rain cloud', 'cold clear dawn', 'smoky evening', 'white winter sky'],
 		work: ['inkstone', 'loom', 'rice flail', 'lacquer bench'],
 		sim: ['like snow on a bamboo grove', 'like a crane rising from a pond', 'like a lantern in fog', 'like ink in water', 'like a falling blossom'],
-		proverbs: ['A full bowl needs no sermon.', 'The old tree bows to the same wind as the young.', 'Mend the roof before you study the sky.', 'A closed gate keeps out friends first.', 'Even a good brush leaves a stain.'],
+		proverbs: ['A full bowl needs no sermon.', 'The old tree bows to the same wind as the young.', 'Mend the roof before you study the sky.', 'A closed gate keeps out friends first.', 'Even a good brush leaves a stain.', 'The kettle that boils dry forgets the spring.'],
 		foe: ['the faithless', 'the rootless', 'the grasping']
 	},
 	monsoon: {
@@ -92,7 +92,7 @@ export const BANKS: Record<Family, Banks> = {
 		sky: ['iron-grey sky', 'low snow cloud', 'cold green dawn', 'rain-dark evening', 'pale northern night'],
 		work: ['anvil', 'plough', 'loom', 'net'],
 		sim: ['like wolves at a fold', 'like a raven on a wall', 'like fog off a cold sea', 'like a hearth-fire in a storm', 'like iron cooling'],
-		proverbs: ['A cold hall makes a short oath.', 'The sword forgets; the kin do not.', 'Trust the fire, test the friend.', 'The ravens are never early and never late.', 'He who rows alone chooses the storm.'],
+		proverbs: ['A cold hall makes a short oath.', 'The sword forgets; the kin do not.', 'Trust the fire, test the friend.', 'The ravens are never early and never late.', 'He who rows alone chooses the storm.', 'Frost finds the crack the carpenter hid.'],
 		foe: ['the oath-breakers', 'the kin-slayers', 'the grasping']
 	},
 	eldritch: {

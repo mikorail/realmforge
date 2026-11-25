@@ -149,12 +149,14 @@ export function neighbors(c: Cells, i: number): Int32Array {
 
 /** Nearest cell by brute-ish search via walking the neighbour graph (greedy). */
 export function findCell(c: Cells, px: number, py: number, start = 0): number {
+	const { x, y, nStart, nList } = c;
 	let cur = start;
-	let best = (c.x[cur] - px) ** 2 + (c.y[cur] - py) ** 2;
+	let best = (x[cur] - px) ** 2 + (y[cur] - py) ** 2;
 	for (;;) {
 		let moved = false;
-		for (const j of neighbors(c, cur)) {
-			const d = (c.x[j] - px) ** 2 + (c.y[j] - py) ** 2;
+		for (let k = nStart[cur], end = nStart[cur + 1]; k < end; k++) {
+			const j = nList[k];
+			const d = (x[j] - px) ** 2 + (y[j] - py) ** 2;
 			if (d < best) {
 				best = d;
 				cur = j;
@@ -171,6 +173,10 @@ export class Heap {
 	private v: number[] = [];
 	get size() {
 		return this.v.length;
+	}
+	clear() {
+		this.k.length = 0;
+		this.v.length = 0;
 	}
 	push(value: number, key: number) {
 		const k = this.k, v = this.v;

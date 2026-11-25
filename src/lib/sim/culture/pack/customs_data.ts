@@ -166,7 +166,7 @@ export const TABOOS: TabooT[] = [
 
 /** one or two taboos the genre adds, fixed text */
 export const GENRE_TABOOS: Record<string, TabooT[]> = {
-	fantasy: [TB('break_oath', 'pious martial', 3, 'ordeal', '', 'An oath sworn on the <oath> and broken calls a curse down on the oath-breaker\'s whole line.', 'You swore it, and the stones heard.')],
+	fantasy: [TB('break_oath', 'pious martial', 3, 'ordeal', '', 'A <oath> once broken calls a curse down on the oath-breaker\'s whole line.', 'You swore it, and the stones heard.')],
 	mythic: [TB('blaspheme', 'pious', 3, 'exile', 'hall', 'Naming the gods idly in the <hall> draws their eyes on the whole <house>.', 'Hush. The gods have long ears.')],
 	steampunk: [TB('shirk_duty', 'mercantile', 2, 'fine', '', 'Leaving a boiler or a pressure gauge unwatched endangers the street; the guild fines whoever held the shift.', 'Who was on the gauge?'), TB('break_oath', 'mercantile martial', 3, 'exile', 'hall', 'A <oath> stamped in the ledger is never unsworn; the breaker\'s name is chiselled off the guild plaque.', 'Your name came off the plaque this morning.')],
 	dieselpunk: [TB('shirk_duty', 'martial mercantile', 3, 'scorn', '', 'Crossing a picket or breaking a strike is the unforgivable act of the union halls.', 'Scab. Turn around and go home.')],
@@ -293,7 +293,7 @@ export const ETIQUETTE: EtiqT[] = [
 ];
 
 export const GENRE_ETIQUETTE: Record<string, EtiqT[]> = {
-	fantasy: [ET('speech', 'pious scholarly', 2, 'Swear on the <oath> only when you mean it; the stones are said to listen.')],
+	fantasy: [ET('speech', 'pious scholarly', 2, 'Take a <oath> only when you mean it; the stones are said to listen.')],
 	mythic: [ET('gesture', 'pious', 2, 'Pour a drop of <drink> on the ground before drinking; the old gods drink first.')],
 	steampunk: [ET('greeting', 'mercantile scholarly', 2, 'Tip the hat and offer a calling card; a stranger without one is not announced.'), ET('time', '', 1, 'Be punctual to the minute; the town clock is law and the guild keeps its time.')],
 	dieselpunk: [ET('greeting', 'martial mercantile', 2, 'Greet with a brisk nod and ask the shift; a worker is judged by his union and his hours.'), ET('speech', '', 1, 'Call workmates comrade or brother; boss is for the other side of the hall.')],

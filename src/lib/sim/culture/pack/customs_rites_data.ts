@@ -22,7 +22,7 @@ export type RiteId = Exclude<Rite['id'], 'harvest' | 'departure' | 'homecoming'>
 
 export const RITES: Record<RiteId, RiteDef> = {
 	birth: {
-		names: ['First Breath', 'Cradle Welcome', 'Hearth Greeting', 'Threshold of the Newborn'],
+		names: ['First Breath', 'Cradle Welcome', 'Hearth Greeting', 'Threshold of the Newborn', 'First Light'],
 		slots: [
 			[['', 'A kinsman carries word to the <house> row that a child has come.'], ['pious', 'The midwife gives the hour of birth to the keepers of {faith}, so the day can be read.'], ['nomadic', 'A rider carries a knotted cord to the next camp; the knots tell the hour of birth.']],
 			[['', 'The child is washed in warm water and wrapped in cloth woven by the mother\'s kin.'], ['seafaring', 'The child is rinsed in salt water and a single drop is put on the lips.'], ['martial', 'The child is laid for one breath on the household\'s <weapon>-cloth and the line is recited.'], ['ancestral', 'The child is held up to <anc> so the dead can see who has joined the line.']],
@@ -30,8 +30,8 @@ export const RITES: Record<RiteId, RiteDef> = {
 			[['', 'The household serves <staple> and <drink> to all who come, for three days.'], ['insular', 'Only close kin enter; the rest leave gifts at the gate and are fed there.'], ['scholarly', 'A verse or a figure is read aloud over the cradle as the child\'s first lesson.']],
 			[['', 'The birth is <mark> before the first moon is out.'], ['', 'The mother rests, and no one asks anything of her until the feast is cleared.'], ['ancestral', 'A lock of hair is kept in the household box beside those of the elders.']]
 		],
-		roles: ['the midwife', 'the eldest aunt', 'the father or his brother', 'a neighbour', '<elder> of the house'],
-		gifts: ['<gift>', 'a swaddling cloth', 'a small bell', 'a charm against fever', 'a spoon of <staple>'],
+		roles: ['the midwife', 'the eldest aunt', 'the father or his brother', 'a neighbour', 'the <elder>'],
+		gifts: ['<gift>', 'a swaddling cloth', 'a small bell', 'a charm against fever', 'a spoon of <staple>', 'a painted rattle'],
 		dress: ['The child is wrapped in plain cloth with nothing sewn on it.', 'Guests come in their best: <sdress>.', 'The mother wears her wedding <head>.'],
 		song: ['A lullaby is sung over the cradle, played on <smusic>.', 'The household hums the family cradle-song, one line for each ancestor named.', 'A short blessing is sung three times at the door.'],
 		genre: {

@@ -16,17 +16,21 @@ export function demographics(sim: Simulation) {
 	const r = sim.rng;
 	const gt = growthTable(sim); // racial growth per realm; null = all neutral
 	const gm = sectorGrowth(sim);
-	for (let i = 0; i < c.n; i++) {
+	const gmLen = gm ? gm.length : 0;
+	const { n, state, pop, burg } = c;
+	const basePop = sim.basePop;
+	for (let i = 0; i < n; i++) {
 		if (!sim.isLand(i)) continue;
-		const cap = sim.basePop[i] * (c.state[i] ? 1.6 : 1.1) + (c.burg[i] ? 2 : 0);
+		const st = state[i];
+		const cap = basePop[i] * (st ? 1.6 : 1.1) + (burg[i] ? 2 : 0);
 		if (cap <= 0) continue;
-		const p = c.pop[i];
-		c.pop[i] = Math.max(0.01, p + p * 0.03 * (gt ? gt[c.state[i]] ?? 1 : 1) * (gm && c.state[i] < gm.length ? gm[c.state[i]] : 1) * (1 - p / cap) + (r() - 0.5) * 0.01);
+		const p = pop[i];
+		pop[i] = Math.max(0.01, p + p * 0.03 * (gt ? gt[st] ?? 1 : 1) * (gm && st < gmLen ? gm[st] : 1) * (1 - p / cap) + (r() - 0.5) * 0.01);
 	}
 	for (const b of sim.w.burgs) {
 		if (!b.id || !b.alive) continue;
 		const li = sim.burgLayer(b);
-		const ratio = li === 0 ? c.pop[b.cell] / Math.max(0.1, sim.basePop[b.cell]) : 1.01;
+		const ratio = li === 0 ? pop[b.cell] / Math.max(0.1, basePop[b.cell]) : 1.01;
 		b.pop = +clamp(b.pop * (0.97 + ratio * 0.03 + (r() - 0.5) * 0.02), 0.2, 500).toFixed(2);
 		b.state = sim.st(li)[b.cell];
 	}
@@ -35,12 +39,21 @@ export function demographics(sim: Simulation) {
 
 export function economy(sim: Simulation) {
 	const r = sim.rng;
+	const c = sim.c;
 	// surface cells per realm; ownership does not change inside this loop
-	const own = cellsByState(sim.c.state, sim.polities.length);
+	const own = cellsByState(c.state, sim.polities.length);
+	// precompute active war count per polity once instead of scanning sim.wars per polity
+	const warCount = new Int32Array(sim.polities.length);
+	for (let i = 0; i < sim.wars.length; i++) {
+		const w = sim.wars[i];
+		if (w.end) continue;
+		for (let j = 0; j < w.attackers.length; j++) warCount[w.attackers[j]]++;
+		for (let j = 0; j < w.defenders.length; j++) warCount[w.defenders[j]]++;
+	}
 	for (const p of sim.polities) {
 		if (!p.alive) continue;
 		const ruler = sim.ruler(p);
-		const wars = sim.warsOf(p.id).length;
+		const wars = warCount[p.id];
 		const income = p.pop * p.tax * (0.8 + (ruler?.stewardship ?? 5) * 0.04) * cultureMod(sim, p, 'trade') * motiveMod(sim, p, 'trade') * sectorIncome(sim, p.id);
 		const upkeep = p.army * 0.6;
 		p.treasury += income - upkeep;
@@ -52,13 +65,14 @@ export function economy(sim: Simulation) {
 		} else if (p.army > target * 1.3 && !wars) p.army *= 0.92;
 		// stability drift
 		let cult = 0, faith = 0, tot = 0;
-		const c = sim.c;
+		const cCult = c.culture, cRel = c.religion;
+		const pCult = p.culture, pRel = p.religion;
 		for (let k = own.start[p.id], end = own.start[p.id + 1]; k < end; k++) {
 			const i = own.cells[k];
 			if (i % 3) continue; // every third cell, as sampled before the index existed
 			tot++;
-			if (c.culture[i] === p.culture) cult++;
-			if (c.religion[i] === p.religion) faith++;
+			if (cCult[i] === pCult) cult++;
+			if (cRel[i] === pRel) faith++;
 		}
 		const cs = tot ? cult / tot : 1, fs = tot ? faith / tot : 1;
 		const target2 = 45 + (ruler?.diplomacy ?? 5) * 1.6 + (cs - 0.7) * 40 + (fs - 0.7) * 30 - wars * 7 - (p.treasury < 0 ? 15 : 0) - (p.tax - 0.1) * 120 - Math.max(0, p.cells / Math.max(1, p.peak) < 0.6 ? 10 : 0) + sectorStability(sim, p.id);
@@ -71,8 +85,16 @@ export function economy(sim: Simulation) {
 }
 
 export function innovate(sim: Simulation) {
-	const scholars = sim.idx.living(sim.people).filter((p) => p.traits.includes('Scholar')).length;
-	const stableRealms = sim.polities.filter((p) => p.alive && p.stability > 60).length;
+	let scholars = 0;
+	const living = sim.idx.living(sim.people);
+	for (let i = 0; i < living.length; i++) {
+		if (living[i].traits.includes('Scholar')) scholars++;
+	}
+	let stableRealms = 0;
+	for (let i = 0; i < sim.polities.length; i++) {
+		const p = sim.polities[i];
+		if (p.alive && p.stability > 60) stableRealms++;
+	}
 	// diminishing returns so the ages unfold over centuries, not years (≈ era every 100–150 yrs)
 	sim.gainInnovation(0.9 + Math.sqrt(scholars) * 0.25 + Math.sqrt(stableRealms) * 0.15);
 

@@ -6,13 +6,29 @@ export type Division =
 	| 'plain'
 	| 'per_pale'
 	| 'per_fess'
+	| 'per_bend'
+	| 'per_chevron'
 	| 'quarterly'
 	| 'bend'
 	| 'chevron'
 	| 'saltire'
-	| 'bordure';
+	| 'bordure'
+	| 'chief'
+	| 'fess'
+	| 'pale'
+	| 'gyronny';
 
-export type StandardTincture = 'or' | 'argent' | 'gules' | 'azure' | 'vert' | 'sable' | 'purpure';
+export type StandardTincture =
+	| 'or'
+	| 'argent'
+	| 'gules'
+	| 'azure'
+	| 'vert'
+	| 'sable'
+	| 'purpure'
+	| 'tenne'
+	| 'murrey'
+	| 'celeste';
 
 export type Tincture = StandardTincture | string;
 
@@ -34,7 +50,15 @@ export type ChargeKind =
 	| 'wheat'
 	| 'flame'
 	| 'anvil'
-	| 'skull';
+	| 'skull'
+	| 'kraken'
+	| 'phoenix'
+	| 'chalice'
+	| 'lantern'
+	| 'compass'
+	| 'stag'
+	| 'serpent'
+	| 'key';
 
 export interface CoatOfArms {
 	shape: ShieldShape;
@@ -63,7 +87,10 @@ export const TINCTURES: Record<StandardTincture, TinctureInfo> = {
 	azure: { name: 'Azure', hex: '#2563eb', isMetal: false },
 	vert: { name: 'Vert', hex: '#16a34a', isMetal: false },
 	sable: { name: 'Sable', hex: '#1e293b', isMetal: false },
-	purpure: { name: 'Purpure', hex: '#7c3aed', isMetal: false }
+	purpure: { name: 'Purpure', hex: '#7c3aed', isMetal: false },
+	tenne: { name: 'Tenne', hex: '#c2410c', isMetal: false },
+	murrey: { name: 'Murrey', hex: '#881337', isMetal: false },
+	celeste: { name: 'Bleu-celeste', hex: '#0284c7', isMetal: false }
 };
 
 export const SHIELD_SHAPES: ShieldShape[] = ['heater', 'round', 'square', 'banner', 'spanish'];
@@ -72,11 +99,17 @@ export const DIVISIONS: Division[] = [
 	'plain',
 	'per_pale',
 	'per_fess',
+	'per_bend',
+	'per_chevron',
 	'quarterly',
 	'bend',
 	'chevron',
 	'saltire',
-	'bordure'
+	'bordure',
+	'chief',
+	'fess',
+	'pale',
+	'gyronny'
 ];
 
 export const CHARGE_KINDS: ChargeKind[] = [
@@ -97,7 +130,15 @@ export const CHARGE_KINDS: ChargeKind[] = [
 	'wheat',
 	'flame',
 	'anvil',
-	'skull'
+	'skull',
+	'kraken',
+	'phoenix',
+	'chalice',
+	'lantern',
+	'compass',
+	'stag',
+	'serpent',
+	'key'
 ];
 
 /** SVG path data for shield outlines (viewBox 0 0 100 100) */
@@ -128,7 +169,15 @@ export const CHARGE_PATHS: Record<ChargeKind, string> = {
 	wheat: 'M 0,-19 C 2,-16 2,-10 0,-5 C -2,-10 -2,-16 0,-19 Z M -6,-17 C -4,-15 -2,-9 -2,-4 C -4,-6 -6,-11 -6,-17 Z M 6,-17 C 6,-11 4,-6 2,-4 C 2,-9 4,-15 6,-17 Z M -5,-3 L 5,-3 L 4,2 L -4,2 Z M -3,3 L 3,3 L 6,18 L 4,19 L 1,7 L 0,20 L -1,7 L -4,19 L -6,18 Z',
 	flame: 'M 0,-21 C 3,-16 5,-11 3,-6 C 7,-11 10,-8 9,-3 C 12,-6 15,-4 14,2 C 13,9 7,16 0,18 C -7,16 -13,9 -14,2 C -15,-4 -12,-6 -9,-3 C -10,-8 -7,-11 -3,-6 C -5,-11 -3,-16 0,-21 Z M 0,-4 C 2,-2 3,2 2,5 C 0,8 -3,7 -3,4 C -3,1 -1,-2 0,-4 Z',
 	anvil: 'M -16,-8 L 8,-8 C 12,-8 18,-6 20,-3 L 10,-3 L 8,0 L 5,3 L 6,10 L 12,13 L 14,17 L -14,17 L -12,13 L -6,10 L -5,3 L -8,0 L -10,-3 L -16,-3 Z',
-	skull: 'M -10,-17 C -4,-21 4,-21 10,-17 C 15,-12 15,-5 12,0 C 13,3 11,6 8,7 L 8,13 L 5,13 L 5,10 L 3,10 L 3,13 L 1,13 L 1,10 L -1,10 L -1,13 L -3,13 L -3,10 L -5,10 L -5,13 L -8,13 L -8,7 C -11,6 -13,3 -12,0 C -15,-5 -15,-12 -10,-17 Z M -7,-6 C -5,-6 -4,-4 -4,-2 C -4,0 -5,1 -7,1 C -9,1 -10,0 -10,-2 C -10,-4 -9,-6 -7,-6 Z M 7,-6 C 9,-6 10,-4 10,-2 C 10,0 9,1 7,1 C 5,1 4,0 4,-2 C 4,-4 5,-6 7,-6 Z M 0,2 L 2,6 L -2,6 Z'
+	skull: 'M -10,-17 C -4,-21 4,-21 10,-17 C 15,-12 15,-5 12,0 C 13,3 11,6 8,7 L 8,13 L 5,13 L 5,10 L 3,10 L 3,13 L 1,13 L 1,10 L -1,10 L -1,13 L -3,13 L -3,10 L -5,10 L -5,13 L -8,13 L -8,7 C -11,6 -13,3 -12,0 C -15,-5 -15,-12 -10,-17 Z M -7,-6 C -5,-6 -4,-4 -4,-2 C -4,0 -5,1 -7,1 C -9,1 -10,0 -10,-2 C -10,-4 -9,-6 -7,-6 Z M 7,-6 C 9,-6 10,-4 10,-2 C 10,0 9,1 7,1 C 5,1 4,0 4,-2 C 4,-4 5,-6 7,-6 Z M 0,2 L 2,6 L -2,6 Z',
+	kraken: 'M 0,-20 C 8,-20 12,-14 11,-6 C 10,-2 8,1 6,3 C 11,5 16,3 19,-1 L 20,2 C 17,7 12,9 7,8 C 11,11 14,15 16,19 L 13,20 C 10,16 7,12 4,10 C 5,14 5,18 3,21 L 0,20 C 1,16 1,13 0,10 C -1,13 -1,16 0,20 L -3,21 C -5,18 -5,14 -4,10 C -7,12 -10,16 -13,20 L -16,19 C -14,15 -11,11 -7,8 C -12,9 -17,7 -20,2 L -19,-1 C -16,3 -11,5 -6,3 C -8,1 -10,-2 -11,-6 C -12,-14 -8,-20 0,-20 Z M -4,-8 A 2,2 0 1 0 -4,-4 A 2,2 0 1 0 -4,-8 Z M 4,-8 A 2,2 0 1 0 4,-4 A 2,2 0 1 0 4,-8 Z',
+	phoenix: 'M 0,-21 L 3,-15 L 1,-13 C 4,-12 6,-9 6,-6 C 10,-10 15,-14 20,-15 L 18,-10 C 14,-8 11,-5 17,-6 L 16,-2 C 12,0 9,2 14,4 L 12,7 C 8,6 5,5 4,8 C 6,12 9,16 11,19 L 7,18 L 5,21 L 2,16 L 0,21 L -2,16 L -5,21 L -7,18 L -11,19 C -9,16 -6,12 -4,8 C -5,5 -8,6 -12,7 L -14,4 C -9,2 -12,0 -16,-2 L -17,-6 C -11,-5 -14,-8 -18,-10 L -20,-15 C -15,-14 -10,-10 -6,-6 C -6,-9 -4,-12 -1,-13 L -3,-15 Z',
+	chalice: 'M -14,-18 L 14,-18 L 13,-14 L 11,-14 C 11,-5 7,1 2,3 L 2,12 L 8,15 L 11,19 L -11,19 L -8,15 L -2,12 L -2,3 C -7,1 -11,-5 -11,-14 L -13,-14 Z M -7,-14 C -7,-7 -4,-2 0,-2 C 4,-2 7,-7 7,-14 Z',
+	lantern: 'M -3,-20 L 3,-20 L 3,-16 L 9,-13 L 9,-10 L 12,-10 L 10,9 L 12,11 L 12,14 L 6,14 L 6,18 L -6,18 L -6,14 L -12,14 L -12,11 L -10,9 L -12,-10 L -9,-10 L -9,-13 L -3,-16 Z M -6,-7 L -5,8 L -1,8 L -1,-7 Z M 1,-7 L 1,8 L 5,8 L 6,-7 Z',
+	compass: 'M 0,-21 L 4,-5 L 14,-14 L 5,-4 L 21,0 L 5,4 L 14,14 L 4,5 L 0,21 L -4,5 L -14,14 L -5,4 L -21,0 L -5,-4 L -14,-14 L -4,-5 Z M 0,-4 A 4,4 0 1 0 0,4 A 4,4 0 1 0 0,-4 Z',
+	stag: 'M -3,-2 L -6,-7 L -11,-10 L -15,-8 L -13,-12 L -18,-15 L -15,-16 L -11,-13 L -11,-19 L -8,-18 L -8,-12 L -5,-16 L -3,-14 L -5,-9 L -2,-5 L 2,-5 L 5,-9 L 3,-14 L 5,-16 L 8,-12 L 8,-18 L 11,-19 L 11,-13 L 15,-16 L 18,-15 L 13,-12 L 15,-8 L 11,-10 L 6,-7 L 3,-2 L 8,0 L 11,-2 L 10,3 L 6,4 L 5,12 L 2,19 L -2,19 L -5,12 L -6,4 L -10,3 L -11,-2 L -8,0 Z',
+	serpent: 'M -4,-20 C 2,-20 6,-17 6,-13 C 6,-9 2,-7 -4,-6 C -11,-4 -15,0 -14,5 C -13,10 -7,12 1,12 C 8,12 12,14 13,18 L 16,19 L 10,20 C 9,17 5,16 -1,16 C -11,16 -19,12 -19,5 C -19,-2 -13,-7 -5,-9 C 0,-10 2,-11 2,-13 C 2,-15 0,-16 -4,-16 L -9,-15 L -13,-18 L -8,-19 Z',
+	key: 'M 0,-20 C 6,-20 10,-16 10,-10 C 10,-5 7,-2 3,-1 L 3,18 L -3,18 L -3,15 L -10,15 L -10,12 L -3,12 L -3,9 L -8,9 L -8,6 L -3,6 L -3,-1 C -7,-2 -10,-5 -10,-10 C -10,-16 -6,-20 0,-20 Z M 0,-15 A 5,5 0 1 0 0,-5 A 5,5 0 1 0 0,-15 Z'
 };
 
 const CHARGE_DESCRIPTORS: Record<ChargeKind, { singular: string; plural: string }> = {
@@ -149,14 +198,22 @@ const CHARGE_DESCRIPTORS: Record<ChargeKind, { singular: string; plural: string 
 	wheat: { singular: 'garb of wheat', plural: 'garbs of wheat' },
 	flame: { singular: 'flame', plural: 'flames' },
 	anvil: { singular: 'anvil', plural: 'anvils' },
-	skull: { singular: 'skull', plural: 'skulls' }
+	skull: { singular: 'skull', plural: 'skulls' },
+	kraken: { singular: 'kraken', plural: 'krakens' },
+	phoenix: { singular: 'phoenix rising', plural: 'phoenixes rising' },
+	chalice: { singular: 'chalice', plural: 'chalices' },
+	lantern: { singular: 'lantern', plural: 'lanterns' },
+	compass: { singular: 'compass rose', plural: 'compass roses' },
+	stag: { singular: 'stag caboshed', plural: 'stags caboshed' },
+	serpent: { singular: 'serpent nowed', plural: 'serpents nowed' },
+	key: { singular: 'key erect', plural: 'keys erect' }
 };
 
 export function isLightColor(colorStr: string): boolean {
 	if (!colorStr) return false;
 	const norm = colorStr.toLowerCase().trim();
 	if (norm === 'or' || norm === 'argent') return true;
-	if (['gules', 'azure', 'vert', 'sable', 'purpure'].includes(norm)) return false;
+	if (['gules', 'azure', 'vert', 'sable', 'purpure', 'tenne', 'murrey', 'celeste'].includes(norm)) return false;
 
 	const c = norm.replace('#', '');
 	if (c.length === 3) {
@@ -277,12 +334,32 @@ export function generateHeraldry(
 		plain: 4,
 		per_pale: 3,
 		per_fess: 3,
+		per_bend: 2,
+		per_chevron: 2,
 		quarterly: 2,
 		bend: 2,
 		chevron: 2,
 		saltire: 2,
-		bordure: 2
+		bordure: 2,
+		chief: 2,
+		fess: 2,
+		pale: 2,
+		gyronny: 1
 	};
+
+	if (ideology === 'monarchy') {
+		divisionWeights.quarterly += 2;
+		divisionWeights.chief += 1;
+	} else if (ideology === 'republic') {
+		divisionWeights.per_pale += 2;
+		divisionWeights.fess += 2;
+	} else if (ideology === 'theocracy') {
+		divisionWeights.saltire += 2;
+		divisionWeights.pale += 2;
+	} else if (ideology === 'technocracy') {
+		divisionWeights.gyronny += 2;
+		divisionWeights.chevron += 2;
+	}
 
 	const division = rng.weighted(
 		DIVISIONS,
@@ -290,7 +367,7 @@ export function generateHeraldry(
 	);
 
 	// 3. Tinctures
-	const colors: StandardTincture[] = ['gules', 'azure', 'vert', 'sable', 'purpure'];
+	const colors: StandardTincture[] = ['gules', 'azure', 'vert', 'sable', 'purpure', 'tenne', 'murrey', 'celeste'];
 	const metals: StandardTincture[] = ['or', 'argent'];
 
 	let tinctureA: string;
@@ -339,7 +416,15 @@ export function generateHeraldry(
 		wheat: 1,
 		flame: 1,
 		anvil: 1,
-		skull: 1
+		skull: 1,
+		kraken: 1,
+		phoenix: 1,
+		chalice: 1,
+		lantern: 1,
+		compass: 1,
+		stag: 1,
+		serpent: 1,
+		key: 1
 	};
 
 	// Boost according to ideology
@@ -349,88 +434,124 @@ export function generateHeraldry(
 		chargeWeights.eagle += 4;
 		chargeWeights.sword += 3;
 		chargeWeights.dragon += 3;
+		chargeWeights.stag += 4;
+		chargeWeights.phoenix += 3;
+		chargeWeights.chalice += 2;
 	} else if (ideology === 'republic') {
 		chargeWeights.scales += 6;
 		chargeWeights.eagle += 4;
 		chargeWeights.star += 4;
 		chargeWeights.tower += 3;
+		chargeWeights.lantern += 4;
+		chargeWeights.compass += 3;
+		chargeWeights.key += 3;
 	} else if (ideology === 'theocracy') {
 		chargeWeights.sun += 6;
 		chargeWeights.cross += 6;
 		chargeWeights.crescent += 5;
 		chargeWeights.flame += 4;
 		chargeWeights.star += 3;
+		chargeWeights.chalice += 6;
+		chargeWeights.phoenix += 4;
+		chargeWeights.key += 3;
 	} else if (ideology === 'oligarchy') {
 		chargeWeights.scales += 5;
 		chargeWeights.tower += 4;
 		chargeWeights.crown += 3;
 		chargeWeights.anchor += 3;
+		chargeWeights.key += 5;
+		chargeWeights.compass += 4;
 	} else if (ideology === 'autocracy') {
 		chargeWeights.sword += 6;
 		chargeWeights.eagle += 5;
 		chargeWeights.dragon += 4;
 		chargeWeights.skull += 4;
 		chargeWeights.wolf += 3;
+		chargeWeights.serpent += 4;
 	} else if (ideology === 'communal') {
 		chargeWeights.wheat += 6;
 		chargeWeights.tree += 5;
 		chargeWeights.anvil += 5;
 		chargeWeights.sun += 3;
+		chargeWeights.stag += 4;
+		chargeWeights.lantern += 3;
+		chargeWeights.chalice += 3;
 	} else if (ideology === 'technocracy') {
 		chargeWeights.anvil += 6;
 		chargeWeights.star += 5;
 		chargeWeights.tower += 4;
 		chargeWeights.scales += 3;
 		chargeWeights.flame += 3;
+		chargeWeights.lantern += 6;
+		chargeWeights.compass += 5;
+		chargeWeights.key += 3;
 	}
 
 	// Boost according to sphere
 	if (sphere === 'sea' || sphere === 'polynesian') {
 		chargeWeights.anchor += 6;
+		chargeWeights.kraken += 6;
+		chargeWeights.compass += 6;
 		chargeWeights.star += 4;
 		chargeWeights.sun += 3;
 	} else if (sphere === 'norse' || sphere === 'celtic') {
 		chargeWeights.wolf += 5;
+		chargeWeights.stag += 6;
 		chargeWeights.dragon += 4;
 		chargeWeights.sword += 4;
 		chargeWeights.tree += 3;
+		chargeWeights.kraken += 3;
 	} else if (sphere === 'sinic' || sphere === 'japonic') {
 		chargeWeights.dragon += 6;
+		chargeWeights.phoenix += 6;
 		chargeWeights.sun += 4;
+		chargeWeights.lantern += 4;
 		chargeWeights.sword += 3;
 		chargeWeights.tree += 3;
 	} else if (sphere === 'persian' || sphere === 'arabic') {
 		chargeWeights.crescent += 6;
 		chargeWeights.sun += 5;
+		chargeWeights.phoenix += 5;
 		chargeWeights.flame += 4;
+		chargeWeights.lantern += 4;
+		chargeWeights.compass += 3;
 		chargeWeights.sword += 3;
 	} else if (sphere === 'indic') {
 		chargeWeights.sun += 5;
 		chargeWeights.crown += 4;
 		chargeWeights.tree += 4;
+		chargeWeights.serpent += 4;
+		chargeWeights.chalice += 3;
 		chargeWeights.crescent += 3;
 	} else if (sphere === 'mande' || sphere === 'yoruba' || sphere === 'bantu') {
 		chargeWeights.lion += 5;
 		chargeWeights.sun += 4;
 		chargeWeights.tree += 4;
+		chargeWeights.serpent += 3;
 		chargeWeights.sword += 3;
 	} else if (sphere === 'ethiopic') {
 		chargeWeights.lion += 6;
 		chargeWeights.cross += 5;
+		chargeWeights.chalice += 5;
 		chargeWeights.crown += 4;
 	} else if (sphere === 'nahua' || sphere === 'maya') {
 		chargeWeights.sun += 6;
 		chargeWeights.eagle += 5;
+		chargeWeights.serpent += 6;
 		chargeWeights.skull += 4;
 		chargeWeights.flame += 3;
 	} else if (sphere === 'steppe') {
 		chargeWeights.wolf += 6;
 		chargeWeights.eagle += 5;
+		chargeWeights.stag += 4;
 		chargeWeights.sword += 4;
 		chargeWeights.star += 3;
 	} else if (sphere === 'eldritch') {
 		chargeWeights.skull += 6;
+		chargeWeights.kraken += 6;
+		chargeWeights.serpent += 5;
 		chargeWeights.flame += 5;
+		chargeWeights.lantern += 4;
 		chargeWeights.crescent += 4;
 		chargeWeights.dragon += 4;
 	}
@@ -455,6 +576,10 @@ export function generateHeraldry(
 		fieldBlazon = `Per pale ${tinctureAName} and ${tinctureBName}`;
 	} else if (division === 'per_fess') {
 		fieldBlazon = `Per fess ${tinctureAName} and ${tinctureBName}`;
+	} else if (division === 'per_bend') {
+		fieldBlazon = `Per bend ${tinctureAName} and ${tinctureBName}`;
+	} else if (division === 'per_chevron') {
+		fieldBlazon = `Per chevron ${tinctureAName} and ${tinctureBName}`;
 	} else if (division === 'quarterly') {
 		fieldBlazon = `Quarterly ${tinctureAName} and ${tinctureBName}`;
 	} else if (division === 'bend') {
@@ -465,6 +590,14 @@ export function generateHeraldry(
 		fieldBlazon = `${tinctureAName}, a saltire ${tinctureBName}`;
 	} else if (division === 'bordure') {
 		fieldBlazon = `${tinctureAName}, a bordure ${tinctureBName}`;
+	} else if (division === 'chief') {
+		fieldBlazon = `${tinctureAName}, a chief ${tinctureBName}`;
+	} else if (division === 'fess') {
+		fieldBlazon = `${tinctureAName}, a fess ${tinctureBName}`;
+	} else if (division === 'pale') {
+		fieldBlazon = `${tinctureAName}, a pale ${tinctureBName}`;
+	} else if (division === 'gyronny') {
+		fieldBlazon = `Gyronny of eight ${tinctureAName} and ${tinctureBName}`;
 	}
 
 	const descriptor = CHARGE_DESCRIPTORS[chargeKind];
@@ -483,7 +616,14 @@ export function generateHeraldry(
 	let blazon = '';
 	if (division === 'plain') {
 		blazon = `${fieldBlazon}, ${chargePhrase}.`;
-	} else if (division === 'per_pale' || division === 'per_fess' || division === 'quarterly') {
+	} else if (
+		division === 'per_pale' ||
+		division === 'per_fess' ||
+		division === 'per_bend' ||
+		division === 'per_chevron' ||
+		division === 'quarterly' ||
+		division === 'gyronny'
+	) {
 		blazon = `${fieldBlazon}, overall ${chargePhrase}.`;
 	} else {
 		blazon = `${fieldBlazon}, charged with ${chargePhrase}.`;
@@ -521,6 +661,12 @@ export function heraldrySvg(coa: CoatOfArms, size = 64): string {
 		case 'per_fess':
 			divisionElements = `<rect x="0" y="50" width="100" height="50" fill="${coa.tinctureB}" />`;
 			break;
+		case 'per_bend':
+			divisionElements = `<polygon points="0,0 100,0 100,100" fill="${coa.tinctureB}" />`;
+			break;
+		case 'per_chevron':
+			divisionElements = `<polygon points="0,70 50,34 100,70 100,100 0,100" fill="${coa.tinctureB}" />`;
+			break;
 		case 'quarterly':
 			divisionElements = `
 				<rect x="50" y="0" width="50" height="50" fill="${coa.tinctureB}" />
@@ -545,6 +691,23 @@ export function heraldrySvg(coa: CoatOfArms, size = 64): string {
 				<g transform="translate(50, 50) scale(0.76) translate(-50, -50)">
 					<path d="${shapePath}" fill="${coa.tinctureA}" />
 				</g>
+			`;
+			break;
+		case 'chief':
+			divisionElements = `<rect x="0" y="0" width="100" height="32" fill="${coa.tinctureB}" />`;
+			break;
+		case 'fess':
+			divisionElements = `<rect x="0" y="36" width="100" height="28" fill="${coa.tinctureB}" />`;
+			break;
+		case 'pale':
+			divisionElements = `<rect x="36" y="0" width="28" height="100" fill="${coa.tinctureB}" />`;
+			break;
+		case 'gyronny':
+			divisionElements = `
+				<polygon points="50,50 50,0 100,0" fill="${coa.tinctureB}" />
+				<polygon points="50,50 100,50 100,100" fill="${coa.tinctureB}" />
+				<polygon points="50,50 50,100 0,100" fill="${coa.tinctureB}" />
+				<polygon points="50,50 0,50 0,0" fill="${coa.tinctureB}" />
 			`;
 			break;
 	}
@@ -671,6 +834,24 @@ export function drawHeraldry(
 		case 'per_fess':
 			ctx.fillRect(0, 50, 100, 50);
 			break;
+		case 'per_bend':
+			ctx.beginPath();
+			ctx.moveTo(0, 0);
+			ctx.lineTo(100, 0);
+			ctx.lineTo(100, 100);
+			ctx.closePath();
+			ctx.fill();
+			break;
+		case 'per_chevron':
+			ctx.beginPath();
+			ctx.moveTo(0, 70);
+			ctx.lineTo(50, 34);
+			ctx.lineTo(100, 70);
+			ctx.lineTo(100, 100);
+			ctx.lineTo(0, 100);
+			ctx.closePath();
+			ctx.fill();
+			break;
 		case 'quarterly':
 			ctx.fillRect(50, 0, 50, 50);
 			ctx.fillRect(0, 50, 50, 50);
@@ -722,6 +903,30 @@ export function drawHeraldry(
 			ctx.fillStyle = coa.tinctureA;
 			ctx.fill();
 			ctx.restore();
+			break;
+		case 'chief':
+			ctx.fillRect(0, 0, 100, 32);
+			break;
+		case 'fess':
+			ctx.fillRect(0, 36, 100, 28);
+			break;
+		case 'pale':
+			ctx.fillRect(36, 0, 28, 100);
+			break;
+		case 'gyronny':
+			for (const pts of [
+				[50, 50, 50, 0, 100, 0],
+				[50, 50, 100, 50, 100, 100],
+				[50, 50, 50, 100, 0, 100],
+				[50, 50, 0, 50, 0, 0]
+			]) {
+				ctx.beginPath();
+				ctx.moveTo(pts[0], pts[1]);
+				ctx.lineTo(pts[2], pts[3]);
+				ctx.lineTo(pts[4], pts[5]);
+				ctx.closePath();
+				ctx.fill();
+			}
 			break;
 	}
 

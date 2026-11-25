@@ -31,9 +31,13 @@ export const GENRE_FAITH: Record<Genre, GenreFaith> = {
 /** names for further gods when the theology needs more than one voice */
 export const LESSER_GODS = [
 	'the Hearth-Mother', 'the Storm-Father', 'the Grain-Lord', 'the Ferryman', 'the Lady of Rivers', 'the Forge-Elder', 'the Moon-Weaver',
-	'the Hunter in the Hills', 'the Keeper of Roads', 'the Reaper', 'the Bright Child', 'the Salt Mother', 'the Judge Beneath', 'the Lord of Fires'
+	'the Hunter in the Hills', 'the Keeper of Roads', 'the Reaper', 'the Bright Child', 'the Salt Mother', 'the Judge Beneath', 'the Lord of Fires',
+	'the Loom-Keeper', 'the Well-Warden', 'the Watchman of Bridges', 'the Shepherd of Winds'
 ];
-export const DARK_FORCES = ['the Unlit One', 'the Hollow Flame', 'the Devourer', 'the Quiet Dark', 'the Cold Gnawer', 'the Shadow Under', 'the Unmaker'];
+export const DARK_FORCES = [
+	'the Unlit One', 'the Hollow Flame', 'the Devourer', 'the Quiet Dark', 'the Cold Gnawer', 'the Shadow Under', 'the Unmaker',
+	'the Rust-Eater', 'the Ash-Tide'
+];
 
 // ---------------- prayers ----------------
 

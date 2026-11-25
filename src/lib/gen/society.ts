@@ -51,12 +51,14 @@ export function expand(c: Cells, seeds: number[], out: Uint16Array, ids: number[
 		out[s] = ids[k];
 		heap.push(s, 0);
 	});
+	const { nStart, nList } = c;
 	while (heap.size) {
 		const i = heap.pop();
 		const ci = heap.lastKey;
 		if (ci > cost[i]) continue;
 		const owner = out[i];
-		for (const j of neighbors(c, i)) {
+		for (let k = nStart[i], end = nStart[i + 1]; k < end; k++) {
+			const j = nList[k];
 			const step = costFn(i, j, owner);
 			if (!isFinite(step)) continue;
 			const nc = ci + step;
@@ -262,40 +264,75 @@ export function generateReligions(c: Cells, rng: Rng, cultures: Culture[], burgs
 	return religions;
 }
 
+// Reusable scratch buffers for landPath A* (generation-stamped to avoid per-call O(n) alloc/fill)
+let _lpN = 0;
+let _lpGen = 0;
+let _lpSeen = new Uint32Array(0);
+let _lpG = new Float32Array(0);
+let _lpFrom = new Int32Array(0);
+const _lpHeap = new Heap();
+
 /** A* over land cells; roads cheaper on existing roads so they merge into networks */
 export function landPath(c: Cells, a: number, b: number, water = false): number[] | null {
 	const n = c.n;
-	const g = new Float32Array(n).fill(Infinity);
-	const from = new Int32Array(n).fill(-1);
-	const heap = new Heap();
+	if (n > _lpN) {
+		_lpSeen = new Uint32Array(n);
+		_lpG = new Float32Array(n);
+		_lpFrom = new Int32Array(n);
+		_lpN = n;
+		_lpGen = 0;
+	}
+	if (++_lpGen >= 0xffffffff) {
+		_lpSeen.fill(0);
+		_lpGen = 1;
+	}
+	const gen = _lpGen;
+	const seen = _lpSeen;
+	const g = _lpG;
+	const from = _lpFrom;
+	const heap = _lpHeap;
+	heap.clear();
+	seen[a] = gen;
 	g[a] = 0;
+	from[a] = -1;
 	heap.push(a, 0);
-	const hx = c.x[b], hy = c.y[b];
+	const { x: cx, y: cy, h: ch, dist: cdist, biome: cbiome, road: croad, river: criver, nStart, nList } = c;
+	const hx = cx[b], hy = cy[b];
+	const maxExp = water ? 20000 : 6000;
 	let expanded = 0;
 	while (heap.size) {
 		const i = heap.pop();
 		if (i === b) break;
-		if (++expanded > (water ? 20000 : 6000)) return null;
-		for (const j of neighbors(c, i)) {
-			if (water ? land(c, j) && j !== b : !land(c, j)) continue;
-			const d = Math.hypot(c.x[j] - c.x[i], c.y[j] - c.y[i]);
+		if (++expanded > maxExp) return null;
+		const xi = cx[i], yi = cy[i], gi = g[i], rivI = criver[i];
+		for (let k = nStart[i], end = nStart[i + 1]; k < end; k++) {
+			const j = nList[k];
+			if (water ? ch[j] >= SEA && j !== b : ch[j] < SEA) continue;
+			const d = Math.hypot(cx[j] - xi, cy[j] - yi);
+			const prevG = seen[j] === gen ? g[j] : Infinity;
 			if (water) {
-				const ng = g[i] + d * (c.dist[j] < -3 ? 0.9 : 1);
-				if (ng < g[j]) { g[j] = ng; from[j] = i; heap.push(j, ng + Math.hypot(hx - c.x[j], hy - c.y[j])); }
+				const ng = gi + d * (cdist[j] < -3 ? 0.9 : 1);
+				if (ng < prevG) {
+					seen[j] = gen;
+					g[j] = ng;
+					from[j] = i;
+					heap.push(j, ng + Math.hypot(hx - cx[j], hy - cy[j]));
+				}
 				continue;
 			}
-			let mul = BIOMES[c.biome[j]].cost / 60 + 0.5 + Math.max(0, c.h[j] - 55) * 0.05;
-			if (c.road[j]) mul *= 0.35;
-			if (c.river[j] && !c.river[i]) mul += 1;
-			const ng = g[i] + d * mul;
-			if (ng < g[j]) {
+			let mul = BIOMES[cbiome[j]].cost / 60 + 0.5 + Math.max(0, ch[j] - 55) * 0.05;
+			if (croad[j]) mul *= 0.35;
+			if (criver[j] && !rivI) mul += 1;
+			const ng = gi + d * mul;
+			if (ng < prevG) {
+				seen[j] = gen;
 				g[j] = ng;
 				from[j] = i;
-				heap.push(j, ng + Math.hypot(hx - c.x[j], hy - c.y[j]) * 0.5);
+				heap.push(j, ng + Math.hypot(hx - cx[j], hy - cy[j]) * 0.5);
 			}
 		}
 	}
-	if (from[b] < 0 && a !== b) return null;
+	if ((seen[b] !== gen || from[b] < 0) && a !== b) return null;
 	const path = [b];
 	for (let i = b; i !== a; i = from[i]) path.push(from[i]);
 	return path.reverse();

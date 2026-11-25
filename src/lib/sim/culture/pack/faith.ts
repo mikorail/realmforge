@@ -19,8 +19,18 @@ import {
 
 type Tokens = Record<string, string>;
 
+const A_EXCEPT = /^(?:uni[a-z]|use[a-z]*|usu[a-z]*|one\b|once\b|eu[a-z]|ewe\b|ura[a-z]|ute[a-z])/i;
+function fixArticles(s: string): string {
+	return s
+		.replace(/\b(the)\s+the\b/gi, '$1')
+		.replace(/\b(a|an)\s+\1\b/gi, '$1')
+		.replace(/\b(a)\s+([aeiou][a-z-]*)/gi, (m, art: string, word: string) =>
+			A_EXCEPT.test(word) ? m : `${art === 'A' ? 'An' : 'an'} ${word}`
+		);
+}
+
 const fill = (t: string, k: Tokens): string => {
-	const s = t.replace(/\{(\w+)\}/g, (m, key: string) => (key in k ? k[key] : m));
+	const s = fixArticles(t.replace(/\{(\w+)\}/g, (m, key: string) => (key in k ? k[key] : m)));
 	return s.charAt(0).toUpperCase() + s.slice(1);
 };
 const take = <T>(rng: Rng, arr: readonly T[], n: number): T[] => rng.shuffle(arr).slice(0, Math.min(n, arr.length));
@@ -36,7 +46,7 @@ function defaultDoctrine(type: string): DoctrineKind {
 export function genFaithLore(sim: Simulation, religionId: number): FaithPack {
 	const w = sim.w;
 	const r = w.religions[religionId];
-	if (!r) return {};
+	if (!r || !r.id || r.name === 'No faith') return {};
 	const seed = w.opts.seed;
 	const rng = makeRng(`${seed}:cp:faith:${religionId}`);
 	const theology = r.theology ?? defaultTheology(r.type);

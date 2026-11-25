@@ -55,7 +55,11 @@ I present myself and my respects, {title}, and ask your leave to speak.
 The {time} greets you, {title} {name}; may our business be brief and fair.
 Permit me to bid you good {time}, {title}, in the name of {realm}.
 I am pleased to find you well, {title} {name}, and the affairs of {town} in order.
-On behalf of those I serve, I offer you the courtesies of the {time}.`),
+On behalf of those I serve, I offer you the courtesies of the {time}.
+Peace and order to your house this {time}, {title} {name}.
+I come in due form, {title} {name}, and ask a moment of your counsel.
+May the annals of {town} record this meeting kindly, {title}.
+Your presence brings credit to this hall, {title} {name}.`),
 		farewell: L(`
 I take my leave of you, {title} {name}, with thanks for your time and attention.
 May your affairs prosper until we meet again, {title}.
@@ -64,7 +68,10 @@ Farewell, {title} {name}, and may your house stand firm.
 I commend you to a peaceful {time} and a safe road.
 Until we are again in the same company, {title}, I remain in your debt.
 Let it be recorded that this meeting was conducted in good order. Farewell.
-I depart, {title}, as custom allows, and wish you every success.`),
+I depart, {title}, as custom allows, and wish you every success.
+May the roads of {realm} lie smooth before you, {title} {name}.
+I withdraw with respect, {title}, and leave your house in peace.
+Keep well until the next assembly, {title} {name}.`),
 		thanks: L(`
 I am obliged to you, {title} {name}, more than I can properly say.
 You have my sincere thanks, and the debt is recorded in my memory.
@@ -121,15 +128,19 @@ May no door in {town} open to you, and no table be laid.
 May your seal be doubted and your signature forged.
 May the courts of <god> find against you in every suit.
 May your lineage be forgotten before the next generation is named.
-May you be remembered only in the footnotes of better people.`),
+May you be remembered only in the footnotes of better people.
+May every petition you file be lost between two desks.
+May your witnesses forget your face when you need them most.`),
 		oaths: L(`
 I swear it upon my name and the name of my house.
 Before witnesses and in the sight of <god>, I give my word.
 Upon my honour, which I hold above my life.
-As <god> is my judge, it is true.
+I swear before <god>, it is true.
 By the seal of my office, I affirm it.
 By {deity}, and by every oath I have sworn before this.
-I pledge it formally, and let the record show it.`),
+I pledge it formally, and let the record show it.
+Let my seat in the hall stand empty if I break this word.
+I bind my house to this pledge, in open daylight.`),
 		fillers: L(`
 as is proper
 if I may say so
@@ -178,7 +189,11 @@ Hello. Make it quick.
 Ah, {name}. What now?
 {time}. Speak.
 You look rough, {name}. Come in anyway.
-Right. I'm listening.`),
+Right. I'm listening.
+Step inside, {name}, and shut the door.
+Say your piece, {name}.
+Still standing, {name}? Good.
+Come on then, {name}, out with it.`),
 		farewell: L(`
 Go.
 Leave when you're ready, {name}.
@@ -187,7 +202,10 @@ Done here. Off you go.
 See you, {name}. Don't be late next time.
 That's all. Go well.
 Watch your back out there.
-Enough talk. Go.`),
+Enough talk. Go.
+Keep your boots dry, {name}.
+Road's waiting. Move.
+Until next time. Stay sharp.`),
 		thanks: L(`
 Good. I owe you.
 Thanks. I mean it.
@@ -301,7 +319,10 @@ The {time} bows to you, {name}, as the grass bows to the wind.
 Hail, {name}, a pearl on the thread of my day.
 May every road you walk be paved with kind weather, {title}.
 Sweet {time}, {name}; the very stones are glad to hear your step.
-You come like spring to a frozen street, {name}.`),
+You come like spring to a frozen street, {name}.
+Blessings on the threshold that brings you here, {name}.
+Ah, {name}, the lanterns burn brighter for your company.
+May the {time} pour gold upon your shoulders, {title} {name}.`),
 		farewell: L(`
 Go, {name}, and may the wind be a gentle hand at your back.
 Part we must, as the river parts the shore, but we shall meet at the sea.
@@ -310,7 +331,9 @@ The door is a wound when you walk through it; return and heal it.
 Farewell, bright one; my thoughts will follow you like birds.
 May the stars keep watch over your sleeping, {name}.
 Until the moon is round again, dear {name}.
-Walk in light, and may the evening be soft as a cloak.`),
+Walk in light, and may the evening be soft as a cloak.
+May every mile shorten itself beneath your feet, {name}.
+Go with music in your ears and a warm hearth ahead, {title}.`),
 		thanks: L(`
 Your kindness is rain upon my dry fields, {name}.
 A thousand thanks, and each one as warm as a hearthstone.
@@ -497,7 +520,9 @@ By {deity}.
 Sworn.
 On my life.
 By <god>.
-True.`),
+True.
+My bond.
+On my name.`),
 		fillers: L(`
 so
 well
@@ -545,7 +570,10 @@ Good {time}, {name}. Eat something.
 Come in, come in, you're letting the <weather> in.
 How goes it, {name}? Hands full or belly empty?
 There's the face I was hoping for, {name}, ugly as ever.
-Sit down before you fall down, {name}.`),
+Sit down before you fall down, {name}.
+Pull up a stool, {name}; the kettle's just singing.
+Good {time} to you, {name}! Wipe your boots or don't, I've given up.
+Ah, {name}, just in time to help lift something heavy.`),
 		farewell: L(`
 Off you go, then, and mind the mud.
 Go on, {name}, before the stew gets cold.
@@ -554,7 +582,9 @@ Walk easy, {name}, and don't step in anything.
 Good night to you, and warm feet.
 Come back when you're hungry. That'll be soon.
 Mind the <beast>s on the road, {name}.
-May your belly be full and your roof dry.`),
+May your belly be full and your roof dry.
+Keep the <weather> off your back, {name}.
+Shut the gate on your way out, mind.`),
 		thanks: L(`
 Bless you, {name}, that's worth a loaf.
 You're a good one, {name}. I'll bring you a <beast> for it.
@@ -632,9 +662,11 @@ I'll tell you what`),
 Heard it at the well, so it must be true:
 Old {name}'s wife says
 You'll not believe it, but
-They're saying down at the <work>:
+They're saying down at <work>:
 Over the fence I heard that
-Spilled with the soup, this:`),
+Spilled with the soup, this:
+The baker's boy swears that
+I got this straight from the road:`),
 		humour: L(`
 Earthy humour: bawdy, loud and full of food, animals and bodily trouble; the best joke is at one's own expense.
 Jokes come out as stories about stubborn animals and worse neighbours, told at the table with much elbowing.`),
@@ -741,7 +773,9 @@ I give my word, as one gives a gift, freely.
 On my family's good name, I swear it.
 By all that is gracious, it is true.
 I swear it by the favour of <god>.
-Let me be unwelcome at every door if I lie.`),
+Let me be unwelcome at every door if I lie.
+Upon the grace of this house, I pledge it.
+Let my name never be spoken in good company if I prove false.`),
 		fillers: L(`
 if I may be so bold
 forgive me
@@ -1580,7 +1614,9 @@ Salt and patience cure most wounds.
 Trust the captain on the water and the cook on the land.
 A leaking boat has no friends in the crew.
 Fish do not argue with the net.
-Even the biggest wave ends on a beach.`),
+Even the biggest wave ends on a beach.
+A dry oar never crossed a strait.
+Check the knot twice before the squall checks it once.`),
 	steppe: L(`
 The horse knows the road better than the rider.
 Grass is wealth; the herd is life.
@@ -1591,7 +1627,9 @@ Winter takes the weak and the lazy first.
 A cold fire still smokes.
 Tents are made for moving, people for staying faithful.
 Lame foal, long journey.
-The wolf follows the herd, but the herd follows the shepherd.`),
+The wolf follows the herd, but the herd follows the shepherd.
+Count the water-skins before you count the miles.
+A loose cinch teaches a short lesson.`),
 	trade: L(`
 A short measure costs a long reputation.
 The ledger remembers what the heart forgets.

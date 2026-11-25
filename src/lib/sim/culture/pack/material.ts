@@ -80,7 +80,11 @@ export function genMaterial(sim: Simulation, cu: number): MaterialPack {
 
 	// faith of the culture's home, for the unclean foods
 	const relId = c.layer === 'surface' && c.center >= 0 ? w.cells.religion[c.center] : 0;
-	const rel = w.religions[relId] ?? w.religions.find((r) => r.culture === cu);
+	const rawRel = relId ? w.religions[relId] : undefined;
+	const rel =
+		rawRel && rawRel.id && rawRel.name !== 'No faith'
+			? rawRel
+			: w.religions.find((r) => r.id && r.name !== 'No faith' && r.culture === cu);
 	const doctrine: DoctrineKind = rel?.doctrine ?? (rel?.type === 'Folk' ? 'ancestral' : rel?.type === 'Cult' ? 'esoteric' : 'caste');
 
 	// ---------- cuisine ----------

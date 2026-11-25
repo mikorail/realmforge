@@ -418,11 +418,14 @@ export class MapRenderer {
 			smooth(coast, w.edges, ch);
 		}
 		// hillshade from a NW light
+		const { nStart, nList, h: ch, x: cx, y: cy } = c;
 		const shadeOf = (i: number) => {
 			let gx = 0, gy = 0;
-			for (const j of neighbors(c, i)) {
-				const dh = c.h[j] - c.h[i];
-				const dx = c.x[j] - c.x[i], dy = c.y[j] - c.y[i];
+			const hi = ch[i], xi = cx[i], yi = cy[i];
+			for (let k = nStart[i], end = nStart[i + 1]; k < end; k++) {
+				const j = nList[k];
+				const dh = ch[j] - hi;
+				const dx = cx[j] - xi, dy = cy[j] - yi;
 				const d = Math.hypot(dx, dy) || 1;
 				gx += (dh * dx) / d;
 				gy += (dh * dy) / d;
@@ -797,13 +800,13 @@ export class MapRenderer {
 			for (const ch of chains(w.edges, (a, b) => open[a] === 1 && open[b] === 1 && keyArr[a] !== keyArr[b])) smooth(borders, w.edges, ch);
 		// war fronts
 		const fronts = new Path2D();
-		const enemies = new Set<string>();
-		for (const war of s.wars) if (!war.end) for (const a of war.attackers) for (const d of war.defenders) { enemies.add(`${a}-${d}`); enemies.add(`${d}-${a}`); }
+		const enemies = new Set<number>();
+		for (const war of s.wars) if (!war.end) for (const a of war.attackers) for (const d of war.defenders) { enemies.add(a * 65536 + d); enemies.add(d * 65536 + a); }
 		if (enemies.size)
 			for (let e = 0; e < w.edges.n; e++) {
 				const a = w.edges.a[e], b = w.edges.b[e];
 				if (!open[a] || !open[b] || st[a] === st[b]) continue;
-				if (!enemies.has(`${st[a]}-${st[b]}`)) continue;
+				if (!enemies.has(st[a] * 65536 + st[b])) continue;
 				fronts.moveTo(w.edges.vx[w.edges.va[e]], w.edges.vy[w.edges.va[e]]);
 				fronts.lineTo(w.edges.vx[w.edges.vb[e]], w.edges.vy[w.edges.vb[e]]);
 			}
@@ -812,15 +815,27 @@ export class MapRenderer {
 		const labels: Label[] = [];
 		const keyN = this.mode === 'culture' ? w.cultures.length : this.mode === 'religion' ? w.religions.length : pols.length;
 		if (this.mode === 'political' || ((this.mode === 'culture' || this.mode === 'religion') && L.kind === 'surface')) {
+			const { nStart, nList } = c;
 			const dist = new Int16Array(c.n).fill(-1);
 			let ring: number[] = [];
 			for (let i = 0; i < c.n; i++) {
 				if (!open[i] || !keyArr[i]) continue;
-				for (const j of neighbors(c, i)) if (!open[j] || keyArr[j] !== keyArr[i]) { dist[i] = 0; ring.push(i); break; }
+				const ki = keyArr[i];
+				for (let k = nStart[i], end = nStart[i + 1]; k < end; k++) {
+					const j = nList[k];
+					if (!open[j] || keyArr[j] !== ki) { dist[i] = 0; ring.push(i); break; }
+				}
 			}
 			for (let d = 1; ring.length; d++) {
 				const next: number[] = [];
-				for (const i of ring) for (const j of neighbors(c, i)) if (dist[j] < 0 && open[j] && keyArr[j] === keyArr[i]) { dist[j] = d; next.push(j); }
+				for (let r = 0; r < ring.length; r++) {
+					const i = ring[r];
+					const ki = keyArr[i];
+					for (let k = nStart[i], end = nStart[i + 1]; k < end; k++) {
+						const j = nList[k];
+						if (dist[j] < 0 && open[j] && keyArr[j] === ki) { dist[j] = d; next.push(j); }
+					}
+				}
 				ring = next;
 			}
 			const best = new Int32Array(keyN).fill(-1);
@@ -1269,25 +1284,35 @@ export class MapRenderer {
 		const w = this.world!, ctx = this.ctx, c = w.cells, th = this.theme;
 		const L = w.layers[this.layer];
 		const s = this.sim!;
-		for (const rt of w.routes) {
+		const byKind: Record<string, typeof w.routes> = { road: [], sea: [], tunnel: [], sky: [] };
+		for (let r = 0; r < w.routes.length; r++) {
+			const rt = w.routes[r];
 			if (rt.kind === 'shaft') continue;
 			const a = w.burgs[rt.a];
 			if (s.burgLayer(a) !== this.layer) continue;
 			if (!a.alive || !w.burgs[rt.b].alive) continue;
+			(byKind[rt.kind] ?? byKind.sky).push(rt);
+		}
+		const cx = c.x, cy = c.y;
+		for (const kind of ['road', 'sea', 'tunnel', 'sky'] as const) {
+			const list = byKind[kind];
+			if (!list.length) continue;
 			ctx.beginPath();
-			const pts = rt.cells;
-			if (rt.kind === 'sky') {
-				const ax = c.x[pts[0]], ay = c.y[pts[0]], bx = c.x[pts[pts.length - 1]], by = c.y[pts[pts.length - 1]];
-				ctx.moveTo(ax, ay);
-				ctx.quadraticCurveTo((ax + bx) / 2, (ay + by) / 2 - Math.hypot(bx - ax, by - ay) * 0.2, bx, by);
-			} else {
-				ctx.moveTo(c.x[pts[0]], c.y[pts[0]]);
-				for (let i = 1; i < pts.length - 1; i++) ctx.quadraticCurveTo(c.x[pts[i]], c.y[pts[i]], (c.x[pts[i]] + c.x[pts[i + 1]]) / 2, (c.y[pts[i]] + c.y[pts[i + 1]]) / 2);
-				ctx.lineTo(c.x[pts[pts.length - 1]], c.y[pts[pts.length - 1]]);
+			for (let r = 0; r < list.length; r++) {
+				const pts = list[r].cells;
+				if (kind === 'sky') {
+					const ax = cx[pts[0]], ay = cy[pts[0]], bx = cx[pts[pts.length - 1]], by = cy[pts[pts.length - 1]];
+					ctx.moveTo(ax, ay);
+					ctx.quadraticCurveTo((ax + bx) / 2, (ay + by) / 2 - Math.hypot(bx - ax, by - ay) * 0.2, bx, by);
+				} else {
+					ctx.moveTo(cx[pts[0]], cy[pts[0]]);
+					for (let i = 1; i < pts.length - 1; i++) ctx.quadraticCurveTo(cx[pts[i]], cy[pts[i]], (cx[pts[i]] + cx[pts[i + 1]]) / 2, (cy[pts[i]] + cy[pts[i + 1]]) / 2);
+					ctx.lineTo(cx[pts[pts.length - 1]], cy[pts[pts.length - 1]]);
+				}
 			}
-			if (rt.kind === 'road') { ctx.strokeStyle = alpha(th.road, 0.8); ctx.lineWidth = px(1.2); ctx.setLineDash([px(4), px(2.5)]); }
-			else if (rt.kind === 'sea') { ctx.strokeStyle = alpha(L.kind === 'sea' ? '#bff' : '#ffffff', 0.45); ctx.lineWidth = px(1); ctx.setLineDash([px(2), px(4)]); }
-			else if (rt.kind === 'tunnel') { ctx.strokeStyle = alpha(th.deep[1], 0.9); ctx.lineWidth = px(1.8); ctx.setLineDash([px(6), px(2)]); }
+			if (kind === 'road') { ctx.strokeStyle = alpha(th.road, 0.8); ctx.lineWidth = px(1.2); ctx.setLineDash([px(4), px(2.5)]); }
+			else if (kind === 'sea') { ctx.strokeStyle = alpha(L.kind === 'sea' ? '#bff' : '#ffffff', 0.45); ctx.lineWidth = px(1); ctx.setLineDash([px(2), px(4)]); }
+			else if (kind === 'tunnel') { ctx.strokeStyle = alpha(th.deep[1], 0.9); ctx.lineWidth = px(1.8); ctx.setLineDash([px(6), px(2)]); }
 			else { ctx.strokeStyle = alpha('#5a7fb0', 0.8); ctx.lineWidth = px(1.2); ctx.setLineDash([px(3), px(3)]); }
 			ctx.stroke();
 		}

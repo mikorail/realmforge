@@ -230,8 +230,18 @@ function traitTaste(traits: TraitKey[]): string {
 	return traits.slice(0, 2).map((x) => t[x]).join(' and ');
 }
 
+const A_EXCEPT = /^(?:uni[a-z]|use[a-z]*|usu[a-z]*|one\b|once\b|eu[a-z]|ewe\b|ura[a-z]|ute[a-z])/i;
+
 function clean(p: LiteraturePack): LiteraturePack {
-	const fix = (s: string) => s.replace(/\u2014/g, ',').replace(/\u2013/g, '-');
+	const fix = (s: string) =>
+		s
+			.replace(/\u2014/g, ',')
+			.replace(/\u2013/g, '-')
+			.replace(/\b(the)\s+the\b/gi, '$1')
+			.replace(/\b(a|an)\s+\1\b/gi, '$1')
+			.replace(/\b(a)\s+([aeiou][a-z-]*)/gi, (m, art: string, word: string) =>
+				A_EXCEPT.test(word) ? m : `${art === 'A' ? 'An' : 'an'} ${word}`
+			);
 	const fixAll = <T,>(v: T): T => {
 		if (typeof v === 'string') return fix(v) as unknown as T;
 		if (Array.isArray(v)) return v.map(fixAll) as unknown as T;

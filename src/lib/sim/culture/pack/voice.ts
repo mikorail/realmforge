@@ -59,9 +59,18 @@ function mix(rng: Rng, reg: string[], gen: string[], n: number, g: number): stri
 }
 
 const CAP = (s: string) => s.replace(/(^|[.!?]\s+)([a-z])/g, (_m, a: string, b: string) => a + b.toUpperCase());
+const A_EXCEPT = /^(?:uni[a-z]|use[a-z]*|usu[a-z]*|one\b|once\b|eu[a-z]|ewe\b|ura[a-z]|ute[a-z])/i;
+function fixArticles(s: string): string {
+	return s
+		.replace(/\b(the)\s+the\b/gi, '$1')
+		.replace(/\b(a|an)\s+\1\b/gi, '$1')
+		.replace(/\b(a)\s+([aeiou][a-z-]*)/gi, (m, art: string, word: string) =>
+			A_EXCEPT.test(word) ? m : `${art === 'A' ? 'An' : 'an'} ${word}`
+		);
+}
 
 type Lex = Record<string, string>;
-const fill = (s: string, lex: Lex): string => s.replace(/<(\w+)>/g, (m, k: string) => lex[k] ?? m);
+const fill = (s: string, lex: Lex): string => fixArticles(s.replace(/<(\w+)>/g, (m, k: string) => lex[k] ?? m));
 const fl = (arr: string[], lex: Lex, cap = true) => arr.map((s) => (cap ? CAP(fill(s, lex)) : fill(s, lex)));
 
 function domainOf(sim: Simulation, cu: number, traits: TraitKey[]): { d1: Domain; d2: Domain } {
@@ -97,7 +106,11 @@ function domainOf(sim: Simulation, cu: number, traits: TraitKey[]): { d1: Domain
 function cultureContext(sim: Simulation, cu: number) {
 	const pols = sim.polities.filter((p) => p.alive && p.id && p.culture === cu).sort((a, b) => b.cells - a.cells);
 	const lead = pols[0];
-	const rel = lead ? sim.w.religions[lead.religion] : sim.w.religions.find((r) => r && r.id && r.culture === cu);
+	const leadRel = lead && lead.religion ? sim.w.religions[lead.religion] : undefined;
+	const rel =
+		leadRel && leadRel.id && leadRel.name !== 'No faith'
+			? leadRel
+			: sim.w.religions.find((r) => r && r.id && r.name !== 'No faith' && r.culture === cu);
 	return { ideology: lead?.ideology ?? 'monarchy', religion: rel };
 }
 
@@ -289,7 +302,8 @@ export function genPersonVoice(sim: Simulation, p: Person): PersonVoice | undefi
 	const oath = oaths.length ? rng.pick(oaths) : undefined;
 
 	// beliefs
-	const rel = w.religions[p.religion];
+	const rawRel = p.religion ? w.religions[p.religion] : undefined;
+	const rel = rawRel && rawRel.id && rawRel.name !== 'No faith' ? rawRel : undefined;
 	const prof = cultureProfile(w, p.culture);
 	const pol = sim.polities[p.state];
 	const cands: string[] = [];
@@ -318,7 +332,8 @@ export function genPersonVoice(sim: Simulation, p: Person): PersonVoice | undefi
 
 function topicOf(sim: Simulation, p: Person, rng: Rng): string {
 	const w = sim.w;
-	const rel = w.religions[p.religion];
+	const rawRel = p.religion ? w.religions[p.religion] : undefined;
+	const rel = rawRel && rawRel.id && rawRel.name !== 'No faith' ? rawRel : undefined;
 	const burg = w.burgs[p.burg];
 	const town = burg?.name ?? '{town}';
 	const wars = sim.wars.filter((x) => (x.attackers.includes(p.state) || x.defenders.includes(p.state)) && x.start >= p.born);
